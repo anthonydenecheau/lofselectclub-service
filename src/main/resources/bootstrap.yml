@@ -1,6 +1,6 @@
 spring:
   application:
-    name: showservice
+    name: lofselectclubservice
   profiles:
     active:
       default
