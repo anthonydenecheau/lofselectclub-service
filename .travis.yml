@@ -27,7 +27,7 @@ env:
 #- docker push $SCC_DOCKER_IMAGE
 before_install:
 - gem install travis -v 1.8.5 --no-rdoc --no-ri
-- export BUILD_NAME=lofselectclub-$TRAVIS_BRANCH-$(date -u "+%Y%m%d%H%M%S")-$TRAVIS_BUILD_NUMBER
+- export BUILD_NAME=scc-lofselectclub-service-$TRAVIS_BRANCH-$(date -u "+%Y%m%d%H%M%S")-$TRAVIS_BUILD_NUMBER
 script:
 - sh scripts/travis/tag_build.sh
 - sh scripts/travis/build_services.sh

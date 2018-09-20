@@ -153,8 +153,8 @@
 	<springfox-swagger.version>2.8.0</springfox-swagger.version>    
     <start-class>com.scc.lofselectclub.Application</start-class>    
     <docker.image.name>anthonydenecheau/scc-lofselectclub-service</docker.image.name>
-   	<!-- <docker.image.tag>${env.BUILD_NAME}</docker.image.tag> -->
-   	<docker.image.tag>version1.1</docker.image.tag>
+	<docker.image.tag>${env.BUILD_NAME}</docker.image.tag>
+   	<!-- <docker.image.tag>version1.1</docker.image.tag> -->
   </properties>
 
   <build>
