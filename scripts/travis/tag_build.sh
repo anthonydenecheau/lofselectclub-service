@@ -5,9 +5,9 @@ body="{
   \"tag_name\": \"$BUILD_NAME\",
   \"target_commitish\": \"master\",
   \"name\": \"$BUILD_NAME\",
-  \"body\": \"Release of version $BUILD_NAME\",
-  \"draft\": true,
-  \"prerelease\": true
+  \"body\": \"Tag version $BUILD_NAME\",
+  \"draft\": false,
+  \"prerelease\": false
 }"
 
 curl -k -X POST \
