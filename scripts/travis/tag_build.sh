@@ -3,18 +3,20 @@ export TARGET_URL="https://api.github.com/repos/anthonydenecheau/lofselectclub-s
 
 echo "###"
 echo $TARGET_URL
+echo "###"
 
 body="{
-  \"tag_name\": \"$BUILD_NAME\",
-  \"target_commitish\": \"master\",
-  \"name\": \"$BUILD_NAME\",
-  \"body\": \"Tag version $BUILD_NAME\",
-  \"draft\": false,
-  \"prerelease\": false
+ \"tag_name\": \"$BUILD_NAME\",
+ \"target_commitish\": \"master\",
+ \"name\": \"$BUILD_NAME\",
+ \"body\": \"Tag version $BUILD_NAME\",
+ \"draft\": false,
+ \"prerelease\": false
 }"
 
 echo "###"
 echo $body
+echo "###"
 
 curl -k -X POST \
   -H "Content-Type: application/json" \
