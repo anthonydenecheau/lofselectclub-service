@@ -21,7 +21,7 @@ env:
   - secure: EGfuZbEnZ3qpfSFxrRHKMCs+oaPdX85CAtbaIKzdrZcsTly4odtynM4htTp5hx6+UcXexUNN+ZWqXHfK264xv3Ixb28mru0TQPm+JJlBZYOhe3xJ/Q2PRfgsEoMyeuDYYoXLyRVkpkK4FNFIHI4CfV2KPv5lEIxLQ1e+2suq9AZd/ehR4eRj444fuDVrU7qk9UFuHGUQu4DhmBOaRHsfXG3eUrHa2gd5PII6Wv0YsovdidlMKjUA9Et30U+0Sy71gtELT0AuKIPW4Udt3c+YTwbMmeOevgVRzadPMgV0V9z5GSC96EjrH4OLDyR+23Dj0KLth20VPT7NwF9w13cLGD9gz1P6K/024ZqDsZuk9585Bn18k8w+3+v3py9siwPG51TejHIJKJrcxFaM4Q6CzA5aVD/JXDGV2iTdsa0kN364YraBTR3BUuKjQH8OmCekY41GIhiQHq1kSxBB0bqdIcqekd65OePOUhlW+PmAwuNooxvzzWunoYFfmPZpUCBua7gN2C977UjI7eSekdkOp9m6HX1lq1B4udZamRe0iqU6GGIiHuaPaK8exigAJsdkx/8zdQt90sGhkzimKomEh/14yS8c3HGMK1JthwMMSHxZzrmYBaMt/4fQdG0XzxSdzgfseDORsivPWaHv3nbRdWDVV7QdvL6wmrupMNzCPGY=
 before_install:
 - gem install travis -v 1.8.5 --no-rdoc --no-ri
-- export BUILD_NAME=k8s-gateway-$TRAVIS_BRANCH-$(date -u "+%Y%m%d%H%M%S")-$TRAVIS_BUILD_NUMBER
+- export BUILD_NAME=$TRAVIS_BRANCH-$(date -u "+%Y%m%d%H%M%S")-$TRAVIS_BUILD_NUMBER
 script:
 - sh scripts/travis/tag_build.sh
 - sh scripts/travis/build_services.sh
