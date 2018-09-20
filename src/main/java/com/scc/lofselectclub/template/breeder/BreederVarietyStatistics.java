@@ -5,12 +5,12 @@ import java.util.Map;
 
 import io.swagger.annotations.ApiModelProperty;
 
-public class VarietyStatistics {
+public class BreederVarietyStatistics {
 
 	@ApiModelProperty(notes = "number of breeders", position = 1, allowEmptyValue=true)
 	int qtity;
 
-	@ApiModelProperty(notes = "detail by series", position = 2, allowEmptyValue=true)
+	@ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Serie", notes = "detail by series", position = 2, allowEmptyValue=true)
 	List<Map<String, Object>> series;
 	
 	public int getQtity() { return qtity; }
@@ -19,8 +19,8 @@ public class VarietyStatistics {
 	public List<Map<String, Object>> getSeries() { return series; }
 	public void setSeries(List<Map<String, Object>> series) { this.series = series; }
 	
-	public VarietyStatistics withQtity(int qtity){ this.setQtity(qtity); return this; }
-	public VarietyStatistics withSeries(List<Map<String, Object>> series){ this.setSeries(series); return this; }
+	public BreederVarietyStatistics withQtity(int qtity){ this.setQtity(qtity); return this; }
+	public BreederVarietyStatistics withSeries(List<Map<String, Object>> series){ this.setSeries(series); return this; }
 
 	@Override
 	public String toString() {

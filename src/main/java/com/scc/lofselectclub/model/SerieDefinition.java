@@ -3,25 +3,25 @@ package com.scc.lofselectclub.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "ls_range_definition")
-public class RangeDefinition {
+@Table(name = "ls_serie_definition")
+public class SerieDefinition {
 
 	@Id 
-    @Column(name = "id_range")
-    Integer idRange;
+    @Column(name = "id_serie")
+    Integer idSerie;
 	@Column(name = "min_value")
     Integer minValue;	
     @Column(name = "max_value")
     Integer maxValue;
-    @Column(name = "lib_range")
+    @Column(name = "lib_serie")
     String libelle;
     @Column(name = "sequence")
     int sequence;
-    @Column(name = "id_range_group")
-    Integer idRangeGroup;
+    @Column(name = "id_serie_group")
+    Integer idSerieGroup;
    
-	public Integer getIdRange() { return idRange; }
-	public void setIdRange(Integer idRange) { this.idRange = idRange; }
+	public Integer getIdSerie() { return idSerie; }
+	public void setIdSerie(Integer idSerie) { this.idSerie = idSerie; }
 
 	public Integer getMinValue() { return minValue; }
 	public void setMinValue(Integer minValue) { this.minValue = minValue; }
@@ -35,7 +35,7 @@ public class RangeDefinition {
 	public Integer getSequence() { return sequence; }
 	public void setSequence(Integer sequence) { this.sequence = sequence; }
 
-	public Integer getIdRangeGroup() { return idRangeGroup; }
-	public void setIdRangeGroup(Integer idRangeGroup) { this.idRangeGroup = idRangeGroup; }
+	public Integer getIdSerieGroup() { return idSerieGroup; }
+	public void setIdSerieGroup(Integer idSerieGroup) { this.idSerieGroup = idSerieGroup; }
 	
 }

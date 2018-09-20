@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.scc.lofselectclub.exceptions.ApiError;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
-import com.scc.lofselectclub.services.BreederService;
-import com.scc.lofselectclub.template.breeder.BreederResponseObject;
+import com.scc.lofselectclub.services.ParentService;
+import com.scc.lofselectclub.template.parent.ParentResponseObject;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -20,23 +20,23 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @RestController
 @RequestMapping(value="v1/clubs")
-@Api(value="breeders selection", description="Return breeders data")
-public class BreederServiceController {
+@Api(value="parents selection", description="Return parents data")
+public class ParentServiceController {
    
 	@Autowired
-    private BreederService breederService;
+    private ParentService parentService;
 
-    @ApiOperation(value = "View breeders information by id club",response = BreederResponseObject.class)
+    @ApiOperation(value = "View parents information by id club",response = ParentResponseObject.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Successfully retrieved breeders"),
+            @ApiResponse(code = 200, message = "Successfully retrieved parents"),
             @ApiResponse(code = 400, message = "You are trying to reach the resource with invalid parameters"),
             @ApiResponse(code = 401, message = "You are not authorized to view the resource"),
             @ApiResponse(code = 403, message = "Accessing the resource you were trying to reach is forbidden"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found", response = ApiError.class)
     })    
-    @RequestMapping(value="/{id}/breeders", method = RequestMethod.GET)
-    public BreederResponseObject getBreedersStatisticsByIdClub(@ApiParam(value = "id club", required = true) @PathVariable("id") int id) throws EntityNotFoundException {
-        return breederService.getStatistics(id);
+    @RequestMapping(value="/{id}/parents", method = RequestMethod.GET)
+    public ParentResponseObject getParentsStatisticsByIdClub(@ApiParam(value = "id club", required = true) @PathVariable("id") int id) throws EntityNotFoundException {
+        return parentService.getStatistics(id);
     }    
     
 }

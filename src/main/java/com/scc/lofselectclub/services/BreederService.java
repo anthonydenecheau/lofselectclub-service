@@ -8,23 +8,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import com.scc.lofselectclub.exceptions.EntityNotFoundException;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.model.BreederStatistics;
-import com.scc.lofselectclub.model.RangeDefinition;
-import com.scc.lofselectclub.model.RangeRace;
+import com.scc.lofselectclub.model.SerieDefinition;
+import com.scc.lofselectclub.model.ConfigurationRace;
 import com.scc.lofselectclub.repository.BreederRepository;
-import com.scc.lofselectclub.repository.RangeDefinitionRepository;
-import com.scc.lofselectclub.repository.RangeRaceRepository;
+import com.scc.lofselectclub.repository.SerieDefinitionRepository;
+import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
-import com.scc.lofselectclub.template.breeder.MonthStatistics;
-import com.scc.lofselectclub.template.breeder.AffixStatistics;
-import com.scc.lofselectclub.template.breeder.AffixVariety;
-import com.scc.lofselectclub.template.breeder.Breed;
-import com.scc.lofselectclub.template.breeder.ResponseObject;
-import com.scc.lofselectclub.template.breeder.BreedStatistics;
-import com.scc.lofselectclub.template.breeder.VarietyStatistics;
-import com.scc.lofselectclub.template.breeder.Variety;
+import com.scc.lofselectclub.template.breeder.BreederMonthStatistics;
+import com.scc.lofselectclub.template.breeder.BreederAffixStatistics;
+import com.scc.lofselectclub.template.breeder.BreederAffixVariety;
+import com.scc.lofselectclub.template.breeder.BreederBreed;
+import com.scc.lofselectclub.template.breeder.BreederResponseObject;
+import com.scc.lofselectclub.template.breeder.BreederBreedStatistics;
+import com.scc.lofselectclub.template.breeder.BreederVarietyStatistics;
+import com.scc.lofselectclub.utils.StreamUtils;
+import com.scc.lofselectclub.template.breeder.BreederVariety;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,19 +61,19 @@ public class BreederService {
     private BreederRepository breederRepository;
     
     @Autowired
-    private RangeRaceRepository rangeRaceRepository;
+    private ConfigurationRaceRepository configurationRaceRepository;
 
     @Autowired
-    private RangeDefinitionRepository rangeDefinitionRepository;
+    private SerieDefinitionRepository rangeDefinitionRepository;
 
     @Autowired
     ServiceConfig config;
 
     private Integer minVal = 0;
     private Integer maxVal = 0;
+    int limitTopN = 0;
     
     private Set<String> allTopN = new HashSet<String>();
-    final int limitTopN = 20;
 
 	@HystrixCommand(fallbackMethod = "buildFallbackBreederList",
             threadPoolKey = "getStatistics",
@@ -83,57 +85,73 @@ public class BreederService {
                      @HystrixProperty(name="circuitBreaker.errorThresholdPercentage", value="75"),
                      @HystrixProperty(name="circuitBreaker.sleepWindowInMilliseconds", value="7000"),
                      @HystrixProperty(name="metrics.rollingStats.timeInMilliseconds", value="15000"),
-                     @HystrixProperty(name="metrics.rollingStats.numBuckets", value="5")}
+                     @HystrixProperty(name="metrics.rollingStats.numBuckets", value="5")},
+            ignoreExceptions= { EntityNotFoundException.class}
     )
-    public ResponseObject getStatistics(int idClub){
+    public BreederResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
         Span newSpan = tracer.createSpan("getStatistics");
         logger.debug("In the breederService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
 
-    	long startTime = System.currentTimeMillis();
+        // topN affixe
+        limitTopN = config.getLimitTopNAffix();
+
         int _id = 0;
         String _name = "";
         String period = "";
 
-        List<Breed> _breeds = new ArrayList<Breed>();
+        List<BreederBreed> _breeds = new ArrayList<BreederBreed>();
         
         try {
         	
-            // Lecture des races associées au club
+            // Lecture des races associées au club qui ont une production 
+        	// TODO : QUID des races pour le club qui n'ont pas eu de production s/ les 5 dernieres années ?
             Map<TupleBreed,List<BreederStatistics>> _allBreeds = breederRepository.findByIdClub(idClub)
     			.stream()
     			.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())))
     		;
+            
+            // Exception si le club n'a pas de races connues
+            if (_allBreeds.size() == 0)
+            	throw new EntityNotFoundException(BreederResponseObject.class, "idClub", String.valueOf(idClub));
+            
             for (Map.Entry<TupleBreed,List<BreederStatistics>> _currentBreed : _allBreeds.entrySet()) {
 
-            	List<AffixStatistics> _affixesStatistics = new ArrayList<AffixStatistics>();  
-            	List<BreedStatistics> _breedStatistics = new ArrayList<BreedStatistics>();  		
+            	List<BreederAffixStatistics> _affixesStatistics = new ArrayList<BreederAffixStatistics>();  
+            	List<BreederBreedStatistics> _breedStatistics = new ArrayList<BreederBreedStatistics>();  		
             	int _year = 0;
             	int _qtity = 0;
             	
             	_id = _currentBreed.getKey().getId();
             	_name = _currentBreed.getKey().getName();
-            	System.out.println("Race :"+_id+"@"+_name);
 
             	// Recherche TopN Affixe s/ la race
             	List<BreederStatistics> _topsNAffixes = extractTopNAffixes(_currentBreed.getValue());
 
                 // Lecture des plages paramétrées pour la race en cours
-                RangeRace _rangeRace = rangeRaceRepository.findByIdRace(_id);
-                List<RangeDefinition> plages = rangeDefinitionRepository.findByIdRangeGroupOrderBySequence(_rangeRace.getIdRangeGroup());
-                period = _rangeRace.getBreakPeriod();
+            	// Lecture de la dernière date de calcul pour définir la période (rupture dans les années)
+            	// A voir si les années précédentes ne feront pas l'objet d'une suppression côté data (BdD); auquel cas, ce code sera obsolète 
+                ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(_id);
+                List<SerieDefinition> plages = rangeDefinitionRepository.findByIdSerieGroupOrderBySequence(_configurationRace.getIdSerieGroup());
+            	int [] _serieYear = StreamUtils.findSerieYear(_configurationRace.getLastDate());
+            	final int minYear =_serieYear[0];
+                period = _configurationRace.getBreakPeriod();
 
             	// TODO : Quid des années pour lesquels aucune production n'a été enregistrée
 
             	// Lecture des années (on ajoute un tri) 
             	Map<Integer,List<BreederStatistics>> _breedGroupByYear= _currentBreed.getValue()
             			.stream()
-            			.collect(sortedGroupingBy(BreederStatistics::getAnnee))
+            			.filter(x -> x.getAnnee() >= minYear)
+            			.collect(StreamUtils.sortedGroupingBy(BreederStatistics::getAnnee))
             	;
             	for (Map.Entry<Integer,List<BreederStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
 
-                	List<MonthStatistics> _months = new ArrayList<MonthStatistics>();  		
+                	List<BreederMonthStatistics> _months = new ArrayList<BreederMonthStatistics>();  		
                 	_year = _breedOverYear.getKey();
+                	
+                	// Suppression de l'année traitée
+                	_serieYear=ArrayUtils.removeElement(_serieYear,_year); 
                 	
                 	// Total de la production de l'année en cours
                 	_qtity = sumLitter(_breedOverYear.getValue());
@@ -142,7 +160,7 @@ public class BreederService {
                 	List<Map<String, Object>> _series = extractSeries(plages, _breedOverYear.getValue());
             		
             		// Lecture des variétés s/ la race en cours (et pour l'année en cours)
-                	List<Variety> _variety = extractVariety(plages, _breedOverYear.getValue());
+                	List<BreederVariety> _variety = extractVariety(plages, _breedOverYear.getValue());
 
                 	// TODO : Quid des mois pour lesquels aucune production n'a été enregistrée
                 	if ("MM".equals(period)) {
@@ -154,7 +172,7 @@ public class BreederService {
                 		// On complète les données mensuelles (on ajoute un tri == permet de détecter les ruptures dans la production)
                     	Map<Integer,List<BreederStatistics>> _breedGroupByMonth = _breedOverYear.getValue()
                     			.stream()
-                    			.collect(sortedGroupingBy(BreederStatistics::getMois))
+                    			.collect(StreamUtils.sortedGroupingBy(BreederStatistics::getMois))
                     	;
                     	for (Map.Entry<Integer,List<BreederStatistics>> _breedOverMonth : _breedGroupByMonth.entrySet()) {
 
@@ -170,9 +188,9 @@ public class BreederService {
                         	List<Map<String, Object>> _seriesMonth = extractSeries(plages, _breedOverMonth.getValue());
                     		
                         	// Lecture des variétés s/ la race en cours (et pour le mois en cours)
-                        	List<Variety> _varietyMonth = extractVariety(plages, _breedOverMonth.getValue());
+                        	List<BreederVariety> _varietyMonth = extractVariety(plages, _breedOverMonth.getValue());
 
-                        	MonthStatistics _monthStatitics = new MonthStatistics()
+                        	BreederMonthStatistics _monthStatitics = new BreederMonthStatistics()
                         			.withMonth(_month)
                         			.withQtity(_monthQtity)
                         			.withSeries(_seriesMonth)
@@ -187,20 +205,20 @@ public class BreederService {
                     		for (int i = 0; i < _listMonths.length; i++) {
                     			//System.out.print(" -> "+_listMonths[i]);
                     			_months.add( 
-                    				new MonthStatistics()
+                    				new BreederMonthStatistics()
                     					.withMonth(_listMonths[i])
                     					.withQtity(0)
                     					.withSeries(new ArrayList<Map<String, Object>>())
-                    					.withVariety(new ArrayList<Variety>())                    			
+                    					.withVariety(new ArrayList<BreederVariety>())                    			
                         		);
                     		}
                     	
                     	// Mise à jour == Tri s/ les mois
-                    	_months.sort(Comparator.comparing(MonthStatistics::getMonth));
+                    	_months.sort(Comparator.comparing(BreederMonthStatistics::getMonth));
                 	}
                 	
                 	// Création de l'objet Statistique de l'année en cours pour la race (inclus variété)
-                	BreedStatistics _breed = new BreedStatistics()
+                	BreederBreedStatistics _breed = new BreederBreedStatistics()
             			.withYear(_year)
             			.withQtity(_qtity)
             			.withSeries(_series)
@@ -213,9 +231,9 @@ public class BreederService {
             		List<Map<String, Object>> _topsN = extractTopNOverYear(_year,_topsNAffixes);
 
             		// Lecture TopN Affixe par variétés s/ la race en cours (et pour l'année en cours)
-                	List<AffixVariety> _topNVariety = extractTopNVariety(_year, _topsNAffixes);
+                	List<BreederAffixVariety> _topNVariety = extractTopNVariety(_year, _topsNAffixes);
 
-                	AffixStatistics _affixStatistics = new AffixStatistics()
+                	BreederAffixStatistics _affixStatistics = new BreederAffixStatistics()
                 			.withYear(_year)
                 			.withAffixes(_topsN)
                 			.withVariety(_topNVariety)
@@ -224,8 +242,27 @@ public class BreederService {
 
             	}
             	
+            	// On finalise en initialisant les années pour lesquelles on a constaté une rupture
+            	for (int i = 0; i < _serieYear.length; i++) {
+            		BreederBreedStatistics _breed = new BreederBreedStatistics()
+            			.withYear(_serieYear[i])
+            			.withQtity(0)
+            			.withSeries(new ArrayList<Map<String, Object>>())
+            			.withVariety(new ArrayList<BreederVariety>())
+            			.withMonths(new ArrayList<BreederMonthStatistics>())
+            		;	
+            		_breedStatistics.add(_breed);
+            		
+            		BreederAffixStatistics _affixStatistics = new BreederAffixStatistics()
+                			.withYear(_serieYear[i])
+                			.withAffixes(new ArrayList<Map<String, Object>>())
+                			.withVariety(new ArrayList<BreederAffixVariety>())
+                	;
+                	_affixesStatistics.add(_affixStatistics);
+            	}
+            	
             	// Création de l'objet Race
-            	Breed _breed = new Breed()
+            	BreederBreed _breed = new BreederBreed()
             		.withId(_id)
             		.withName(_name)
             		.withStatistics(_breedStatistics)
@@ -235,14 +272,9 @@ public class BreederService {
             	// Ajout à la liste 
             	_breeds.add(_breed);
             }
-
-            long endTime = System.currentTimeMillis();
-            long timeElapsed = endTime - startTime;
-
-            System.out.println("Execution time in milliseconds: " + timeElapsed);
-            
+           
             // Réponse
-        	return new ResponseObject()
+        	return new BreederResponseObject()
             		.withBreeds(_breeds)
             		.withSize(_breeds.size())
             ;
@@ -256,18 +288,18 @@ public class BreederService {
 	    }
     }
 
-	private ResponseObject buildFallbackBreederList(int idClub){
+	private BreederResponseObject buildFallbackBreederList(int idClub){
     	
-    	List<Breed> list = new ArrayList<Breed>(); 
-    	list.add(new Breed()
+    	List<BreederBreed> list = new ArrayList<BreederBreed>(); 
+    	list.add(new BreederBreed()
                 .withId(0))
     	;
-        return new ResponseObject(list.size(),list);
+        return new BreederResponseObject(list.size(),list);
     }
     
-	private List<Variety> extractVariety(List<RangeDefinition> plages, List<BreederStatistics> _list) {
+	private List<BreederVariety> extractVariety(List<SerieDefinition> plages, List<BreederStatistics> _list) {
 
-		List<Variety> _varietyList = new ArrayList<Variety>(); 
+		List<BreederVariety> _varietyList = new ArrayList<BreederVariety>(); 
 		int _id = 0;
 		int _qtity = 0;
 		String _name = "";
@@ -276,6 +308,12 @@ public class BreederService {
 				.stream()
 				.collect(Collectors.groupingBy(r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())))
 		;
+		
+		// Cas où la race est mono variété, la propriété n'est pas renseignée
+		if ( _allVariety.size() == 1 
+				&& StreamUtils.breedMonoVariety(_allVariety.keySet().stream().findFirst().get().getName()) ) 
+			return _varietyList;
+		
 		for (Map.Entry<TupleVariety,List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
 			
 			_id = _currentVariety.getKey().getId();
@@ -288,13 +326,13 @@ public class BreederService {
 			List<Map<String, Object>> _series = extractSeries(plages, _currentVariety.getValue());
 
 			// Création de l'objet VarietyStatistics
-			VarietyStatistics _varietyStatistics = new VarietyStatistics()
+			BreederVarietyStatistics _varietyStatistics = new BreederVarietyStatistics()
 					.withQtity(_qtity)
 					.withSeries(_series)
 			;
 
 			// Création de l'objet Variety
-			Variety _variety = new Variety()
+			BreederVariety _variety = new BreederVariety()
 					.withId(_id)
 					.withName(_name)
 					.withStatistics(_varietyStatistics)
@@ -304,12 +342,12 @@ public class BreederService {
 		return _varietyList;
 	}
 
-	private List<Map<String, Object>> extractSeries(List<RangeDefinition> plages, List<BreederStatistics> _list) {
+	private List<Map<String, Object>> extractSeries(List<SerieDefinition> plages, List<BreederStatistics> _list) {
 		
     	List<Map<String, Object>> _series = new ArrayList<Map<String, Object>>();
 
 		// Par tranche
-		for (RangeDefinition plage : plages) {
+		for (SerieDefinition plage : plages) {
 			
 			Map<String, Object> _serie = new HashMap<String, Object>();
 			
@@ -393,9 +431,9 @@ public class BreederService {
 	}
 
 
-    private List<AffixVariety> extractTopNVariety(int _year, List<BreederStatistics> _topsNAffixes) {
+    private List<BreederAffixVariety> extractTopNVariety(int _year, List<BreederStatistics> _topsNAffixes) {
 
-		List<AffixVariety> _varietyList = new ArrayList<AffixVariety>(); 
+		List<BreederAffixVariety> _varietyList = new ArrayList<BreederAffixVariety>(); 
 		int _id = 0;
 		String _name = "";
 
@@ -403,12 +441,18 @@ public class BreederService {
 				.stream()
 				.collect(Collectors.groupingBy(r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())))
 		;
+		
+		// Cas où la race est mono variété, la propriété n'est pas renseignée
+		if ( _allVariety.size() == 1 
+				&& StreamUtils.breedMonoVariety(_allVariety.keySet().stream().findFirst().get().getName()) ) 
+			return _varietyList;
+		
 		for (Map.Entry<TupleVariety,List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
 			
 			_id = _currentVariety.getKey().getId();
 			_name = _currentVariety.getKey().getName();
 
-			AffixVariety _variety = new AffixVariety()
+			BreederAffixVariety _variety = new BreederAffixVariety()
 					.withId(_id)
 					.withName(_name)
 					.withAffixes(extractTopNOverYear(_year, _currentVariety.getValue()))
@@ -445,11 +489,6 @@ public class BreederService {
     	return _breeder.size();
     }
 
-    private <T, K extends Comparable<K>> Collector<T, ?, TreeMap<K, List<T>>> sortedGroupingBy(Function<T, K> function) {
-         return Collectors.groupingBy(function, 
-            TreeMap::new, Collectors.toList());
-    }
-    
     private List<BreederStatistics> extractTopNAffixes (List<BreederStatistics> _list) {
     	
     	List<BreederStatistics> _topNAffixes = new ArrayList<BreederStatistics>();

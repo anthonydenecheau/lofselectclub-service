@@ -50,7 +50,7 @@ public class SwaggerConfig extends WebMvcConfigurationSupport {
     
     private ApiInfo apiInfo() {
     	
-    	String detailDescription = "The Lof Select Club Microservice is a RESTful API that provides statistics about breeder, DNA or health results, etc. \n \n" 
+    	String detailDescription = "The Lof Select Club Microservice is a RESTful API that provides statistics about breeders, births, DNA or health results, etc. \n \n" 
 	    		+"Below is a list of available REST API calls for Lof Select Club resources.";
 
         return new ApiInfoBuilder()

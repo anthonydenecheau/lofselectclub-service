@@ -5,7 +5,7 @@ import java.util.Map;
 
 import io.swagger.annotations.ApiModelProperty;
 
-public class MonthStatistics {
+public class BreederMonthStatistics {
 
 	@ApiModelProperty(notes = "month", position = 1, allowEmptyValue=true)
 	int month;
@@ -13,11 +13,11 @@ public class MonthStatistics {
 	@ApiModelProperty(notes = "number of breeders", position = 2, allowEmptyValue=true)
 	int qtity;
 	
-	@ApiModelProperty(notes = "detail by series", position = 3, allowEmptyValue=true)
+	@ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Serie", notes = "detail by series", position = 3, allowEmptyValue=true)
 	List<Map<String, Object>> series;
 	
 	@ApiModelProperty(notes = "detail by variety", position = 5, allowEmptyValue=true)
-	List<Variety> variety;
+	List<BreederVariety> variety;
 	
 	public int getMonth() { return month; }
 	public void setMonth(int month) { this.month = month; }
@@ -28,13 +28,13 @@ public class MonthStatistics {
 	public List<Map<String, Object>> getSeries() { return series; }
 	public void setSeries(List<Map<String, Object>> series) { this.series = series; }
 	
-	public List<Variety> getVariety() { return variety; }
-	public void setVariety(List<Variety> variety) { this.variety = variety; }
+	public List<BreederVariety> getVariety() { return variety; }
+	public void setVariety(List<BreederVariety> variety) { this.variety = variety; }
 
-	public MonthStatistics withMonth(int month){ this.setMonth(month); return this; }
-	public MonthStatistics withQtity(int qtity){ this.setQtity(qtity); return this; }
-	public MonthStatistics withSeries(List<Map<String, Object>> series){ this.setSeries(series); return this; }
-	public MonthStatistics withVariety(List<Variety> variety){ this.setVariety(variety); return this; }
+	public BreederMonthStatistics withMonth(int month){ this.setMonth(month); return this; }
+	public BreederMonthStatistics withQtity(int qtity){ this.setQtity(qtity); return this; }
+	public BreederMonthStatistics withSeries(List<Map<String, Object>> series){ this.setSeries(series); return this; }
+	public BreederMonthStatistics withVariety(List<BreederVariety> variety){ this.setVariety(variety); return this; }
 	
 	@Override
 	public String toString() {

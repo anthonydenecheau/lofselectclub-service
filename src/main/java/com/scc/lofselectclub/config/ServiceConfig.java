@@ -13,4 +13,18 @@ public class ServiceConfig{
     return exampleProperty;
   }
 
+  @Value("${breeder.limitTopNAffix}")
+  private int limitTopNAffix;
+
+  public int getLimitTopNAffix(){
+    return limitTopNAffix;
+  }
+
+  @Value("${parent.limitTopNFathers}")
+  private int limitTopNFathers;
+
+  public int getLimitTopNFathers(){
+    return limitTopNFathers;
+  }
+
 }

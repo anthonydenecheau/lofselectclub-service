@@ -4,7 +4,7 @@ import java.util.List;
 
 import io.swagger.annotations.ApiModelProperty;
 
-public class Breed {
+public class BreederBreed {
 
 	@ApiModelProperty(notes = "Breed id", position = 1, allowEmptyValue=true)
 	int id;
@@ -13,10 +13,10 @@ public class Breed {
 	String name;
 	
 	@ApiModelProperty(notes = "Breed statistics", position = 3, allowEmptyValue=true)
-	List<BreedStatistics> statistics;
+	List<BreederBreedStatistics> statistics;
 
 	@ApiModelProperty(notes = "Affixes topN", position = 4, allowEmptyValue=true)
-	List<AffixStatistics> topN;
+	List<BreederAffixStatistics> topN;
 
 	public int getId() { return id; }
 	public void setId(int id) { this.id = id; }
@@ -24,16 +24,16 @@ public class Breed {
 	public String getName() { return name; }
 	public void setName(String name) { this.name = name; }
 
-	public List<BreedStatistics> getStatistics() { return statistics; }
-	public void setStatistics(List<BreedStatistics> statistics) { this.statistics = statistics; }
+	public List<BreederBreedStatistics> getStatistics() { return statistics; }
+	public void setStatistics(List<BreederBreedStatistics> statistics) { this.statistics = statistics; }
 
-	public List<AffixStatistics> getTopN() { return topN; }
-	public void setTopN(List<AffixStatistics> topN) { this.topN = topN; }
+	public List<BreederAffixStatistics> getTopN() { return topN; }
+	public void setTopN(List<BreederAffixStatistics> topN) { this.topN = topN; }
 
-	public Breed withId(int id){ this.setId(id); return this; }
-	public Breed withName(String name){ this.setName(name); return this; }
-	public Breed withStatistics(List<BreedStatistics> statistics){ this.setStatistics(statistics); return this; }
-	public Breed withTopN(List<AffixStatistics> topN){ this.setTopN(topN); return this; }
+	public BreederBreed withId(int id){ this.setId(id); return this; }
+	public BreederBreed withName(String name){ this.setName(name); return this; }
+	public BreederBreed withStatistics(List<BreederBreedStatistics> statistics){ this.setStatistics(statistics); return this; }
+	public BreederBreed withTopN(List<BreederAffixStatistics> topN){ this.setTopN(topN); return this; }
 
 	@Override
 	public String toString() {
