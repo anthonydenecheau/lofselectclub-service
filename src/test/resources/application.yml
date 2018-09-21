@@ -14,6 +14,8 @@ example:
 authentification:
   keys[0]: "myPersonalKey"
   value: "01/01/2057"
+breeder:  
   limitTopNAffix: 0
+parent:
   limitTopNFathers: 0
   
