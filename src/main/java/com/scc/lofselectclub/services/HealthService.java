@@ -10,6 +10,7 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
+import com.scc.lofselectclub.exceptions.EnumValidationException;
 import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.model.ConfigurationRace;
 import com.scc.lofselectclub.model.HealthStatistics;
@@ -26,9 +27,11 @@ import com.scc.lofselectclub.template.health.HealthBreedStatistics;
 import com.scc.lofselectclub.template.health.HealthResponseObject;
 import com.scc.lofselectclub.template.health.HealthResult;
 import com.scc.lofselectclub.template.health.HealthTest;
+import com.scc.lofselectclub.template.health.HealthType;
 import com.scc.lofselectclub.template.health.HealthVariety;
 import com.scc.lofselectclub.template.health.HealthVarietyStatistics;
 import com.scc.lofselectclub.utils.StreamUtils;
+import com.scc.lofselectclub.utils.TypeHealth;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -124,11 +127,11 @@ public class HealthService {
                 	_serieYear=ArrayUtils.removeElement(_serieYear,_year); 
                 
                 	// Lecture des résultats par catégorie soit pour une maladie type suivie, sous surveillance, emergente, ou gène d'intérêt
-                	List<Map<Integer, List<HealthTest>>>  _healthTest = extractHealthTestType(_breedOverYear.getValue());
+                	List<HealthType> _healthType = extractHealthTestType(_breedOverYear.getValue());
                 	
                 	HealthBreedStatistics _breed = new HealthBreedStatistics()
                 			.withYear(_year)
-                			.withHealthTest(_healthTest)
+                			.withHealthType(_healthType)
                 	;
                     _breedStatistics.add(_breed);
             	
@@ -179,9 +182,9 @@ public class HealthService {
         return new HealthResponseObject(list.size(),list);
     }
 
-	private List<Map<Integer, List<HealthTest>>> extractHealthTestType(List<HealthStatistics> _list) {
+	private List<HealthType> extractHealthTestType(List<HealthStatistics> _list) {
 
-		List<Map<Integer, List<HealthTest>>> _resultByType = new ArrayList<Map<Integer, List<HealthTest>>>();
+		List<HealthType> _resultByType = new ArrayList<HealthType>();
 		
 		Map<Integer,List<HealthStatistics>> _breedGroupByHealthType= _list
     			.stream()
@@ -189,12 +192,13 @@ public class HealthService {
     	;
     	for (Map.Entry<Integer,List<HealthStatistics>> _breedByHealthType : _breedGroupByHealthType.entrySet()) {
     		
-    		Map<Integer, List<HealthTest>> _type = new HashMap<Integer, List<HealthTest>>();
-
     		// Lecture des resultats santé par maladie	
     		List<HealthTest> _test = extractHealthTest(_breedByHealthType.getValue());
 
-    		_type.put(_breedByHealthType.getKey(), _test);
+    		HealthType _type = new HealthType()
+    				.withType(TypeHealth.fromId(_breedByHealthType.getKey()))
+    				.withHealthTest(_test)
+    		;
     		_resultByType.add(_type);
     	}
 		
