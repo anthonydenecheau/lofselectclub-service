@@ -11,9 +11,11 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.model.BreederStatistics;
+import com.scc.lofselectclub.model.ConfigurationClub;
 import com.scc.lofselectclub.model.SerieDefinition;
 import com.scc.lofselectclub.model.ConfigurationRace;
 import com.scc.lofselectclub.repository.BreederRepository;
+import com.scc.lofselectclub.repository.ConfigurationClubRepository;
 import com.scc.lofselectclub.repository.SerieDefinitionRepository;
 import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.template.TupleBreed;
@@ -36,11 +38,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,6 +61,9 @@ public class BreederService {
     
     @Autowired
     private ConfigurationRaceRepository configurationRaceRepository;
+
+    @Autowired
+    private ConfigurationClubRepository configurationClubRepository;
 
     @Autowired
     private SerieDefinitionRepository rangeDefinitionRepository;
@@ -94,27 +96,33 @@ public class BreederService {
         logger.debug("In the breederService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
 
         // topN affixe
-        limitTopN = config.getLimitTopNAffix();
+        this.limitTopN = config.getLimitTopNAffix();
 
         int _id = 0;
         String _name = "";
         String period = "";
 
         List<BreederBreed> _breeds = new ArrayList<BreederBreed>();
+        Map<Integer, Set<Integer>> _varietyByBreed = new HashMap<Integer, Set<Integer>>();
         
         try {
         	
-            // Lecture des races associées au club qui ont une production 
-        	// TODO : QUID des races pour le club qui n'ont pas eu de production s/ les 5 dernieres années ?
+        	// Initialisation des données races / varietes associées au club
+        	_varietyByBreed = configurationClubRepository.findByIdClub(idClub)
+        			.stream()
+        			.collect(Collectors.groupingBy(ConfigurationClub::getIdRace, 
+                            Collectors.mapping(ConfigurationClub::getIdVariete,
+                                               Collectors.toSet())));
+        	
+            // Exception si le club n'a pas de races connues == l'id club n'existe pas
+            if (_varietyByBreed.size() == 0)
+            	throw new EntityNotFoundException(BreederResponseObject.class, "idClub", String.valueOf(idClub));
+        	
+            // Lecture des races associées au club pour lesquelles des données ont été calculées
             Map<TupleBreed,List<BreederStatistics>> _allBreeds = breederRepository.findByIdClub(idClub)
     			.stream()
     			.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())))
     		;
-            
-            // Exception si le club n'a pas de races connues
-            if (_allBreeds.size() == 0)
-            	throw new EntityNotFoundException(BreederResponseObject.class, "idClub", String.valueOf(idClub));
-            
             for (Map.Entry<TupleBreed,List<BreederStatistics>> _currentBreed : _allBreeds.entrySet()) {
 
             	List<BreederAffixStatistics> _affixesStatistics = new ArrayList<BreederAffixStatistics>();  
@@ -136,8 +144,6 @@ public class BreederService {
             	int [] _serieYear = StreamUtils.findSerieYear(_configurationRace.getLastDate());
             	final int minYear =_serieYear[0];
                 period = _configurationRace.getBreakPeriod();
-
-            	// TODO : Quid des années pour lesquels aucune production n'a été enregistrée
 
             	// Lecture des années (on ajoute un tri) 
             	Map<Integer,List<BreederStatistics>> _breedGroupByYear= _currentBreed.getValue()
@@ -507,7 +513,7 @@ public class BreederService {
 		// 2. On ne conserve que les 20 plus meilleurs
 		Set<String> _sortedAffixes = _affixes.entrySet().stream()
 			    .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-			    .limit(limitTopN)
+			    .limit(this.limitTopN)
 			    .map(Entry::getKey)
 			    .collect(Collectors.toSet())
 		;

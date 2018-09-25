@@ -6,8 +6,11 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -47,7 +50,33 @@ public class StreamUtils {
         return topN.values();
    }
    
-   public static boolean breedMonoVariety (String name) {
-	   return ( ("".equals(name) || name == null) ? true : false);
-   }
+//   public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+//	    Set<Object> seen = ConcurrentHashMap.newKeySet();
+//	    return t -> seen.add(keyExtractor.apply(t));
+//	}
+   
+	/**
+	* Stateful filter. T is type of stream element, K is type of extracted key.
+	*/
+	public static <T> Predicate<T> distinctByKey(Function<? super T, Object> key) {
+		Map<Object, Boolean> map = new ConcurrentHashMap<>();
+		return t -> map.putIfAbsent(key.apply(t), Boolean.TRUE) == null;
+	}   
+
+	public static boolean breedMonoVariety (String name) {
+		return ( ("".equals(name) || name == null) ? true : false);
+	}
+   
+//   public static Map<Integer, Set<Integer>> removeIdBreed(int idBreed, Map<Integer, Set<Integer>> _l) {
+//	   _l.remove(idBreed);	   
+//	   return _l;
+//   }
+//
+//   public static Map<Integer, Set<Integer>> removeIdVariety(int idVariety, Map<Integer, Set<Integer>> _l) {
+//	   for(Set _j : _l.values()){
+//		   _j.remove(idVariety);
+//		}
+//	   return _l;
+//   }
+
 }

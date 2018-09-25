@@ -10,8 +10,10 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
+import com.scc.lofselectclub.model.ConfigurationClub;
 import com.scc.lofselectclub.model.ConfigurationRace;
 import com.scc.lofselectclub.model.ConfirmationStatistics;
+import com.scc.lofselectclub.repository.ConfigurationClubRepository;
 import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
@@ -22,17 +24,12 @@ import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreed;
 import com.scc.lofselectclub.template.confirmation.ConfirmationResponseObject;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.stream.Collector;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -52,6 +49,9 @@ public class ConfirmationService {
     
     @Autowired
     private ConfigurationRaceRepository configurationRaceRepository;
+
+    @Autowired
+    private ConfigurationClubRepository configurationClubRepository;
 
     @Autowired
     ServiceConfig config;
@@ -78,19 +78,26 @@ public class ConfirmationService {
         String _name = "";
 
         List<ConfirmationBreed> _breeds = new ArrayList<ConfirmationBreed>();
-
+        Map<Integer, Set<Integer>> _varietyByBreed = new HashMap<Integer, Set<Integer>>();
+        
         try {
         	
-            // Lecture des races associées au club
+        	// Initialisation des données races / varietes associées au club
+        	_varietyByBreed = configurationClubRepository.findByIdClub(idClub)
+        			.stream()
+        			.collect(Collectors.groupingBy(ConfigurationClub::getIdRace, 
+                            Collectors.mapping(ConfigurationClub::getIdVariete,
+                                               Collectors.toSet())));
+        	
+            // Exception si le club n'a pas de races connues == l'id club n'existe pas
+            if (_varietyByBreed.size() == 0)
+            	throw new EntityNotFoundException(ConfirmationResponseObject.class, "idClub", String.valueOf(idClub));
+        	
+            // Lecture des races associées au club pour lesquelles des données ont été calculées
             Map<TupleBreed,List<ConfirmationStatistics>> _allBreeds = confirmationRepository.findByIdClub(idClub)
     			.stream()
     			.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())))
     		;
-            
-            // Exception si le club n'a pas de races connues
-            if (_allBreeds.size() == 0)
-            	throw new EntityNotFoundException(ConfirmationResponseObject.class, "idClub", String.valueOf(idClub));
-            
             for (Map.Entry<TupleBreed,List<ConfirmationStatistics>> _currentBreed : _allBreeds.entrySet()) {
             
             	int _year = 0;

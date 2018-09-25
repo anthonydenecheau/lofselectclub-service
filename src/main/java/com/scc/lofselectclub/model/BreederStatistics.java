@@ -5,6 +5,8 @@ import javax.persistence.*;
 @Entity
 @Table(name = "ls_stats_eleveur")
 public class BreederStatistics {
+	
+	// NOTE : Pky ! idSaillie
 
 	@Column(name = "id_club")
     Integer idClub;	
@@ -53,6 +55,10 @@ public class BreederStatistics {
     Double prolificiteRace;
     @Column(name = "prolificite_variete")
     Double prolificiteVariete;    
+    @Column(name = "nb_ancetre_commun")
+    Integer nbAncetreCommun;
+	@Column(name = "consanguinite")
+    Double consanguinite;   
     @Column(name = "annee")
     Integer annee;
     @Column(name = "mois")
@@ -67,7 +73,6 @@ public class BreederStatistics {
 		this.nbFemelle = nbFemelle;
 	}
 
-	
     public BreederStatistics(Integer idClub, String nomClub, Integer numClub, Integer idRace, String nomRace, String codeFci,
 			Integer idVariete, String nomVariete, Integer idEleveur, String affixeEleveur, Integer idSaillie, Integer cotationPortee, Integer nbMale, Integer nbFemelle, 
 			Double prolificiteRace, Double prolificiteVariete, Integer annee, Integer mois) {
@@ -162,6 +167,12 @@ public class BreederStatistics {
 	public Double getProlificiteVariete() { return prolificiteVariete; }
 	public void setProlificiteVariete(Double prolificiteVariete) { this.prolificiteVariete = prolificiteVariete; }
 
+    public Integer getNbAncetreCommun() { return nbAncetreCommun; }
+	public void setNbAncetreCommun(Integer nbAncetreCommun) { this.nbAncetreCommun = nbAncetreCommun; }
+
+	public Double getConsanguinite() { return consanguinite; }
+	public void setConsanguinite(Double consanguinite) { this.consanguinite = consanguinite; }
+
 	public Integer getAnnee() { return annee; }
 	public void setAnnee(Integer annee) { this.annee = annee; }
 
@@ -175,6 +186,7 @@ public class BreederStatistics {
 		result = prime * result + ((affixeEleveur == null) ? 0 : affixeEleveur.hashCode());
 		result = prime * result + ((annee == null) ? 0 : annee.hashCode());
 		result = prime * result + ((codeFci == null) ? 0 : codeFci.hashCode());
+		result = prime * result + ((consanguinite == null) ? 0 : consanguinite.hashCode());
 		result = prime * result + ((cotationEtalon == null) ? 0 : cotationEtalon.hashCode());
 		result = prime * result + ((cotationLice == null) ? 0 : cotationLice.hashCode());
 		result = prime * result + ((cotationPortee == null) ? 0 : cotationPortee.hashCode());
@@ -186,6 +198,7 @@ public class BreederStatistics {
 		result = prime * result + ((idSaillie == null) ? 0 : idSaillie.hashCode());
 		result = prime * result + ((idVariete == null) ? 0 : idVariete.hashCode());
 		result = prime * result + ((mois == null) ? 0 : mois.hashCode());
+		result = prime * result + ((nbAncetreCommun == null) ? 0 : nbAncetreCommun.hashCode());
 		result = prime * result + ((nbFemelle == null) ? 0 : nbFemelle.hashCode());
 		result = prime * result + ((nbMale == null) ? 0 : nbMale.hashCode());
 		result = prime * result + ((nomClub == null) ? 0 : nomClub.hashCode());
@@ -223,6 +236,11 @@ public class BreederStatistics {
 			if (other.codeFci != null)
 				return false;
 		} else if (!codeFci.equals(other.codeFci))
+			return false;
+		if (consanguinite == null) {
+			if (other.consanguinite != null)
+				return false;
+		} else if (!consanguinite.equals(other.consanguinite))
 			return false;
 		if (cotationEtalon == null) {
 			if (other.cotationEtalon != null)
@@ -278,6 +296,11 @@ public class BreederStatistics {
 			if (other.mois != null)
 				return false;
 		} else if (!mois.equals(other.mois))
+			return false;
+		if (nbAncetreCommun == null) {
+			if (other.nbAncetreCommun != null)
+				return false;
+		} else if (!nbAncetreCommun.equals(other.nbAncetreCommun))
 			return false;
 		if (nbFemelle == null) {
 			if (other.nbFemelle != null)
@@ -346,7 +369,8 @@ public class BreederStatistics {
 				+ ", nomEtalon=" + nomEtalon + ", cotationEtalon=" + cotationEtalon + ", typeEtalon=" + typeEtalon
 				+ ", idLice=" + idLice + ", cotationLice=" + cotationLice + ", typeLice=" + typeLice + ", nbMale="
 				+ nbMale + ", nbFemelle=" + nbFemelle + ", prolificiteRace=" + prolificiteRace + ", prolificiteVariete="
-				+ prolificiteVariete + ", annee=" + annee + ", mois=" + mois + "]";
+				+ prolificiteVariete + ", nbAncetreCommun=" + nbAncetreCommun + ", consanguinite=" + consanguinite
+				+ ", annee=" + annee + ", mois=" + mois + "]";
 	}
-	
+
 }

@@ -10,18 +10,15 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
-import com.scc.lofselectclub.exceptions.EnumValidationException;
-import com.scc.lofselectclub.model.BreederStatistics;
+import com.scc.lofselectclub.model.ConfigurationClub;
 import com.scc.lofselectclub.model.ConfigurationRace;
 import com.scc.lofselectclub.model.HealthStatistics;
-import com.scc.lofselectclub.model.SerieDefinition;
+import com.scc.lofselectclub.repository.ConfigurationClubRepository;
 import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.repository.HealthRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleMaladie;
 import com.scc.lofselectclub.template.TupleVariety;
-import com.scc.lofselectclub.template.breeder.BreederVariety;
-import com.scc.lofselectclub.template.breeder.BreederVarietyStatistics;
 import com.scc.lofselectclub.template.health.HealthBreed;
 import com.scc.lofselectclub.template.health.HealthBreedStatistics;
 import com.scc.lofselectclub.template.health.HealthResponseObject;
@@ -39,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -62,8 +60,13 @@ public class HealthService {
     private ConfigurationRaceRepository configurationRaceRepository;
 
     @Autowired
+    private ConfigurationClubRepository configurationClubRepository;
+
+    @Autowired
     ServiceConfig config;
 
+    Map<Integer, Set<Integer>> _varietyByBreed = null;
+    		
 	@HystrixCommand(fallbackMethod = "buildFallbackHealthList",
             threadPoolKey = "getStatistics",
             threadPoolProperties =
@@ -80,25 +83,32 @@ public class HealthService {
     public HealthResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
         Span newSpan = tracer.createSpan("getStatistics");
-        logger.debug("In the DnaService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
+        logger.debug("In the HealthService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
 
         int _id = 0;
         String _name = "";
 
         List<HealthBreed> _breeds = new ArrayList<HealthBreed>();
-
+        this._varietyByBreed = new HashMap<Integer, Set<Integer>>();
+        
         try {
         	
-            // Lecture des races associées au club
+        	// Initialisation des données races / varietes associées au club
+        	this._varietyByBreed = configurationClubRepository.findByIdClub(idClub)
+        			.stream()
+        			.collect(Collectors.groupingBy(ConfigurationClub::getIdRace, 
+                            Collectors.mapping(ConfigurationClub::getIdVariete,
+                                               Collectors.toSet())));
+        	
+            // Exception si le club n'a pas de races connues == l'id club n'existe pas
+            if (this._varietyByBreed.size() == 0)
+            	throw new EntityNotFoundException(HealthResponseObject.class, "idClub", String.valueOf(idClub));
+        	
+            // Lecture des races associées au club pour lesquelles des données ont été calculées
             Map<TupleBreed,List<HealthStatistics>> _allBreeds = healthRepository.findByIdClub(idClub)
     			.stream()
     			.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())))
     		;
-            
-            // Exception si le club n'a pas de races connues
-            if (_allBreeds.size() == 0)
-            	throw new EntityNotFoundException(HealthResponseObject.class, "idClub", String.valueOf(idClub));
-            
             for (Map.Entry<TupleBreed,List<HealthStatistics>> _currentBreed : _allBreeds.entrySet()) {
             
             	int _year = 0;
@@ -154,10 +164,9 @@ public class HealthService {
             	
             	// Ajout à la liste 
             	_breeds.add(_breed);
-            
+            	
             }
         	
-
             // Réponse
         	return new HealthResponseObject()
             		.withBreeds(_breeds)
@@ -311,6 +320,7 @@ public class HealthService {
 					.withStatistics(_varietyStatistics)
 			;		
 			_varietyList.add(_variety);
+			
 		}
 		return _varietyList;
 		

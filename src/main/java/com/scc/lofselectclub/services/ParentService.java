@@ -11,42 +11,38 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
 import com.scc.lofselectclub.model.BreederStatistics;
+import com.scc.lofselectclub.model.ConfigurationClub;
 import com.scc.lofselectclub.model.ConfigurationRace;
 import com.scc.lofselectclub.repository.BreederRepository;
+import com.scc.lofselectclub.repository.ConfigurationClubRepository;
 import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
-import com.scc.lofselectclub.template.breeder.BreederAffixStatistics;
+import com.scc.lofselectclub.template.breeder.BreederMonthStatistics;
+import com.scc.lofselectclub.template.breeder.BreederVariety;
 import com.scc.lofselectclub.template.parent.ParentVariety;
 import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.template.parent.ParentFather;
 import com.scc.lofselectclub.template.parent.ParentBreed;
 import com.scc.lofselectclub.template.parent.ParentResponseObject;
 import com.scc.lofselectclub.template.parent.ParentBreedStatistics;
+import com.scc.lofselectclub.template.parent.ParentCotation;
 import com.scc.lofselectclub.template.parent.ParentFatherStatistics;
+import com.scc.lofselectclub.template.parent.ParentFrequency;
 import com.scc.lofselectclub.template.parent.ParentGender;
 import com.scc.lofselectclub.template.parent.ParentRegisterType;
 
 import java.text.NumberFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.util.Precision;
@@ -69,9 +65,13 @@ public class ParentService {
     private ConfigurationRaceRepository configurationRaceRepository;
     
     @Autowired
+    private ConfigurationClubRepository configurationClubRepository;
+
+    @Autowired
     ServiceConfig config;
 
     int limitTopN = 0;
+    
     
 	@HystrixCommand(fallbackMethod = "buildFallbackParentList",
             threadPoolKey = "getStatistics",
@@ -92,25 +92,32 @@ public class ParentService {
         logger.debug("In the parentService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
 
         // topN etalon
-        limitTopN = config.getLimitTopNFathers();
+        this.limitTopN = config.getLimitTopNFathers();
         
         int _id = 0;
         String _name = "";
 
         List<ParentBreed> _breeds = new ArrayList<ParentBreed>();
-
+        Map<Integer, Set<Integer>> _varietyByBreed = new HashMap<Integer, Set<Integer>>();
+        
         try {
         	
-            // Lecture des races associées au club
+        	// Initialisation des données races / varietes associées au club
+        	_varietyByBreed = configurationClubRepository.findByIdClub(idClub)
+        			.stream()
+        			.collect(Collectors.groupingBy(ConfigurationClub::getIdRace, 
+                            Collectors.mapping(ConfigurationClub::getIdVariete,
+                                               Collectors.toSet())));
+        	
+            // Exception si le club n'a pas de races connues == l'id club n'existe pas
+            if (_varietyByBreed.size() == 0)
+            	throw new EntityNotFoundException(ParentResponseObject.class, "idClub", String.valueOf(idClub));
+        	
+            // Lecture des races associées au club pour lesquelles des données ont été calculées
             Map<TupleBreed,List<BreederStatistics>> _allBreeds = breederRepository.findByIdClub(idClub)
     			.stream()
     			.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())))
     		;
-            
-            // Exception si le club n'a pas de races connues
-            if (_allBreeds.size() == 0)
-            	throw new EntityNotFoundException(ParentResponseObject.class, "idClub", String.valueOf(idClub));
-            
             for (Map.Entry<TupleBreed,List<BreederStatistics>> _currentBreed : _allBreeds.entrySet()) {
             
             	List<ParentFatherStatistics> _fathersStatistics = new ArrayList<ParentFatherStatistics>();  
@@ -151,18 +158,26 @@ public class ParentService {
                 	
                 	_origins.add(_origin);
                 	
-            		// Lecture des variétés s/ la race en cours (et pour l'année en cours)
+                	// Lecture des variétés s/ la race en cours (et pour l'année en cours)
                 	List<ParentVariety> _variety = extractVariety(_breedOverYear.getValue());
+
+                	// Lecture du nb de géniteur par cotations 
+                	List<ParentCotation> _cotations = extractCotation(_breedOverYear.getValue());
+
+                	// Lecture de la fréquence d'utilisation du géniteur (uniquement étalon)
+                	List<ParentFrequency> _frequencies = extractFrequency(_breedOverYear.getValue());
 
                 	ParentBreedStatistics _breed = new ParentBreedStatistics()
             			.withYear(_year)
             			.withOrigins(_origins)
+            			.withCotations(_cotations)
+            			.withFrequencies(_frequencies)
             			.withVariety(_variety)
             		;
                 	_breedStatistics.add(_breed);
 
                 	// Recherche TopN Etalon de l'année en cours s/ la race et sur les varietes
-                	List<ParentFather> _topsN = extractTopNFathers(limitTopN, _breedOverYear.getValue());
+                	List<ParentFather> _topsN = extractTopNFathers(this.limitTopN, _breedOverYear.getValue());
                 	ParentFatherStatistics _fatherTopN = new ParentFatherStatistics()
                 			.withYear(_year)
                 			.withFathers(_topsN)
@@ -431,15 +446,138 @@ public class ParentService {
         	
         	_origins.add(_origin);
         	
+        	// Lecture du nb de géniteur par cotations 
+        	List<ParentCotation> _cotations = extractCotation(_currentVariety.getValue());
+        	
+        	// Lecture de la fréquence d'utilisation du géniteur (uniquement étalon)
+        	List<ParentFrequency> _frequencies = extractFrequency(_currentVariety.getValue());
+
 			// Création de l'objet Variety
 			ParentVariety _variety = new ParentVariety()
 					.withId(_id)
 					.withName(_name)
 					.withOrigins(_origins)
+					.withCotations(_cotations)
+					.withFrequencies(_frequencies)
 			;		
 			_varietyList.add(_variety);
 		}
 		return _varietyList;
+	}
+
+	private List<ParentFrequency> extractFrequency(List<BreederStatistics> _list) {
+		
+		List<ParentFrequency> _frequencyList = new ArrayList<ParentFrequency>();
+		
+		TreeMap<Integer, Integer> _series = new TreeMap<Integer,Integer>();
+		
+    	Map<Integer, Integer> _frequencyEtalon = _list
+    			.stream()
+    			.collect(
+    				Collectors.groupingBy(
+    	        		BreederStatistics::getIdEtalon,
+    	        		Collectors.collectingAndThen(
+    	                		Collectors.mapping(BreederStatistics::getIdSaillie, Collectors.toSet()),
+    	                        Set::size)
+    	               )
+    	);		
+    	
+    	// Remarque : la liste _frequencyEtalon contient par étalon, le nombre de saillie
+    	// il faut maintenant compter de min à max (nb de dossier), le nombre d'étalon
+    	// Rq: la demande est normalement : nb d'étalon utilisé pour 1 portée
+		for (Map.Entry<Integer,Integer> _f : _frequencyEtalon.entrySet()) {
+			// la serie n'existe pas, on l'initialise
+			if (!_series.containsKey(_f.getValue()))
+				_series.put(_f.getValue(), 1);
+			else {
+				_series.computeIfPresent(_f.getValue(), (k, v) -> v + 1);
+			}
+
+		}
+		
+	    Integer highestKey = _series.lastKey();
+	    //Integer lowestKey = _series.firstKey();
+    	
+		if (_series.size()>0)
+    		//for (int i = 1; i <= highestKey; i++) {
+			for (int i = 1; i <= 1; i++) {
+    			ParentFrequency c = null;
+    			if (_series.containsKey(i))
+    				c = new ParentFrequency()
+    	    			.withTime(i)
+    	    			.withQtity(_series.get(i))
+    	    		;	
+    			else
+    				c = new ParentFrequency()
+	    				.withTime(i)
+	    				.withQtity(0)
+	    			;	
+    			
+    			_frequencyList.add(c);
+    		}
+
+		return _frequencyList;
+	}
+	
+	private List<ParentCotation> extractCotation(List<BreederStatistics> _list) {
+		
+		List<ParentCotation> _cotationList = new ArrayList<ParentCotation>(); 
+		int[] _cotReferences = new int[] {1,2,3,4,5,6};
+		NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+	
+		// Agregat pour les etalons puis les lices ... 
+    	Map<Integer, Integer> _cotationsEtalon = _list
+    			.stream()
+    			.collect(
+    				Collectors.groupingBy(
+    	        		BreederStatistics::getCotationEtalon,
+    	        		Collectors.collectingAndThen(
+    	                		Collectors.mapping(BreederStatistics::getIdEtalon, Collectors.toSet()),
+    	                        Set::size)
+    	               )
+    	);		
+    	Map<Integer, Integer> _cotationsLice = _list
+    			.stream()
+    			.collect(
+    				Collectors.groupingBy(
+    	        		BreederStatistics::getCotationLice,
+    	        		Collectors.collectingAndThen(
+    	                		Collectors.mapping(BreederStatistics::getIdLice, Collectors.toSet()),
+    	                        Set::size)
+    	               )
+    	);
+    	
+    	// ... Fusion des 2 Map
+		_cotationsEtalon.forEach((k, v) -> _cotationsLice.merge(k, v, Integer::sum));
+
+		double _total = _cotationsLice.values().stream().mapToInt(Number::intValue).sum();
+		double _percent = 0;
+		
+		// Suppression de la cotation traitée
+		for (Map.Entry<Integer,Integer> _cot : _cotationsLice.entrySet()) {
+			
+			_percent = Precision.round((double)_cot.getValue()/_total,2);
+			_cotReferences=ArrayUtils.removeElement(_cotReferences,_cot.getKey()); 
+			ParentCotation c = new ParentCotation()
+    			.withGrade(_cot.getKey())
+    			.withQtity((int) (long)_cot.getValue())
+    			.withPercentage(format.format(_percent))
+    		;	
+    		_cotationList.add(c);
+		}
+		
+		for (int i : _cotReferences) {
+			ParentCotation c = new ParentCotation()
+        			.withGrade(i)
+        			.withQtity(0)
+        			.withPercentage(format.format(0))
+        		;	
+        	_cotationList.add(c);
+		}
+		
+		_cotationList.sort(Comparator.comparing(ParentCotation::getGrade));
+		
+		return _cotationList;
 	}
 
 	// Voir Stackoverflow : https://stackoverflow.com/questions/52343325/java-8-stream-how-to-get-top-n-count?noredirect=1#comment91673408_52343325
