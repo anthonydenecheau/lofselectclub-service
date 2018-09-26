@@ -8,26 +8,51 @@ import javax.persistence.Embeddable;
 public class DnaStatisticsId implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-	
-    Integer idClub;	
-    Integer idRace;
-    Integer idVariete;
-    Integer annee;
-    Integer mois;
-    
-	public Integer getIdClub() { return idClub; }
-	public void setIdClub(Integer idClub) { this.idClub = idClub; }
-	
-	public Integer getIdRace() { return idRace; }
-	public void setIdRace(Integer idRace) { this.idRace = idRace; }
-	
-	public Integer getIdVariete() { return idVariete; }
-	public void setIdVariete(Integer idVariete) { this.idVariete = idVariete; }
-	
-	public Integer getAnnee() { return annee; }
-	public void setAnnee(Integer annee) { this.annee = annee; }
-	
-	public Integer getMois() { return mois; }
-	public void setMois(Integer mois) { this.mois = mois; }
+
+	Integer idClub;
+	Integer idRace;
+	Integer idVariete;
+	Integer annee;
+	Integer mois;
+
+	public Integer getIdClub() {
+		return idClub;
+	}
+
+	public void setIdClub(Integer idClub) {
+		this.idClub = idClub;
+	}
+
+	public Integer getIdRace() {
+		return idRace;
+	}
+
+	public void setIdRace(Integer idRace) {
+		this.idRace = idRace;
+	}
+
+	public Integer getIdVariete() {
+		return idVariete;
+	}
+
+	public void setIdVariete(Integer idVariete) {
+		this.idVariete = idVariete;
+	}
+
+	public Integer getAnnee() {
+		return annee;
+	}
+
+	public void setAnnee(Integer annee) {
+		this.annee = annee;
+	}
+
+	public Integer getMois() {
+		return mois;
+	}
+
+	public void setMois(Integer mois) {
+		this.mois = mois;
+	}
 
 }

@@ -5,77 +5,83 @@ import javax.persistence.*;
 @Entity
 @Table(name = "ls_stats_eleveur")
 public class BreederStatistics {
-	
+
 	// NOTE : Pky ! idSaillie
 
 	@Column(name = "id_club")
-    Integer idClub;	
-    @Column(name = "nom_club")
-    String nomClub;
-    @Column(name = "num_club")
-    Integer numClub;
-    @Column(name = "id_race")
-    Integer idRace;
-    @Column(name = "nom_race")
-    String nomRace;
-    @Column(name = "code_fci")
-    String codeFci;
-    @Column(name = "id_variete")
-    Integer idVariete;
-    @Column(name = "nom_variete")
-    String nomVariete;
-    @Column(name = "id_eleveur")
-    Integer idEleveur;
-    @Column(name = "affixe_eleveur")
-    String affixeEleveur;    
-    @Id 
-    @Column(name = "id_saillie")
-    Integer idSaillie;
-    @Column(name = "cotation_portee")
-    Integer cotationPortee;
+	Integer idClub;
+	@Column(name = "nom_club")
+	String nomClub;
+	@Column(name = "num_club")
+	Integer numClub;
+	@Column(name = "id_race")
+	Integer idRace;
+	@Column(name = "nom_race")
+	String nomRace;
+	@Column(name = "code_fci")
+	String codeFci;
+	@Column(name = "id_variete")
+	Integer idVariete;
+	@Column(name = "nom_variete")
+	String nomVariete;
+	@Column(name = "id_eleveur")
+	Integer idEleveur;
+	@Column(name = "affixe_eleveur")
+	String affixeEleveur;
+	@Id
+	@Column(name = "id_saillie")
+	Integer idSaillie;
+	@Column(name = "cotation_portee")
+	Integer cotationPortee;
 	@Column(name = "id_etalon")
-    Integer idEtalon;
+	Integer idEtalon;
 	@Column(name = "nom_etalon")
-    String nomEtalon;
-    @Column(name = "cotation_etalon")
-    Integer cotationEtalon;
-    @Column(name = "type_etalon")
-    Integer typeEtalon;
-    @Column(name = "id_lice")
-    Integer idLice;
-    @Column(name = "cotation_lice")
-    Integer cotationLice;
-    @Column(name = "type_lice")
-    Integer typeLice;
-    @Column(name = "nb_male")
-    Integer nbMale;
-    @Column(name = "nb_femelle")
-    Integer nbFemelle;
-    @Column(name = "prolificite_race")
-    Double prolificiteRace;
-    @Column(name = "prolificite_variete")
-    Double prolificiteVariete;    
-    @Column(name = "nb_ancetre_commun")
-    Integer nbAncetreCommun;
+	String nomEtalon;
+	@Column(name = "cotation_etalon")
+	Integer cotationEtalon;
+	@Column(name = "type_etalon")
+	Integer typeEtalon;
+	@Column(name = "id_lice")
+	Integer idLice;
+	@Column(name = "cotation_lice")
+	Integer cotationLice;
+	@Column(name = "type_lice")
+	Integer typeLice;
+	@Column(name = "nb_male")
+	Integer nbMale;
+	@Column(name = "nb_femelle")
+	Integer nbFemelle;
+	@Column(name = "prolificite_race")
+	Double prolificiteRace;
+	@Column(name = "prolificite_variete")
+	Double prolificiteVariete;
+	@Column(name = "nb_ancetre_commun")
+	Integer nbAncetreCommun;
 	@Column(name = "consanguinite")
-    Double consanguinite;   
-    @Column(name = "annee")
-    Integer annee;
-    @Column(name = "mois")
-    Integer mois;
+	Double consanguinite;
+	@Column(name = "annee")
+	Integer annee;
+	@Column(name = "mois")
+	Integer mois;
 
-    public BreederStatistics() {
-    	
-    }
-    
+	public BreederStatistics() {
+
+	}
+
+	public BreederStatistics(Integer idEtalon, String nomEtalon) {
+		this.idEtalon = idEtalon;
+		this.nomEtalon = nomEtalon;
+	}
+
 	public BreederStatistics(Integer nbMale, Integer nbFemelle) {
 		this.nbMale = nbMale;
 		this.nbFemelle = nbFemelle;
 	}
 
-    public BreederStatistics(Integer idClub, String nomClub, Integer numClub, Integer idRace, String nomRace, String codeFci,
-			Integer idVariete, String nomVariete, Integer idEleveur, String affixeEleveur, Integer idSaillie, Integer cotationPortee, Integer nbMale, Integer nbFemelle, 
-			Double prolificiteRace, Double prolificiteVariete, Integer annee, Integer mois) {
+	public BreederStatistics(Integer idClub, String nomClub, Integer numClub, Integer idRace, String nomRace,
+			String codeFci, Integer idVariete, String nomVariete, Integer idEleveur, String affixeEleveur,
+			Integer idSaillie, Integer cotationPortee, Integer nbMale, Integer nbFemelle, Double prolificiteRace,
+			Double prolificiteVariete, Integer annee, Integer mois) {
 		super();
 		this.idClub = idClub;
 		this.nomClub = nomClub;
@@ -97,87 +103,221 @@ public class BreederStatistics {
 		this.mois = mois;
 	}
 
+	public Integer getIdClub() {
+		return idClub;
+	}
 
-	public Integer getIdClub() { return idClub; }
-	public void setIdClub(Integer idClub) { this.idClub = idClub; }
+	public void setIdClub(Integer idClub) {
+		this.idClub = idClub;
+	}
 
-	public String getNomClub() { return nomClub; }
-	public void setNomClub(String nomClub) { this.nomClub = nomClub; }
+	public String getNomClub() {
+		return nomClub;
+	}
 
-	public Integer getNumClub() { return numClub; }
-	public void setNumClub(Integer numClub) { this.numClub = numClub; }
+	public void setNomClub(String nomClub) {
+		this.nomClub = nomClub;
+	}
 
-	public Integer getIdRace() { return idRace; }
-	public void setIdRace(Integer idRace) { this.idRace = idRace; }
+	public Integer getNumClub() {
+		return numClub;
+	}
 
-	public String getNomRace() { return nomRace; }
-	public void setNomRace(String nomRace) { this.nomRace = nomRace; }
+	public void setNumClub(Integer numClub) {
+		this.numClub = numClub;
+	}
 
-	public String getCodeFci() { return codeFci; }
-	public void setCodeFci(String codeFci) { this.codeFci = codeFci; }
+	public Integer getIdRace() {
+		return idRace;
+	}
 
-	public Integer getIdVariete() { return idVariete; }
-	public void setIdVariete(Integer idVariete) { this.idVariete = idVariete; }
+	public void setIdRace(Integer idRace) {
+		this.idRace = idRace;
+	}
 
-	public String getNomVariete() { return nomVariete; }
-	public void setNomVariete(String nomVariete) { this.nomVariete = nomVariete; }
+	public String getNomRace() {
+		return nomRace;
+	}
 
-	public Integer getIdEleveur() { return idEleveur; }
-	public void setIdEleveur(Integer idEleveur) { this.idEleveur = idEleveur; }
+	public void setNomRace(String nomRace) {
+		this.nomRace = nomRace;
+	}
 
-	public String getAffixeEleveur() { return affixeEleveur; }
-	public void setAffixeEleveur(String affixeEleveur) { this.affixeEleveur = affixeEleveur; }
+	public String getCodeFci() {
+		return codeFci;
+	}
 
-	public Integer getIdSaillie() { return idSaillie; }
-	public void setIdSaillie(Integer idSaillie) { this.idSaillie = idSaillie; }
+	public void setCodeFci(String codeFci) {
+		this.codeFci = codeFci;
+	}
 
-    public Integer getCotationPortee() { return cotationPortee; }
-	public void setCotationPortee(Integer cotationPortee) { this.cotationPortee = cotationPortee; }
+	public Integer getIdVariete() {
+		return idVariete;
+	}
 
-	public Integer getIdEtalon() { return idEtalon; }
-	public void setIdEtalon(Integer idEtalon) { this.idEtalon = idEtalon; }
+	public void setIdVariete(Integer idVariete) {
+		this.idVariete = idVariete;
+	}
 
-	public String getNomEtalon() { return nomEtalon; }
-	public void setNomEtalon(String nomEtalon) { this.nomEtalon = nomEtalon; }
+	public String getNomVariete() {
+		return nomVariete;
+	}
 
-	public Integer getCotationEtalon() { return cotationEtalon; }
-	public void setCotationEtalon(Integer cotationEtalon) { this.cotationEtalon = cotationEtalon; }
+	public void setNomVariete(String nomVariete) {
+		this.nomVariete = nomVariete;
+	}
 
-	public Integer getTypeEtalon() { return typeEtalon; }
-	public void setTypeEtalon(Integer typeEtalon) { this.typeEtalon = typeEtalon; }
+	public Integer getIdEleveur() {
+		return idEleveur;
+	}
 
-	public Integer getIdLice() { return idLice; }
-	public void setIdLice(Integer idLice) { this.idLice = idLice; }
+	public void setIdEleveur(Integer idEleveur) {
+		this.idEleveur = idEleveur;
+	}
 
-	public Integer getCotationLice() { return cotationLice; }
-	public void setCotationLice(Integer cotationLice) { this.cotationLice = cotationLice; }
+	public String getAffixeEleveur() {
+		return affixeEleveur;
+	}
 
-	public Integer getTypeLice() { return typeLice; }
-	public void setTypeLice(Integer typeLice) { this.typeLice = typeLice; }
+	public void setAffixeEleveur(String affixeEleveur) {
+		this.affixeEleveur = affixeEleveur;
+	}
 
-	public Integer getNbMale() { return nbMale; }
-	public void setNbMale(Integer nbMale) { this.nbMale = nbMale; }
+	public Integer getIdSaillie() {
+		return idSaillie;
+	}
 
-	public Integer getNbFemelle() { return nbFemelle; }
-	public void setNbFemelle(Integer nbFemelle) { this.nbFemelle = nbFemelle; }
-	
-	public Double getProlificiteRace() { return prolificiteRace; }
-	public void setProlificiteRace(Double prolificiteRace) { this.prolificiteRace = prolificiteRace; }
+	public void setIdSaillie(Integer idSaillie) {
+		this.idSaillie = idSaillie;
+	}
 
-	public Double getProlificiteVariete() { return prolificiteVariete; }
-	public void setProlificiteVariete(Double prolificiteVariete) { this.prolificiteVariete = prolificiteVariete; }
+	public Integer getCotationPortee() {
+		return cotationPortee;
+	}
 
-    public Integer getNbAncetreCommun() { return nbAncetreCommun; }
-	public void setNbAncetreCommun(Integer nbAncetreCommun) { this.nbAncetreCommun = nbAncetreCommun; }
+	public void setCotationPortee(Integer cotationPortee) {
+		this.cotationPortee = cotationPortee;
+	}
 
-	public Double getConsanguinite() { return consanguinite; }
-	public void setConsanguinite(Double consanguinite) { this.consanguinite = consanguinite; }
+	public Integer getIdEtalon() {
+		return idEtalon;
+	}
 
-	public Integer getAnnee() { return annee; }
-	public void setAnnee(Integer annee) { this.annee = annee; }
+	public void setIdEtalon(Integer idEtalon) {
+		this.idEtalon = idEtalon;
+	}
 
-	public Integer getMois() { return mois; }
-	public void setMois(Integer mois) { this.mois = mois;}
+	public String getNomEtalon() {
+		return nomEtalon;
+	}
+
+	public void setNomEtalon(String nomEtalon) {
+		this.nomEtalon = nomEtalon;
+	}
+
+	public Integer getCotationEtalon() {
+		return cotationEtalon;
+	}
+
+	public void setCotationEtalon(Integer cotationEtalon) {
+		this.cotationEtalon = cotationEtalon;
+	}
+
+	public Integer getTypeEtalon() {
+		return typeEtalon;
+	}
+
+	public void setTypeEtalon(Integer typeEtalon) {
+		this.typeEtalon = typeEtalon;
+	}
+
+	public Integer getIdLice() {
+		return idLice;
+	}
+
+	public void setIdLice(Integer idLice) {
+		this.idLice = idLice;
+	}
+
+	public Integer getCotationLice() {
+		return cotationLice;
+	}
+
+	public void setCotationLice(Integer cotationLice) {
+		this.cotationLice = cotationLice;
+	}
+
+	public Integer getTypeLice() {
+		return typeLice;
+	}
+
+	public void setTypeLice(Integer typeLice) {
+		this.typeLice = typeLice;
+	}
+
+	public Integer getNbMale() {
+		return nbMale;
+	}
+
+	public void setNbMale(Integer nbMale) {
+		this.nbMale = nbMale;
+	}
+
+	public Integer getNbFemelle() {
+		return nbFemelle;
+	}
+
+	public void setNbFemelle(Integer nbFemelle) {
+		this.nbFemelle = nbFemelle;
+	}
+
+	public Double getProlificiteRace() {
+		return prolificiteRace;
+	}
+
+	public void setProlificiteRace(Double prolificiteRace) {
+		this.prolificiteRace = prolificiteRace;
+	}
+
+	public Double getProlificiteVariete() {
+		return prolificiteVariete;
+	}
+
+	public void setProlificiteVariete(Double prolificiteVariete) {
+		this.prolificiteVariete = prolificiteVariete;
+	}
+
+	public Integer getNbAncetreCommun() {
+		return nbAncetreCommun;
+	}
+
+	public void setNbAncetreCommun(Integer nbAncetreCommun) {
+		this.nbAncetreCommun = nbAncetreCommun;
+	}
+
+	public Double getConsanguinite() {
+		return consanguinite;
+	}
+
+	public void setConsanguinite(Double consanguinite) {
+		this.consanguinite = consanguinite;
+	}
+
+	public Integer getAnnee() {
+		return annee;
+	}
+
+	public void setAnnee(Integer annee) {
+		this.annee = annee;
+	}
+
+	public Integer getMois() {
+		return mois;
+	}
+
+	public void setMois(Integer mois) {
+		this.mois = mois;
+	}
 
 	@Override
 	public int hashCode() {

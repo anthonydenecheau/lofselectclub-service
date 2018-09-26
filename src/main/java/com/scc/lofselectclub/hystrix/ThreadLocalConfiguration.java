@@ -13,27 +13,24 @@ import javax.annotation.PostConstruct;
 
 @Configuration
 public class ThreadLocalConfiguration {
-        @Autowired(required = false)
-        private HystrixConcurrencyStrategy existingConcurrencyStrategy;
+	@Autowired(required = false)
+	private HystrixConcurrencyStrategy existingConcurrencyStrategy;
 
-        @PostConstruct
-        public void init() {
-            // Keeps references of existing Hystrix plugins.
-            HystrixEventNotifier eventNotifier = HystrixPlugins.getInstance()
-                    .getEventNotifier();
-            HystrixMetricsPublisher metricsPublisher = HystrixPlugins.getInstance()
-                    .getMetricsPublisher();
-            HystrixPropertiesStrategy propertiesStrategy = HystrixPlugins.getInstance()
-                    .getPropertiesStrategy();
-            HystrixCommandExecutionHook commandExecutionHook = HystrixPlugins.getInstance()
-                    .getCommandExecutionHook();
+	@PostConstruct
+	public void init() {
+		// Keeps references of existing Hystrix plugins.
+		HystrixEventNotifier eventNotifier = HystrixPlugins.getInstance().getEventNotifier();
+		HystrixMetricsPublisher metricsPublisher = HystrixPlugins.getInstance().getMetricsPublisher();
+		HystrixPropertiesStrategy propertiesStrategy = HystrixPlugins.getInstance().getPropertiesStrategy();
+		HystrixCommandExecutionHook commandExecutionHook = HystrixPlugins.getInstance().getCommandExecutionHook();
 
-            HystrixPlugins.reset();
+		HystrixPlugins.reset();
 
-            HystrixPlugins.getInstance().registerConcurrencyStrategy(new ThreadLocalAwareStrategy(existingConcurrencyStrategy));
-            HystrixPlugins.getInstance().registerEventNotifier(eventNotifier);
-            HystrixPlugins.getInstance().registerMetricsPublisher(metricsPublisher);
-            HystrixPlugins.getInstance().registerPropertiesStrategy(propertiesStrategy);
-            HystrixPlugins.getInstance().registerCommandExecutionHook(commandExecutionHook);
-        }
+		HystrixPlugins.getInstance()
+				.registerConcurrencyStrategy(new ThreadLocalAwareStrategy(existingConcurrencyStrategy));
+		HystrixPlugins.getInstance().registerEventNotifier(eventNotifier);
+		HystrixPlugins.getInstance().registerMetricsPublisher(metricsPublisher);
+		HystrixPlugins.getInstance().registerPropertiesStrategy(propertiesStrategy);
+		HystrixPlugins.getInstance().registerCommandExecutionHook(commandExecutionHook);
+	}
 }

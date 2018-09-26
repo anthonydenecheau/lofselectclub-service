@@ -7,15 +7,26 @@ public class TupleBreed {
 		this.id = id;
 		this.name = name;
 	}
+
 	Integer id;
 	String name;
-	
-	public Integer getId() { return id; }
-	public void setId(Integer id) { this.id = id; }
-	
-	public String getName() { return name; }
-	public void setName(String name) { this.name = name; }
-	
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -24,6 +35,7 @@ public class TupleBreed {
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		return result;
 	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -45,6 +57,5 @@ public class TupleBreed {
 			return false;
 		return true;
 	}
-	
 
 }

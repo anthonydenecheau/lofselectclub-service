@@ -7,15 +7,26 @@ public class TupleMaladie {
 		this.code = code;
 		this.name = name;
 	}
+
 	String code;
 	String name;
-	
-	public String getCode() { return code; }
-	public void setCode(String code) { this.code = code; }
-	
-	public String getName() { return name; }
-	public void setName(String name) { this.name = name; }
-	
+
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -24,7 +35,7 @@ public class TupleMaladie {
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		return result;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -46,5 +57,5 @@ public class TupleMaladie {
 			return false;
 		return true;
 	}
-	
+
 }

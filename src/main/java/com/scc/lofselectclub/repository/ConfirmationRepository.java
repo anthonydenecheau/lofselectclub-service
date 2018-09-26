@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface ConfirmationRepository extends CrudRepository<ConfirmationStatistics, Long> {
 
-    List<ConfirmationStatistics> findByIdClub(Integer idClub);
+	List<ConfirmationStatistics> findByIdClub(Integer idClub);
 
 }

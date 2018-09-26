@@ -13,10 +13,9 @@ import java.util.stream.Stream;
 @Repository
 public interface BreederRepository extends CrudRepository<BreederStatistics, Long> {
 
-    List<BreederStatistics> findByIdClub(Integer idClub);
+	List<BreederStatistics> findByIdClub(Integer idClub);
 
-    @Query("select c from BreederStatistics c where c.idClub = :idClub")
-    Stream<BreederStatistics> findByIdClubReturnStream(@Param("idClub") Integer idClub);
-
+	@Query("select c from BreederStatistics c where c.idClub = :idClub")
+	Stream<BreederStatistics> findByIdClubReturnStream(@Param("idClub") Integer idClub);
 
 }

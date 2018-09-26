@@ -10,5 +10,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SerieDefinitionRepository extends CrudRepository<SerieDefinition, Long> {
 
-	public List<SerieDefinition> findByIdSerieGroupOrderBySequence (Integer idSerieGroup);
+	public List<SerieDefinition> findByIdSerieGroupOrderBySequence(Integer idSerieGroup);
 }

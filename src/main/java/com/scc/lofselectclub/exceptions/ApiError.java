@@ -23,117 +23,111 @@ import javax.validation.ConstraintViolation;
 @JsonTypeIdResolver(LowerCaseClassNameResolver.class)
 public class ApiError {
 
-	@ApiModelProperty(notes = "http resonse error", position = 1, allowEmptyValue=false)
+	@ApiModelProperty(notes = "http resonse error", position = 1, allowEmptyValue = false)
 	private HttpStatus status;
-    
-	@ApiModelProperty(notes = "timestamp error", position = 2, allowEmptyValue=false)
+
+	@ApiModelProperty(notes = "timestamp error", position = 2, allowEmptyValue = false)
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
-    private LocalDateTime timestamp;
-    
-	@ApiModelProperty(notes = "message error", position = 3, allowEmptyValue=false)
+	private LocalDateTime timestamp;
+
+	@ApiModelProperty(notes = "message error", position = 3, allowEmptyValue = false)
 	private String message;
 
-    @ApiModelProperty(notes = "debug message error", position = 4, allowEmptyValue=true)
-    private String debugMessage;
-    
-	@ApiModelProperty(notes = "details message error", position = 5, allowEmptyValue=true)
-    private List<ApiSubError> subErrors;
-    
-    ApiError() {
-        this.timestamp = LocalDateTime.now();
-    }
+	@ApiModelProperty(notes = "debug message error", position = 4, allowEmptyValue = true)
+	private String debugMessage;
 
-    public ApiError(HttpStatus status, String message) {
-        this();
-        this.status = status;
-        this.message = message;
-    }
-    
-    ApiError(HttpStatus status) {
-        this();
-        this.status = status;
-    }
-    
-    ApiError(HttpStatus status, Throwable ex) {
-        this();
-        this.status = status;
-        this.message = "Unexpected error";
-        this.debugMessage = ex.getLocalizedMessage();
-    }
+	@ApiModelProperty(notes = "details message error", position = 5, allowEmptyValue = true)
+	private List<ApiSubError> subErrors;
 
-    ApiError(HttpStatus status, String message, Throwable ex) {
-        this();
-        this.status = status;
-        this.message = message;
-        this.debugMessage = ex.getLocalizedMessage();
-    }
+	ApiError() {
+		this.timestamp = LocalDateTime.now();
+	}
 
-    private void addSubError(ApiSubError subError) {
-        if (subErrors == null) {
-            subErrors = new ArrayList<>();
-        }
-        subErrors.add(subError);
-    }
+	public ApiError(HttpStatus status, String message) {
+		this();
+		this.status = status;
+		this.message = message;
+	}
 
-    private void addValidationError(String object, String field, Object rejectedValue, String message) {
-        addSubError(new ApiValidationError(object, field, rejectedValue, message));
-    }
+	ApiError(HttpStatus status) {
+		this();
+		this.status = status;
+	}
 
-    private void addValidationError(String object, String message) {
-        addSubError(new ApiValidationError(object, message));
-    }
+	ApiError(HttpStatus status, Throwable ex) {
+		this();
+		this.status = status;
+		this.message = "Unexpected error";
+		this.debugMessage = ex.getLocalizedMessage();
+	}
 
-    private void addValidationError(FieldError fieldError) {
-        this.addValidationError(
-                fieldError.getObjectName(),
-                fieldError.getField(),
-                fieldError.getRejectedValue(),
-                fieldError.getDefaultMessage());
-    }
+	ApiError(HttpStatus status, String message, Throwable ex) {
+		this();
+		this.status = status;
+		this.message = message;
+		this.debugMessage = ex.getLocalizedMessage();
+	}
 
-    void addValidationErrors(List<FieldError> fieldErrors) {
-        fieldErrors.forEach(this::addValidationError);
-    }
+	private void addSubError(ApiSubError subError) {
+		if (subErrors == null) {
+			subErrors = new ArrayList<>();
+		}
+		subErrors.add(subError);
+	}
 
-    private void addValidationError(ObjectError objectError) {
-        this.addValidationError(
-                objectError.getObjectName(),
-                objectError.getDefaultMessage());
-    }
+	private void addValidationError(String object, String field, Object rejectedValue, String message) {
+		addSubError(new ApiValidationError(object, field, rejectedValue, message));
+	}
 
-    void addValidationError(List<ObjectError> globalErrors) {
-        globalErrors.forEach(this::addValidationError);
-    }
+	private void addValidationError(String object, String message) {
+		addSubError(new ApiValidationError(object, message));
+	}
 
-    /**
-     * Utility method for adding error of ConstraintViolation. Usually when a @Validated validation fails.
-     * @param cv the ConstraintViolation
-     */
-    private void addValidationError(ConstraintViolation<?> cv) {
-        this.addValidationError(
-                cv.getRootBeanClass().getSimpleName(),
-                ((PathImpl) cv.getPropertyPath()).getLeafNode().asString(),
-                cv.getInvalidValue(),
-                cv.getMessage());
-    }
+	private void addValidationError(FieldError fieldError) {
+		this.addValidationError(fieldError.getObjectName(), fieldError.getField(), fieldError.getRejectedValue(),
+				fieldError.getDefaultMessage());
+	}
 
-    void addValidationErrors(Set<ConstraintViolation<?>> constraintViolations) {
-        constraintViolations.forEach(this::addValidationError);
-    }
-    
+	void addValidationErrors(List<FieldError> fieldErrors) {
+		fieldErrors.forEach(this::addValidationError);
+	}
+
+	private void addValidationError(ObjectError objectError) {
+		this.addValidationError(objectError.getObjectName(), objectError.getDefaultMessage());
+	}
+
+	void addValidationError(List<ObjectError> globalErrors) {
+		globalErrors.forEach(this::addValidationError);
+	}
+
+	/**
+	 * Utility method for adding error of ConstraintViolation. Usually when
+	 * a @Validated validation fails.
+	 * 
+	 * @param cv
+	 *            the ConstraintViolation
+	 */
+	private void addValidationError(ConstraintViolation<?> cv) {
+		this.addValidationError(cv.getRootBeanClass().getSimpleName(),
+				((PathImpl) cv.getPropertyPath()).getLeafNode().asString(), cv.getInvalidValue(), cv.getMessage());
+	}
+
+	void addValidationErrors(Set<ConstraintViolation<?>> constraintViolations) {
+		constraintViolations.forEach(this::addValidationError);
+	}
+
 	abstract class ApiSubError {
 
-    }
-	
-    class ApiValidationError extends ApiSubError {
-    	
+	}
+
+	class ApiValidationError extends ApiSubError {
+
 		private String object;
-        private String field;
-        private Object rejectedValue;
-        private String message;
+		private String field;
+		private Object rejectedValue;
+		private String message;
 
-
-        ApiValidationError(String object, String field, Object rejectedValue, String message) {
+		ApiValidationError(String object, String field, Object rejectedValue, String message) {
 			super();
 			this.object = object;
 			this.field = field;
@@ -141,41 +135,60 @@ public class ApiError {
 			this.message = message;
 		}
 
+		ApiValidationError(String object, String message) {
+			this.object = object;
+			this.message = message;
+		}
+	}
 
-        ApiValidationError(String object, String message) {
-            this.object = object;
-            this.message = message;
-        }
-    }
-    
-	public HttpStatus getStatus() { return status; }
-	public void setStatus(HttpStatus status) { this.status = status; }
+	public HttpStatus getStatus() {
+		return status;
+	}
 
-	public LocalDateTime getTimestamp() { return timestamp; }
-	public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+	public void setStatus(HttpStatus status) {
+		this.status = status;
+	}
 
-	public String getMessage() { return message; }
-	public void setMessage(String message) { this.message = message; }
+	public LocalDateTime getTimestamp() {
+		return timestamp;
+	}
 
-	public String getDebugMessage() { return debugMessage; }
-	public void setDebugMessage(String debugMessage) { this.debugMessage = debugMessage; }
-	
+	public void setTimestamp(LocalDateTime timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+
+	public String getDebugMessage() {
+		return debugMessage;
+	}
+
+	public void setDebugMessage(String debugMessage) {
+		this.debugMessage = debugMessage;
+	}
+
 }
 
 class LowerCaseClassNameResolver extends TypeIdResolverBase {
 
-    @Override
-    public String idFromValue(Object value) {
-        return value.getClass().getSimpleName().toLowerCase();
-    }
+	@Override
+	public String idFromValue(Object value) {
+		return value.getClass().getSimpleName().toLowerCase();
+	}
 
-    @Override
-    public String idFromValueAndType(Object value, Class<?> suggestedType) {
-        return idFromValue(value);
-    }
+	@Override
+	public String idFromValueAndType(Object value, Class<?> suggestedType) {
+		return idFromValue(value);
+	}
 
-    @Override
-    public JsonTypeInfo.Id getMechanism() {
-        return JsonTypeInfo.Id.CUSTOM;
-    }
+	@Override
+	public JsonTypeInfo.Id getMechanism() {
+		return JsonTypeInfo.Id.CUSTOM;
+	}
 }

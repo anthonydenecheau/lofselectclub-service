@@ -18,19 +18,19 @@ import com.scc.lofselectclub.utils.UserContextFilter;
 @RefreshScope
 public class Application {
 
-    @Bean
-    public Filter userContextFilter() {
-        UserContextFilter userContextFilter = new UserContextFilter();
-        return userContextFilter;
-    }
-    
-    @Bean
-    public Sampler defaultSampler() {
-        return new AlwaysSampler();
-    }
-    
+	@Bean
+	public Filter userContextFilter() {
+		UserContextFilter userContextFilter = new UserContextFilter();
+		return userContextFilter;
+	}
+
+	@Bean
+	public Sampler defaultSampler() {
+		return new AlwaysSampler();
+	}
+
 	public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
-    }
-	
+		SpringApplication.run(Application.class, args);
+	}
+
 }

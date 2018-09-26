@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface DnaRepository extends CrudRepository<DnaStatistics, Long> {
 
-    List<DnaStatistics> findByIdClub(Integer idClub);
+	List<DnaStatistics> findByIdClub(Integer idClub);
 
 }

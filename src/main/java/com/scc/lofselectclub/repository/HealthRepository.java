@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface HealthRepository extends CrudRepository<HealthStatistics, Long> {
 
-    List<HealthStatistics> findByIdClub(Integer idClub);
+	List<HealthStatistics> findByIdClub(Integer idClub);
 
 }

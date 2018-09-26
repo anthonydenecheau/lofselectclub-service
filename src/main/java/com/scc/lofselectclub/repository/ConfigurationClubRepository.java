@@ -1,6 +1,5 @@
 package com.scc.lofselectclub.repository;
 
-
 import java.util.List;
 
 import org.springframework.data.repository.CrudRepository;
