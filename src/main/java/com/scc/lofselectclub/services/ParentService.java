@@ -18,8 +18,6 @@ import com.scc.lofselectclub.repository.ConfigurationClubRepository;
 import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
-import com.scc.lofselectclub.template.breeder.BreederMonthStatistics;
-import com.scc.lofselectclub.template.breeder.BreederVariety;
 import com.scc.lofselectclub.template.parent.ParentVariety;
 import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.template.parent.ParentFather;
@@ -34,7 +32,6 @@ import com.scc.lofselectclub.template.parent.ParentRegisterType;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -114,8 +111,7 @@ public class ParentService {
 			if (_varietyByBreed.size() == 0)
 				throw new EntityNotFoundException(ParentResponseObject.class, "idClub", String.valueOf(idClub));
 
-			// Lecture des races associées au club pour lesquelles des données ont été
-			// calculées
+			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<BreederStatistics>> _allBreeds = breederRepository.findByIdClub(idClub).stream()
 					.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
 			for (Map.Entry<TupleBreed, List<BreederStatistics>> _currentBreed : _allBreeds.entrySet()) {
@@ -188,8 +184,7 @@ public class ParentService {
 
 				}
 
-				// On finalise en initialisant les années pour lesquelles on a constaté une
-				// rupture
+				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
 				for (int i = 0; i < _serieYear.length; i++) {
 					ParentBreedStatistics _breed = new ParentBreedStatistics().withYear(_serieYear[i])
 							.withOrigins(new ArrayList<Map<String, List<ParentGender>>>())
@@ -542,12 +537,12 @@ public class ParentService {
 
 		try {
 
-			// 1. On groupe les affixes par qtites pour l'année en cours
+			// 1. On groupe les étalons par qtites pour l'année en cours
 			Map<String, Long> _affixes = _list.stream().filter(x -> (_year == x.getAnnee()))
 					.collect(Collectors.groupingBy(BreederStatistics::getNomEtalon, Collectors.counting()));
 			;
 
-			// 3. On complète par les affixes potentiellement manquants
+			// 3. On complète par les étalons potentiellement manquants
 			boolean g = false;
 			for (String s : this.allTopN) {
 				g = false;
@@ -591,8 +586,7 @@ public class ParentService {
 				.collect(StreamUtils.sortedGroupingBy(BreederStatistics::getAnnee));
 		for (Map.Entry<Integer, List<BreederStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
 
-			// 1. On groupe les affixes par qtites (ne prends pas en compte les affixes
-			// vides)
+			// 1. On groupe les étalons par qtites 
 			Map<BreederStatistics, Long> _bestOfFathersOverYear = _breedOverYear.getValue().stream()
 					.collect(Collectors.groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()),
 							Collectors.counting()));
@@ -606,7 +600,7 @@ public class ParentService {
 
 		}
 
-		// On conserve le topN affixe (null-safe way)
+		// On conserve le topN étalon (null-safe way)
 		this.allTopN = Optional.ofNullable(_sortedFathers).map(Set::stream).orElseGet(Stream::empty)
 				.collect(Collectors.toSet());
 

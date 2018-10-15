@@ -99,8 +99,7 @@ public class HealthService {
 			if (this._varietyByBreed.size() == 0)
 				throw new EntityNotFoundException(HealthResponseObject.class, "idClub", String.valueOf(idClub));
 
-			// Lecture des races associées au club pour lesquelles des données ont été
-			// calculées
+			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<HealthStatistics>> _allBreeds = healthRepository.findByIdClub(idClub).stream()
 					.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
 			for (Map.Entry<TupleBreed, List<HealthStatistics>> _currentBreed : _allBreeds.entrySet()) {
@@ -140,8 +139,7 @@ public class HealthService {
 
 				}
 
-				// On finalise en initialisant les années pour lesquelles on a constaté une
-				// rupture
+				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
 				for (int i = 0; i < _serieYear.length; i++) {
 					HealthBreedStatistics _breed = new HealthBreedStatistics().withYear(_serieYear[i]);
 					_breedStatistics.add(_breed);

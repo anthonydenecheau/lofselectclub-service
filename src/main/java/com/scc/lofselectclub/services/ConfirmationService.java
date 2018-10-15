@@ -88,8 +88,7 @@ public class ConfirmationService {
 			if (_varietyByBreed.size() == 0)
 				throw new EntityNotFoundException(ConfirmationResponseObject.class, "idClub", String.valueOf(idClub));
 
-			// Lecture des races associées au club pour lesquelles des données ont été
-			// calculées
+			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<ConfirmationStatistics>> _allBreeds = confirmationRepository.findByIdClub(idClub)
 					.stream().collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
 			for (Map.Entry<TupleBreed, List<ConfirmationStatistics>> _currentBreed : _allBreeds.entrySet()) {
@@ -133,8 +132,7 @@ public class ConfirmationService {
 
 				}
 
-				// On finalise en initialisant les années pour lesquelles on a constaté une
-				// rupture
+				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
 				for (int i = 0; i < _serieYear.length; i++) {
 					ConfirmationBreedStatistics _breed = new ConfirmationBreedStatistics().withYear(_serieYear[i])
 							.withQtity(0).withVariety(new ArrayList<ConfirmationVariety>());

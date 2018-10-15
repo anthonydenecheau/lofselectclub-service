@@ -5,7 +5,7 @@ public class TupleVariety {
 	public TupleVariety(Integer id, String name) {
 		super();
 		this.id = id;
-		this.name = name;
+		this.name = (name == null ? "" : name);
 	}
 
 	Integer id;

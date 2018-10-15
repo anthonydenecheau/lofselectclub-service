@@ -87,8 +87,7 @@ public class DnaService {
 			if (_varietyByBreed.size() == 0)
 				throw new EntityNotFoundException(DnaResponseObject.class, "idClub", String.valueOf(idClub));
 
-			// Lecture des races associées au club pour lesquelles des données ont été
-			// calculées
+			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<DnaStatistics>> _allBreeds = dnaRepository.findByIdClub(idClub).stream()
 					.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
 			for (Map.Entry<TupleBreed, List<DnaStatistics>> _currentBreed : _allBreeds.entrySet()) {
@@ -119,7 +118,7 @@ public class DnaService {
 					_serieYear = ArrayUtils.removeElement(_serieYear, _year);
 
 					// Somme des resultats Adn
-					DnaStatistics sumBirth = _breedOverYear.getValue().stream().reduce(new DnaStatistics(0, 0, 0, 0),
+					DnaStatistics sumDna = _breedOverYear.getValue().stream().reduce(new DnaStatistics(0, 0, 0, 0),
 							(x, y) -> {
 								return new DnaStatistics(x.getDna() + y.getDna(), x.getDnaComp() + y.getDnaComp(),
 										x.getDnaCompP() + y.getDnaCompP(), x.getDnaCompM() + y.getDnaCompM());
@@ -128,15 +127,14 @@ public class DnaService {
 					// Lecture des variétés s/ la race en cours (et pour l'année en cours)
 					List<DnaVariety> _variety = extractVariety(_breedOverYear.getValue());
 
-					DnaBreedStatistics _breed = new DnaBreedStatistics().withYear(_year).withDna(sumBirth.getDna())
-							.withDnaComp(sumBirth.getDnaComp()).withDnaCompP(sumBirth.getDnaCompP())
-							.withDnaCompM(sumBirth.getDnaCompM()).withVariety(_variety);
+					DnaBreedStatistics _breed = new DnaBreedStatistics().withYear(_year).withDna(sumDna.getDna())
+							.withDnaComp(sumDna.getDnaComp()).withDnaCompP(sumDna.getDnaCompP())
+							.withDnaCompM(sumDna.getDnaCompM()).withVariety(_variety);
 					_breedStatistics.add(_breed);
 
 				}
 
-				// On finalise en initialisant les années pour lesquelles on a constaté une
-				// rupture
+				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
 				for (int i = 0; i < _serieYear.length; i++) {
 					DnaBreedStatistics _breed = new DnaBreedStatistics().withYear(_serieYear[i]).withDna(0)
 							.withDnaComp(0).withDnaCompP(0).withDnaCompM(0).withVariety(new ArrayList<DnaVariety>());
@@ -187,17 +185,17 @@ public class DnaService {
 			_id = _currentVariety.getKey().getId();
 			_name = _currentVariety.getKey().getName();
 
-			// Somme des chiots males, femelles, portée
-			DnaStatistics sumBirth = _currentVariety.getValue().stream().reduce(new DnaStatistics(0, 0, 0, 0),
+			// Somme des resultats Adn
+			DnaStatistics sumDna = _currentVariety.getValue().stream().reduce(new DnaStatistics(0, 0, 0, 0),
 					(x, y) -> {
 						return new DnaStatistics(x.getDna() + y.getDna(), x.getDnaComp() + y.getDnaComp(),
 								x.getDnaCompP() + y.getDnaCompP(), x.getDnaCompM() + y.getDnaCompM());
 					});
 
 			// Création de l'objet Variety
-			DnaVariety _variety = new DnaVariety().withId(_id).withName(_name).withDna(sumBirth.getDna())
-					.withDnaComp(sumBirth.getDnaComp()).withDnaCompP(sumBirth.getDnaCompP())
-					.withDnaCompM(sumBirth.getDnaCompM());
+			DnaVariety _variety = new DnaVariety().withId(_id).withName(_name).withDna(sumDna.getDna())
+					.withDnaComp(sumDna.getDnaComp()).withDnaCompP(sumDna.getDnaCompP())
+					.withDnaCompM(sumDna.getDnaCompM());
 			_varietyList.add(_variety);
 
 		}

@@ -15,9 +15,15 @@ public class ConfigurationClub {
 	@Column(name = "id_race")
 	Integer idRace;
 
+	@Column(name = "nom_race")
+	String libelleRace;
+
 	@Id
 	@Column(name = "id_variete")
 	Integer idVariete;
+
+	@Column(name = "nom_variete")
+	String libelleVariete;
 
 	public Integer getIdClub() {
 		return idClub;
@@ -43,12 +49,28 @@ public class ConfigurationClub {
 		this.idRace = idRace;
 	}
 
+	public String getLibelleRace() {
+		return libelleRace;
+	}
+
+	public void setLibelleRace(String libelleRace) {
+		this.libelleRace = libelleRace;
+	}
+
 	public Integer getIdVariete() {
 		return idVariete;
 	}
-
+	
 	public void setIdVariete(Integer idVariete) {
 		this.idVariete = idVariete;
+	}
+
+	public String getLibelleVariete() {
+		return libelleVariete;
+	}
+
+	public void setLibelleVariete(String libelleVariete) {
+		this.libelleVariete = libelleVariete;
 	}
 
 }

@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -14,6 +13,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.scc.lofselectclub.template.TupleVariety;
 
 public class StreamUtils {
 
@@ -62,6 +63,11 @@ public class StreamUtils {
 	}
 
 	public static boolean breedMonoVariety(String name) {
+		return (("".equals(name) || name == null) ? true : false);
+	}
+	
+	public static boolean breedMonoVariety(TupleVariety variety) {
+		String name = variety.getName();
 		return (("".equals(name) || name == null) ? true : false);
 	}
 

@@ -96,8 +96,7 @@ public class ConsanguinityService {
 			if (_varietyByBreed.size() == 0)
 				throw new EntityNotFoundException(ConsanguinityResponseObject.class, "idClub", String.valueOf(idClub));
 
-			// Lecture des races associées au club pour lesquelles des données ont été
-			// calculées
+			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<BreederStatistics>> _allBreeds = breederRepository.findByIdClub(idClub).stream()
 					.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
 			for (Map.Entry<TupleBreed, List<BreederStatistics>> _currentBreed : _allBreeds.entrySet()) {
@@ -131,7 +130,7 @@ public class ConsanguinityService {
 					double _cng = _breedOverYear.getValue().stream().mapToDouble(BreederStatistics::getConsanguinite)
 							.average().orElse(0.0);
 
-					// Moyenne du nb d'ancètres communs
+					// Nb portées par nb d'ancètres communs
 					List<ConsanguintyCommonAncestor> _commonAncestors = extractCommonAncestors(
 							_breedOverYear.getValue());
 
@@ -145,8 +144,7 @@ public class ConsanguinityService {
 
 				}
 
-				// On finalise en initialisant les années pour lesquelles on a constaté une
-				// rupture
+				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
 				for (int i = 0; i < _serieYear.length; i++) {
 					ConsanguinityBreedStatistics _breed = new ConsanguinityBreedStatistics().withYear(_serieYear[i])
 							.withCng(format.format((double) 0))

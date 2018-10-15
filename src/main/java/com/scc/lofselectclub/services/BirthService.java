@@ -92,8 +92,7 @@ public class BirthService {
 			if (_varietyByBreed.size() == 0)
 				throw new EntityNotFoundException(BirthResponseObject.class, "idClub", String.valueOf(idClub));
 
-			// Lecture des races associées au club pour lesquelles des données ont été
-			// calculées
+			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<BreederStatistics>> _allBreeds = breederRepository.findByIdClub(idClub).stream()
 					.collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
 			for (Map.Entry<TupleBreed, List<BreederStatistics>> _currentBreed : _allBreeds.entrySet()) {
@@ -135,8 +134,7 @@ public class BirthService {
 					double prolificity = _breedOverYear.getValue().stream().findFirst()
 							.map(BreederStatistics::getProlificiteRace).orElse(0.0);
 
-					// Lecture des cotations des portées s/ la race en cours (et pour l'année en
-					// cours)
+					// Lecture des cotations des portées s/ la race en cours (et pour l'année en cours)
 					List<BirthCotation> _cotations = extractCotation(_breedOverYear.getValue());
 
 					// Lecture des variétés s/ la race en cours (et pour l'année en cours)
@@ -151,8 +149,7 @@ public class BirthService {
 
 				}
 
-				// On finalise en initialisant les années pour lesquelles on a constaté une
-				// rupture
+				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
 				for (int i = 0; i < _serieYear.length; i++) {
 					BirthBreedStatistics _breed = new BirthBreedStatistics().withYear(_serieYear[i]).withNumberOfMale(0)
 							.withNumberOfFemale(0).withNumberOfPuppies(0).withTotalOfLitter(0).withProlificity(0)
@@ -193,15 +190,14 @@ public class BirthService {
 
 		Map<Integer, Long> _cotations = _list.stream()
 				.collect(Collectors.groupingBy(BreederStatistics::getCotationPortee, Collectors.counting()));
-		;
 
 		double _total = _cotations.values().stream().mapToInt(Number::intValue).sum();
 		double _percent = 0;
 
-		// Suppression de la cotation traitée
 		for (Map.Entry<Integer, Long> _cot : _cotations.entrySet()) {
 
 			_percent = Precision.round((double) _cot.getValue() / _total, 2);
+			// Suppression de la cotation traitée
 			_cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
 			BirthCotation c = new BirthCotation().withGrade(_cot.getKey()).withQtity((int) (long) _cot.getValue())
 					.withPercentage(format.format(_percent));
