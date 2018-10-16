@@ -18,8 +18,13 @@ import com.scc.lofselectclub.repository.ConfigurationClubRepository;
 import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
+import com.scc.lofselectclub.template.breeder.BreederResponseObject;
+import com.scc.lofselectclub.template.breeder.BreederVariety;
+import com.scc.lofselectclub.template.breeder.BreederVarietyStatistics;
 import com.scc.lofselectclub.template.parent.ParentVariety;
 import com.scc.lofselectclub.utils.StreamUtils;
+import com.scc.lofselectclub.utils.TypeHealth;
+import com.scc.lofselectclub.utils.TypeRegistration;
 import com.scc.lofselectclub.template.parent.ParentFather;
 import com.scc.lofselectclub.template.parent.ParentBreed;
 import com.scc.lofselectclub.template.parent.ParentResponseObject;
@@ -73,9 +78,18 @@ public class ParentService {
 	ServiceConfig config;
 
 	int limitTopN = 0;
+	int idBreed = 0;
+	int idVariety = 0;
 
 	private Set<String> allTopN = new HashSet<String>();
 
+	/**
+	 * Retourne les données statistiques liées aux géniteurs pour l'ensemble des races affiliées au club
+	 * 
+	 * @param idClub	Identifiant du club
+	 * @return			Objet <code>ParentResponseObject</code>
+	 * @throws EntityNotFoundException
+	 */
 	@HystrixCommand(fallbackMethod = "buildFallbackParentList", threadPoolKey = "getStatistics", threadPoolProperties = {
 			@HystrixProperty(name = "coreSize", value = "30"),
 			@HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
@@ -94,22 +108,27 @@ public class ParentService {
 		// topN etalon
 		this.limitTopN = config.getLimitTopNFathers();
 
-		int _id = 0;
 		String _name = "";
 
+		List<ConfigurationClub> _breedsManagedByClub = new ArrayList<ConfigurationClub>(); 
 		List<ParentBreed> _breeds = new ArrayList<ParentBreed>();
-		Map<Integer, Set<Integer>> _varietyByBreed = new HashMap<Integer, Set<Integer>>();
+		Map<TupleBreed, Set<TupleVariety>> _varietyByBreed = new HashMap<TupleBreed, Set<TupleVariety>>();
 
 		try {
 
 			// Initialisation des données races / varietes associées au club
-			_varietyByBreed = configurationClubRepository.findByIdClub(idClub).stream()
-					.collect(Collectors.groupingBy(ConfigurationClub::getIdRace,
-							Collectors.mapping(ConfigurationClub::getIdVariete, Collectors.toSet())));
+			_breedsManagedByClub = configurationClubRepository.findByIdClub(idClub);
 
 			// Exception si le club n'a pas de races connues == l'id club n'existe pas
-			if (_varietyByBreed.size() == 0)
-				throw new EntityNotFoundException(ParentResponseObject.class, "idClub", String.valueOf(idClub));
+			if (_breedsManagedByClub.size() == 0)
+				throw new EntityNotFoundException(BreederResponseObject.class, "idClub", String.valueOf(idClub));
+
+			// Intialisation des races du club			
+			_varietyByBreed = _breedsManagedByClub.stream()
+					 .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getLibelleRace()), 
+                             Collectors.mapping( e -> new TupleVariety(e.getIdVariete(), e.getLibelleVariete()), Collectors.toSet())
+                            )
+					);
 
 			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<BreederStatistics>> _allBreeds = breederRepository.findByIdClub(idClub).stream()
@@ -119,7 +138,7 @@ public class ParentService {
 				List<ParentFatherStatistics> _fathersStatistics = new ArrayList<ParentFatherStatistics>();
 
 				int _year = 0;
-				_id = _currentBreed.getKey().getId();
+				this.idBreed = _currentBreed.getKey().getId();
 				_name = _currentBreed.getKey().getName();
 
 				List<ParentBreedStatistics> _breedStatistics = new ArrayList<ParentBreedStatistics>();
@@ -128,10 +147,19 @@ public class ParentService {
 				// les années)
 				// A voir si les années précédentes ne feront pas l'objet d'une suppression côté
 				// data (BdD); auquel cas, ce code sera obsolète
-				ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(_id);
+				ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(this.idBreed);
 				int[] _serieYear = StreamUtils.findSerieYear(_configurationRace.getLastDate());
 				final int minYear = _serieYear[0];
 
+				// Lecture des variétés référencées 
+				// si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
+				List<TupleVariety> _referencedVarieties = _varietyByBreed.entrySet()
+						.stream()
+						.filter(r -> r.getKey().getId() == this.idBreed)
+						.flatMap(map -> map.getValue().stream())
+						.collect(Collectors.toList())
+				;
+				
 				// Recherche TopN Etalon s/ la race
 				// Regle de sélection :
 				// Pour chaque année, on sélectionne le top 20.
@@ -162,7 +190,7 @@ public class ParentService {
 					_origins.add(_origin);
 
 					// Lecture des variétés s/ la race en cours (et pour l'année en cours)
-					List<ParentVariety> _variety = extractVariety(_breedOverYear.getValue());
+					List<ParentVariety> _variety = extractVariety(_breedOverYear.getValue(), _referencedVarieties);
 
 					// Lecture du nb de géniteur par cotations
 					List<ParentCotation> _cotations = extractCotation(_breedOverYear.getValue());
@@ -188,7 +216,7 @@ public class ParentService {
 				for (int i = 0; i < _serieYear.length; i++) {
 					ParentBreedStatistics _breed = new ParentBreedStatistics().withYear(_serieYear[i])
 							.withOrigins(new ArrayList<Map<String, List<ParentGender>>>())
-							.withVariety(new ArrayList<ParentVariety>());
+							.withVariety(extractVariety(new ArrayList<BreederStatistics>(), _referencedVarieties));
 					_breedStatistics.add(_breed);
 
 					ParentFatherStatistics _fatherTopN = new ParentFatherStatistics().withYear(_serieYear[i])
@@ -199,7 +227,7 @@ public class ParentService {
 				}
 
 				// Création de l'objet Race
-				ParentBreed _breed = new ParentBreed().withId(_id).withName(_name).withStatistics(_breedStatistics)
+				ParentBreed _breed = new ParentBreed().withId(this.idBreed).withName(_name).withStatistics(_breedStatistics)
 						.withTopN(_fathersStatistics);
 
 				// Ajout à la liste
@@ -217,6 +245,12 @@ public class ParentService {
 		}
 	}
 
+	/**
+	 * Fonction fallbackMethod de la fonction principale <code>getStatistics</code> (Hystrix Latency / Fault Tolerance)
+	 * 
+	 * @param idClub	Identifiant du club
+	 * @return			Objet <code>ParentResponseObject</code>
+	 */
 	private ParentResponseObject buildFallbackParentList(int idClub) {
 
 		List<ParentBreed> list = new ArrayList<ParentBreed>();
@@ -224,6 +258,13 @@ public class ParentService {
 		return new ParentResponseObject(list.size(), list);
 	}
 
+	/**
+	 * Retourne la répartition des étalons par type d'inscription
+	 * 
+	 * @param _list	Liste des données de production à analyser
+	 * @return		Propriété <code>origins</code> de l'objet <code>ParentBreedStatistics</code>
+	 * @see TypeRegistration
+	 */
 	private List<ParentGender> extractFather(List<BreederStatistics> _list) {
 
 		List<ParentGender> _stats = new ArrayList<ParentGender>();
@@ -244,14 +285,14 @@ public class ParentService {
 			for (Integer key : _map.keySet()) {
 				Integer value = _map.get(key);
 
-				switch (key) {
-				case 537:
+				switch (TypeRegistration.fromId(key)) {
+				case FRANCAIS:
 					_qtityTypeFrancais += value;
 					break;
-				case 538:
+				case IMPORTES:
 					_qtityTypeImport += value;
 					break;
-				case 540:
+				case ETRANGERS:
 					_qtityTypeEtranger += value;
 					break;
 				default:
@@ -263,21 +304,20 @@ public class ParentService {
 				_qtity += value;
 			}
 
-			String[] _typesDefinition = { "FRANCAIS", "IMPORTES", "ETRANGERS", "AUTRES" };
 			List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
 			NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
 
-			for (String s : _typesDefinition) {
+			for (TypeRegistration s : TypeRegistration.values()) {
 				int _qtityType = 0;
 				double _percent = 0;
 				switch (s) {
-				case "FRANCAIS":
+				case FRANCAIS:
 					_qtityType = _qtityTypeFrancais;
 					break;
-				case "IMPORTES":
+				case IMPORTES:
 					_qtityType = _qtityTypeImport;
 					break;
-				case "ETRANGERS":
+				case ETRANGERS:
 					_qtityType = _qtityTypeEtranger;
 					break;
 				default:
@@ -301,6 +341,13 @@ public class ParentService {
 		return _stats;
 	}
 
+	/**
+	 * Retourne la répartition des lices par type d'inscription
+	 * 
+	 * @param _list	Liste des données de production à analyser
+	 * @return		Propriété <code>origins</code> de l'objet <code>ParentBreedStatistics</code>
+	 * @see TypeRegistration
+	 */
 	private List<ParentGender> extractMother(List<BreederStatistics> _list) {
 
 		List<ParentGender> _stats = new ArrayList<ParentGender>();
@@ -320,11 +367,11 @@ public class ParentService {
 			for (Integer key : _map.keySet()) {
 				Integer value = _map.get(key);
 
-				switch (key) {
-				case 537:
+				switch (TypeRegistration.fromId(key)) {
+				case FRANCAIS:
 					_qtityTypeFrancais += value;
 					break;
-				case 538:
+				case IMPORTES:
 					_qtityTypeImport += value;
 					break;
 				default:
@@ -336,18 +383,17 @@ public class ParentService {
 				_qtity += value;
 			}
 
-			String[] _typesDefinition = { "FRANCAIS", "IMPORTES", "AUTRES" };
 			List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
 			NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
 
-			for (String s : _typesDefinition) {
+			for (TypeRegistration s : TypeRegistration.values()) {
 				int _qtityType = 0;
 				double _percent = 0;
 				switch (s) {
-				case "FRANCAIS":
+				case FRANCAIS:
 					_qtityType = _qtityTypeFrancais;
 					break;
-				case "IMPORTES":
+				case IMPORTES:
 					_qtityType = _qtityTypeImport;
 					break;
 				default:
@@ -371,23 +417,33 @@ public class ParentService {
 		return _stats;
 	}
 
-	private List<ParentVariety> extractVariety(List<BreederStatistics> _list) {
+	/**
+	 * Retourne les données statistiques pour l'ensemble des variétés de la race
+	 * 
+	 * @param _list					Liste des données de production à analyser
+	 * @param _referencedVarieties	Liste exhaustive des variétés pour la race lue
+	 * @return 						Propriété <code>variety</code> de l'objet <code>ParentBreedStatistics</code>
+	 */
+	private List<ParentVariety> extractVariety(List<BreederStatistics> _list, List<TupleVariety> _referencedVarieties) {
 
 		List<ParentVariety> _varietyList = new ArrayList<ParentVariety>();
-		int _id = 0;
+		this.idVariety = 0;
 		String _name = "";
 
 		Map<TupleVariety, List<BreederStatistics>> _allVariety = _list.stream()
 				.collect(Collectors.groupingBy(r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())));
 
 		// Cas où la race est mono variété, la propriété n'est pas renseignée
-		if (_allVariety.size() == 1
-				&& StreamUtils.breedMonoVariety(_allVariety.keySet().stream().findFirst().get().getName()))
+		if (_referencedVarieties.size() == 1
+				&& StreamUtils.breedMonoVariety(_referencedVarieties.stream().findFirst().orElse(new TupleVariety(0,""))) )
 			return _varietyList;
+
+		// On stocke la liste des variétés pour la race 
+		List<TupleVariety> _varieties  = new ArrayList<TupleVariety>(_referencedVarieties);
 
 		for (Map.Entry<TupleVariety, List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
 
-			_id = _currentVariety.getKey().getId();
+			this.idVariety = _currentVariety.getKey().getId();
 			_name = _currentVariety.getKey().getName();
 
 			List<Map<String, List<ParentGender>>> _origins = new ArrayList<Map<String, List<ParentGender>>>();
@@ -408,13 +464,33 @@ public class ParentService {
 			List<ParentFrequency> _frequencies = extractFrequency(_currentVariety.getValue());
 
 			// Création de l'objet Variety
-			ParentVariety _variety = new ParentVariety().withId(_id).withName(_name).withOrigins(_origins)
+			ParentVariety _variety = new ParentVariety().withId(this.idVariety).withName(_name).withOrigins(_origins)
 					.withCotations(_cotations).withFrequencies(_frequencies);
 			_varietyList.add(_variety);
+			
+			// Suppression de la variété traitée
+			_varieties.removeIf(e -> e.getId() == this.idVariety);
+			
 		}
+		
+		// Toutes les variétés n'ont pas fait l'objet d'une production doivent être mentionnées
+		if (_varieties.size()>0) {
+			for (TupleVariety v : _varieties) {
+				ParentVariety _variety = new ParentVariety().withId(v.getId()).withName(v.getName())
+						.withOrigins(new ArrayList<Map<String, List<ParentGender>>>())
+						.withCotations(new ArrayList<ParentCotation>()).withFrequencies(new ArrayList<ParentFrequency>());
+				_varietyList.add(_variety);
+			}
+		}		
 		return _varietyList;
 	}
 
+	/**
+	 * Retourne la fréquence d'utilisation d'un étalon dans les dossiers de portée
+	 * 
+	 * @param _list	Liste des données de production à analyser
+	 * @return		Propriété <code>frequencies</code> de l'objet <code>ParentBreedStatistics</code>
+	 */
 	private List<ParentFrequency> extractFrequency(List<BreederStatistics> _list) {
 
 		List<ParentFrequency> _frequencyList = new ArrayList<ParentFrequency>();
@@ -457,6 +533,12 @@ public class ParentService {
 		return _frequencyList;
 	}
 
+	/**
+	 * Retourne les données statistiques liées à la cotation des dossiers de portée
+	 * 
+	 * @param _list	Liste des données de production à analyser
+	 * @return		Propriété <code>cotations</code> de l'objet <code>ParentBreedStatistics</code>
+	 */
 	private List<ParentCotation> extractCotation(List<BreederStatistics> _list) {
 
 		List<ParentCotation> _cotationList = new ArrayList<ParentCotation>();
@@ -531,6 +613,13 @@ public class ParentService {
 	// return _topNFathers;
 	// }
 
+	/**
+	 * Retourne le classement des étalons ayant produit le plus de portées dans l'année
+	 * 
+	 * @param _year	Année
+	 * @param _list	Liste des données de production à analyser
+	 * @return		Propriété <code>fathers</code> de l'objet <code>ParentFatherStatistics</code>
+	 */
 	private List<ParentFather> extractTopNOverYear(int _year, List<BreederStatistics> _list) {
 
 		List<ParentFather> _topNFathers = new ArrayList<ParentFather>();
@@ -576,6 +665,13 @@ public class ParentService {
 
 	}
 
+	/**
+	 * Construction de la liste des étalons qui ont le plus produit sur les 5 dernières années
+	 * 
+	 * @param minYear	Année plancher	
+	 * @param _list		Liste des données de production à analyser
+	 * @return			Liste des étalons avec le nombre de portées
+	 */
 	private List<BreederStatistics> extractTopNFathers(int minYear, List<BreederStatistics> _list) {
 
 		List<BreederStatistics> _topNFathers = new ArrayList<BreederStatistics>();

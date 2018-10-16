@@ -1,16 +1,16 @@
 package com.scc.lofselectclub.utils;
 
 /**
- * Classification des résultats par type
+ * Classification des inscriptions par type
  *
- * <li>{@link #SUIVI}</li>
- * <li>{@link #SOUS_SURVEILLANCE}</li>
- * <li>{@link #EMERGENTE}</li>
- * <li>{@link #GENE_INTERET}</li>
+ * <li>{@link #FRANCAIS}</li>
+ * <li>{@link #IMPORTES}</li>
+ * <li>{@link #ETRANGERS}</li>
+ * <li>{@link #AUTRES}</li>
  */
-public enum TypeHealth {
+public enum TypeRegistration {
 
-	SUIVI(1), SOUS_SURVEILLANCE(2), EMERGENTE(3), GENE_INTERET(4);
+	FRANCAIS(537), IMPORTES(538), ETRANGERS(540), AUTRES(-1);
 
 	private int value;
 
@@ -18,12 +18,12 @@ public enum TypeHealth {
 		return value;
 	}
 
-	private TypeHealth(int value) {
+	private TypeRegistration(int value) {
 		this.value = value;
 	}
 
-	public static TypeHealth fromId(int id) {
-		for (TypeHealth type : values()) {
+	public static TypeRegistration fromId(int id) {
+		for (TypeRegistration type : values()) {
 			if (type.getValue() == id) {
 				return type;
 			}

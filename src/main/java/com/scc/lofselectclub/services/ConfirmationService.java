@@ -56,6 +56,16 @@ public class ConfirmationService {
 	@Autowired
 	ServiceConfig config;
 
+	int idBreed = 0;
+	int idVariety = 0;
+	
+	/**
+	 * Retourne les données statistiques liées à la confirmation pour l'ensemble des races affiliées au club
+	 * 
+	 * @param idClub	Identifiant du club
+	 * @return			Objet <code>ConfirmationResponseObject</code>
+	 * @throws EntityNotFoundException
+	 */
 	@HystrixCommand(fallbackMethod = "buildFallbackConfirmationList", threadPoolKey = "getStatistics", threadPoolProperties = {
 			@HystrixProperty(name = "coreSize", value = "30"),
 			@HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
@@ -71,23 +81,28 @@ public class ConfirmationService {
 		logger.debug("In the ConfirmationService.getStatistics() call, trace id: {}",
 				tracer.getCurrentSpan().traceIdString());
 
-		int _id = 0;
 		String _name = "";
 
+		List<ConfigurationClub> _breedsManagedByClub = new ArrayList<ConfigurationClub>(); 
 		List<ConfirmationBreed> _breeds = new ArrayList<ConfirmationBreed>();
-		Map<Integer, Set<Integer>> _varietyByBreed = new HashMap<Integer, Set<Integer>>();
+		Map<TupleBreed, Set<TupleVariety>> _varietyByBreed = new HashMap<TupleBreed, Set<TupleVariety>>();
 
 		try {
 
 			// Initialisation des données races / varietes associées au club
-			_varietyByBreed = configurationClubRepository.findByIdClub(idClub).stream()
-					.collect(Collectors.groupingBy(ConfigurationClub::getIdRace,
-							Collectors.mapping(ConfigurationClub::getIdVariete, Collectors.toSet())));
+			_breedsManagedByClub = configurationClubRepository.findByIdClub(idClub);
 
 			// Exception si le club n'a pas de races connues == l'id club n'existe pas
-			if (_varietyByBreed.size() == 0)
+			if (_breedsManagedByClub.size() == 0)
 				throw new EntityNotFoundException(ConfirmationResponseObject.class, "idClub", String.valueOf(idClub));
 
+			// Intialisation des races du club			
+			_varietyByBreed = _breedsManagedByClub.stream()
+					 .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getLibelleRace()), 
+                             Collectors.mapping( e -> new TupleVariety(e.getIdVariete(), e.getLibelleVariete()), Collectors.toSet())
+                            )
+					);
+			
 			// Lecture des races associées au club pour lesquelles des données ont été calculées
 			Map<TupleBreed, List<ConfirmationStatistics>> _allBreeds = confirmationRepository.findByIdClub(idClub)
 					.stream().collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
@@ -96,7 +111,7 @@ public class ConfirmationService {
 				int _year = 0;
 				Long _qtity = null;
 
-				_id = _currentBreed.getKey().getId();
+				this.idBreed = _currentBreed.getKey().getId();
 				_name = _currentBreed.getKey().getName();
 
 				List<ConfirmationBreedStatistics> _breedStatistics = new ArrayList<ConfirmationBreedStatistics>();
@@ -105,10 +120,19 @@ public class ConfirmationService {
 				// les années)
 				// A voir si les années précédentes ne feront pas l'objet d'une suppression côté
 				// data (BdD); auquel cas, ce code sera obsolète
-				ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(_id);
+				ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(this.idBreed);
 				int[] _serieYear = StreamUtils.findSerieYear(_configurationRace.getLastDate());
 				final int minYear = _serieYear[0];
 
+				// Lecture des variétés référencées 
+				// si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
+				List<TupleVariety> _referencedVarieties = _varietyByBreed.entrySet()
+						.stream()
+						.filter(r -> r.getKey().getId() == this.idBreed)
+						.flatMap(map -> map.getValue().stream())
+						.collect(Collectors.toList())
+				;
+				
 				// Lecture des années (on ajoute un tri)
 				Map<Integer, List<ConfirmationStatistics>> _breedGroupByYear = _currentBreed.getValue().stream()
 						.filter(x -> x.getAnnee() >= minYear)
@@ -124,7 +148,7 @@ public class ConfirmationService {
 					_qtity = _breedOverYear.getValue().stream().collect(Collectors.counting());
 
 					// Lecture des variétés s/ la race en cours (et pour l'année en cours)
-					List<ConfirmationVariety> _variety = extractVariety(_breedOverYear.getValue());
+					List<ConfirmationVariety> _variety = extractVariety(_breedOverYear.getValue(), _referencedVarieties);
 
 					ConfirmationBreedStatistics _breed = new ConfirmationBreedStatistics().withYear(_year)
 							.withQtity((int) (long) _qtity).withVariety(_variety);
@@ -135,12 +159,12 @@ public class ConfirmationService {
 				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
 				for (int i = 0; i < _serieYear.length; i++) {
 					ConfirmationBreedStatistics _breed = new ConfirmationBreedStatistics().withYear(_serieYear[i])
-							.withQtity(0).withVariety(new ArrayList<ConfirmationVariety>());
+							.withQtity(0).withVariety(extractVariety(new ArrayList<ConfirmationStatistics>(), _referencedVarieties));
 					_breedStatistics.add(_breed);
 				}
 
 				// Création de l'objet Race
-				ConfirmationBreed _breed = new ConfirmationBreed().withId(_id).withName(_name)
+				ConfirmationBreed _breed = new ConfirmationBreed().withId(this.idBreed).withName(_name)
 						.withStatistics(_breedStatistics);
 
 				// Ajout à la liste
@@ -158,6 +182,12 @@ public class ConfirmationService {
 		}
 	}
 
+	/**
+	 * Fonction fallbackMethod de la fonction principale <code>getStatistics</code> (Hystrix Latency / Fault Tolerance)
+	 * 
+	 * @param idClub	Identifiant du club
+	 * @return			Objet <code>ConfirmationResponseObject</code>
+	 */
 	private ConfirmationResponseObject buildFallbackConfirmationList(int idClub) {
 
 		List<ConfirmationBreed> list = new ArrayList<ConfirmationBreed>();
@@ -165,10 +195,17 @@ public class ConfirmationService {
 		return new ConfirmationResponseObject(list.size(), list);
 	}
 
-	private List<ConfirmationVariety> extractVariety(List<ConfirmationStatistics> _list) {
+	/**
+	 * Retourne les données statistiques pour l'ensemble des variétés de la race
+	 * 
+	 * @param _list					Liste des données de production à analyser
+	 * @param _referencedVarieties	Liste exhaustive des variétés pour la race lue
+	 * @return						Propriété <code>variety</code> de l'objet <code>ConfirmationBreedStatistics</code>
+	 */
+	private List<ConfirmationVariety> extractVariety(List<ConfirmationStatistics> _list, List<TupleVariety> _referencedVarieties) {
 
 		List<ConfirmationVariety> _varietyList = new ArrayList<ConfirmationVariety>();
-		int _id = 0;
+		this.idVariety = 0;
 		String _name = "";
 
 		long _qtity = 0;
@@ -177,25 +214,38 @@ public class ConfirmationService {
 				.collect(Collectors.groupingBy(r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())));
 
 		// Cas où la race est mono variété, la propriété n'est pas renseignée
-		if (_allVariety.size() == 1
-				&& StreamUtils.breedMonoVariety(_allVariety.keySet().stream().findFirst().get().getName()))
+		if (_referencedVarieties.size() == 1
+				&& StreamUtils.breedMonoVariety(_referencedVarieties.stream().findFirst().orElse(new TupleVariety(0,""))) )
 			return _varietyList;
 
+		// On stocke la liste des variétés pour la race 
+		List<TupleVariety> _varieties  = new ArrayList<TupleVariety>(_referencedVarieties);
+		
 		for (Map.Entry<TupleVariety, List<ConfirmationStatistics>> _currentVariety : _allVariety.entrySet()) {
 
-			_id = _currentVariety.getKey().getId();
+			this.idVariety = _currentVariety.getKey().getId();
 			_name = _currentVariety.getKey().getName();
 
 			// Somme des chiots males, femelles, portée
 			_qtity = _currentVariety.getValue().stream().collect(Collectors.counting());
 
 			// Création de l'objet Variety
-			ConfirmationVariety _variety = new ConfirmationVariety().withId(_id).withName(_name)
+			ConfirmationVariety _variety = new ConfirmationVariety().withId(this.idVariety).withName(_name)
 					.withQtity((int) (long) _qtity);
 			_varietyList.add(_variety);
 
+			// Suppression de la variété traitée
+			_varieties.removeIf(e -> e.getId() == this.idVariety);
 		}
 
+		// Toutes les variétés n'ont pas fait l'objet d'une production doivent être mentionnées
+		if (_varieties.size()>0) {
+			for (TupleVariety v : _varieties) {
+				ConfirmationVariety _variety = new ConfirmationVariety().withId(v.getId()).withName(v.getName())
+						.withQtity(0);
+				_varietyList.add(_variety);
+			}
+		}
 		return _varietyList;
 
 	}

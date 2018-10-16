@@ -1,11 +1,13 @@
 package com.scc.lofselectclub.template.parent;
 
+import com.scc.lofselectclub.utils.TypeRegistration;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class ParentRegisterType {
 
-	@ApiModelProperty(notes = "registration type", position = 1, allowEmptyValue = true)
-	String registration;
+	@ApiModelProperty(notes = "registration type", dataType = "com.scc.lofselectclub.utils.TypeRegistration", position = 1, allowEmptyValue = true)
+	TypeRegistration registration;
 
 	@ApiModelProperty(notes = "number of male/female", position = 2, allowEmptyValue = true)
 	int qtity;
@@ -13,11 +15,11 @@ public class ParentRegisterType {
 	@ApiModelProperty(notes = "percentage", position = 3, allowEmptyValue = true)
 	String percentage;
 
-	public String getRegistration() {
+	public TypeRegistration getRegistration() {
 		return registration;
 	}
 
-	public void setRegistration(String registration) {
+	public void setRegistration(TypeRegistration registration) {
 		this.registration = registration;
 	}
 
@@ -37,7 +39,7 @@ public class ParentRegisterType {
 		this.percentage = percentage;
 	}
 
-	public ParentRegisterType withRegistration(String registration) {
+	public ParentRegisterType withRegistration(TypeRegistration registration) {
 		this.setRegistration(registration);
 		return this;
 	}

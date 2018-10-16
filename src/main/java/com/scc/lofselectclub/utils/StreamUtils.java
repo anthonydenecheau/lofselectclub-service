@@ -20,6 +20,12 @@ public class StreamUtils {
 
 	final static int minusYear = 4;
 
+	/**
+	 * Retourne les années de référence pour les données statistiques
+	 * 
+	 * @param _referenceDate	Année de calcul des statistiques
+	 * @return 					Liste des 5 dernières années
+	 */
 	public static int[] findSerieYear(Date _referenceDate) {
 
 		LocalDateTime _l = _referenceDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
@@ -31,14 +37,27 @@ public class StreamUtils {
 		return Collectors.groupingBy(function, TreeMap::new, Collectors.toList());
 	}
 
+	/**
+	 * Retourne les n meilleurs éléments
+	 * 
+	 * @param map			Initial map 
+	 * @param N				Size N elements
+	 * @param tieBreaker	Using a comparator that first sorts the TreeMap<Map.Entry<K, V>, K> by values V in descending order, and then by keys K
+	 * @return				Retourne les n top éléments triés par valeur décroissante
+	 * @See https://stackoverflow.com/questions/52343325/java-8-stream-how-to-get-top-n-count
+	 */
 	public static <K, V extends Comparable<V>, T extends Comparable<T>> Collection<K> topN(Map<K, V> map, int N,
 			Function<? super K, ? extends T> tieBreaker) {
 
+		// First, put the entry into the topN map
 		TreeMap<Map.Entry<K, V>, K> topN = new TreeMap<>(Map.Entry.<K, V>comparingByValue() // by value descending, then
 																							// by key
 				.reversed() // to allow entries with duplicate values
 				.thenComparing(e -> tieBreaker.apply(e.getKey())));
 
+		// Then, if the map has more than N entries, 
+		// we immediately invoke the pollLastEntry method will remove the entry with the lowest priority 
+		// (according to the order of the keys of the TreeMap)
 		map.entrySet().forEach(e -> {
 			topN.put(e, e.getKey());
 			if (topN.size() > N)
@@ -48,41 +67,27 @@ public class StreamUtils {
 		return topN.values();
 	}
 
-	// public static <T> Predicate<T> distinctByKey(Function<? super T, ?>
-	// keyExtractor) {
-	// Set<Object> seen = ConcurrentHashMap.newKeySet();
-	// return t -> seen.add(keyExtractor.apply(t));
-	// }
 
 	/**
 	 * Stateful filter. T is type of stream element, K is type of extracted key.
+	 * 
+	 * @param key
+	 * @return
 	 */
 	public static <T> Predicate<T> distinctByKey(Function<? super T, Object> key) {
 		Map<Object, Boolean> map = new ConcurrentHashMap<>();
 		return t -> map.putIfAbsent(key.apply(t), Boolean.TRUE) == null;
 	}
 
-	public static boolean breedMonoVariety(String name) {
-		return (("".equals(name) || name == null) ? true : false);
-	}
-	
+	/**
+	 * Détermine si la variété appartient à une race mono variété
+	 * 
+	 * @param variety	Données variété
+	 * @return			<code>true</code> si la race est mono variété
+	 */
 	public static boolean breedMonoVariety(TupleVariety variety) {
 		String name = variety.getName();
 		return (("".equals(name) || name == null) ? true : false);
 	}
-
-	// public static Map<Integer, Set<Integer>> removeIdBreed(int idBreed,
-	// Map<Integer, Set<Integer>> _l) {
-	// _l.remove(idBreed);
-	// return _l;
-	// }
-	//
-	// public static Map<Integer, Set<Integer>> removeIdVariety(int idVariety,
-	// Map<Integer, Set<Integer>> _l) {
-	// for(Set _j : _l.values()){
-	// _j.remove(idVariety);
-	// }
-	// return _l;
-	// }
 
 }
