@@ -9,11 +9,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ApplicationTest {
 
-	/*
-	 * Référence documentation: http://www.baeldung.com/spring-boot-testing
-	 */
+   /*
+    * Référence documentation: http://www.baeldung.com/spring-boot-testing
+    */
 
-	@Test
-	public void contextLoads() {
-	}
+   @Test
+   public void contextLoads() {
+   }
 }

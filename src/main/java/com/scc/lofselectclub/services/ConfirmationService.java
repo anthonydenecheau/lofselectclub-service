@@ -10,244 +10,193 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
-import com.scc.lofselectclub.model.ConfigurationClub;
-import com.scc.lofselectclub.model.ConfigurationRace;
 import com.scc.lofselectclub.model.ConfirmationStatistics;
-import com.scc.lofselectclub.repository.ConfigurationClubRepository;
-import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
+import com.scc.lofselectclub.model.GenericStatistics;
+import com.scc.lofselectclub.model.ParametersVariety;
 import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreedStatistics;
 import com.scc.lofselectclub.template.confirmation.ConfirmationVariety;
-import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreed;
 import com.scc.lofselectclub.template.confirmation.ConfirmationResponseObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional
-public class ConfirmationService {
+public class ConfirmationService extends AbstractGenericService<ConfirmationResponseObject,ConfirmationStatistics> {
 
-	private static final Logger logger = LoggerFactory.getLogger(ConfirmationService.class);
+   public ConfirmationService() {
+      super();
+      this.setGenericTemplate(new ConfirmationResponseObject());
+      this.setType(ConfirmationStatistics.class);
+   }
 
-	@Autowired
-	private Tracer tracer;
+   private static final Logger logger = LoggerFactory.getLogger(ConfirmationService.class);
 
-	@Autowired
-	private ConfirmationRepository confirmationRepository;
+   @Autowired
+   private Tracer tracer;
 
-	@Autowired
-	private ConfigurationRaceRepository configurationRaceRepository;
+   @Autowired
+   private ConfirmationRepository confirmationRepository;
 
-	@Autowired
-	private ConfigurationClubRepository configurationClubRepository;
+   @Autowired
+   ServiceConfig config;
 
-	@Autowired
-	ServiceConfig config;
+   /**
+    * Retourne les données statistiques liées à la confirmation pour l'ensemble des races affiliées au club
+    * 
+    * @param idClub  Identifiant du club
+    * @return        Objet <code>ConfirmationResponseObject</code>
+    * @throws EntityNotFoundException
+    */
+   @HystrixCommand(fallbackMethod = "buildFallbackConfirmationList", threadPoolKey = "getStatistics", threadPoolProperties = {
+         @HystrixProperty(name = "coreSize", value = "30"),
+         @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
+               @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
+               @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "75"),
+               @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "7000"),
+               @HystrixProperty(name = "metrics.rollingStats.timeInMilliseconds", value = "15000"),
+               @HystrixProperty(name = "metrics.rollingStats.numBuckets", value = "5") }, ignoreExceptions = {
+                     EntityNotFoundException.class })
+   public ConfirmationResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
-	int idBreed = 0;
-	int idVariety = 0;
-	
-	/**
-	 * Retourne les données statistiques liées à la confirmation pour l'ensemble des races affiliées au club
-	 * 
-	 * @param idClub	Identifiant du club
-	 * @return			Objet <code>ConfirmationResponseObject</code>
-	 * @throws EntityNotFoundException
-	 */
-	@HystrixCommand(fallbackMethod = "buildFallbackConfirmationList", threadPoolKey = "getStatistics", threadPoolProperties = {
-			@HystrixProperty(name = "coreSize", value = "30"),
-			@HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
-					@HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
-					@HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "75"),
-					@HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "7000"),
-					@HystrixProperty(name = "metrics.rollingStats.timeInMilliseconds", value = "15000"),
-					@HystrixProperty(name = "metrics.rollingStats.numBuckets", value = "5") }, ignoreExceptions = {
-							EntityNotFoundException.class })
-	public ConfirmationResponseObject getStatistics(int idClub) throws EntityNotFoundException {
+      Span newSpan = tracer.createSpan("getStatistics");
+      logger.debug("In the ConfirmationService.getStatistics() call, trace id: {}",
+            tracer.getCurrentSpan().traceIdString());
 
-		Span newSpan = tracer.createSpan("getStatistics");
-		logger.debug("In the ConfirmationService.getStatistics() call, trace id: {}",
-				tracer.getCurrentSpan().traceIdString());
+      try {
 
-		String _name = "";
+         // Lecture des données races/variétés pour le club
+         setClubBreedData(idClub);
 
-		List<ConfigurationClub> _breedsManagedByClub = new ArrayList<ConfigurationClub>(); 
-		List<ConfirmationBreed> _breeds = new ArrayList<ConfirmationBreed>();
-		Map<TupleBreed, Set<TupleVariety>> _varietyByBreed = new HashMap<TupleBreed, Set<TupleVariety>>();
+         // Lecture des races associées au club pour lesquelles des données ont été calculées
+         List<ConfirmationBreed> _breeds = populateBreeds(idClub);
 
-		try {
+         // Réponse
+         return getGenericTemplate()
+               .withBreeds(_breeds)
+               .withSize(_breeds.size());
 
-			// Initialisation des données races / varietes associées au club
-			_breedsManagedByClub = configurationClubRepository.findByIdClub(idClub);
+      } finally {
+         newSpan.tag("peer.service", "postgres");
+         newSpan.logEvent(org.springframework.cloud.sleuth.Span.CLIENT_RECV);
+         tracer.close(newSpan);
+      }
+   }
 
-			// Exception si le club n'a pas de races connues == l'id club n'existe pas
-			if (_breedsManagedByClub.size() == 0)
-				throw new EntityNotFoundException(ConfirmationResponseObject.class, "idClub", String.valueOf(idClub));
+   /**
+    * Fonction fallbackMethod de la fonction principale <code>getStatistics</code>
+    * (Hystrix Latency / Fault Tolerance)
+    * 
+    * @param idClub  Identifiant du club
+    * @return        Objet <code>ConfirmationResponseObject</code>
+    */
+   private ConfirmationResponseObject buildFallbackConfirmationList(int idClub) {
 
-			// Intialisation des races du club			
-			_varietyByBreed = _breedsManagedByClub.stream()
-					 .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getLibelleRace()), 
-                             Collectors.mapping( e -> new TupleVariety(e.getIdVariete(), e.getLibelleVariete()), Collectors.toSet())
-                            )
-					);
-			
-			// Lecture des races associées au club pour lesquelles des données ont été calculées
-			Map<TupleBreed, List<ConfirmationStatistics>> _allBreeds = confirmationRepository.findByIdClub(idClub)
-					.stream().collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
-			for (Map.Entry<TupleBreed, List<ConfirmationStatistics>> _currentBreed : _allBreeds.entrySet()) {
+      List<ConfirmationBreed> list = new ArrayList<ConfirmationBreed>();
+      list.add(new ConfirmationBreed().withId(0));
+      return getGenericTemplate().withBreeds(list).withSize(list.size());
+   }
+   
+   @SuppressWarnings("unchecked")
+   @Override
+   protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
+   
+      long _qtity = 0;
+      List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+            
+      // Somme des chiots males, femelles, portée
+      _qtity = _list.stream()
+            .collect(Collectors.counting());
+      
+      // Création de l'objet Variety
+      return (T) new ConfirmationVariety()
+            .withId(this._idVariety)
+            .withName(this._nameVariety)
+            .withQtity((int) (long) _qtity);
+            
+   }
 
-				int _year = 0;
-				Long _qtity = null;
+   @SuppressWarnings("unchecked")
+   @Override
+   protected <T> T emptyVariety(TupleVariety _variety, ParametersVariety _parameters) {
+      return (T) new ConfirmationVariety()
+            .withId(_variety.getId())
+            .withName(_variety.getName())
+            .withQtity(0);
+   }
 
-				this.idBreed = _currentBreed.getKey().getId();
-				_name = _currentBreed.getKey().getName();
+   @SuppressWarnings("unchecked")
+   @Override
+   protected <K, V, C extends Collection<V>, M extends Map<K, C>> M getDataStatistics(int idClub) {
+      return 
+            (M) confirmationRepository.findByIdClub(idClub)
+            .stream()
+            .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
+   }
 
-				List<ConfirmationBreedStatistics> _breedStatistics = new ArrayList<ConfirmationBreedStatistics>();
+   @SuppressWarnings("unchecked")
+   @Override
+   protected <T> T readYear(List<T> _stats, int _year) {
+      
+      List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
 
-				// Lecture de la dernière date de calcul pour définir la période (rupture dans
-				// les années)
-				// A voir si les années précédentes ne feront pas l'objet d'une suppression côté
-				// data (BdD); auquel cas, ce code sera obsolète
-				ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(this.idBreed);
-				int[] _serieYear = StreamUtils.findSerieYear(_configurationRace.getLastDate());
-				final int minYear = _serieYear[0];
+      // Nb de confirmations
+      long _qtity = _list.stream().collect(Collectors.counting());
 
-				// Lecture des variétés référencées 
-				// si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
-				List<TupleVariety> _referencedVarieties = _varietyByBreed.entrySet()
-						.stream()
-						.filter(r -> r.getKey().getId() == this.idBreed)
-						.flatMap(map -> map.getValue().stream())
-						.collect(Collectors.toList())
-				;
-				
-				// Lecture des années (on ajoute un tri)
-				Map<Integer, List<ConfirmationStatistics>> _breedGroupByYear = _currentBreed.getValue().stream()
-						.filter(x -> x.getAnnee() >= minYear)
-						.collect(StreamUtils.sortedGroupingBy(ConfirmationStatistics::getAnnee));
-				for (Map.Entry<Integer, List<ConfirmationStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
+      // Lecture des variétés s/ la race en cours (et pour l'année en cours)
+      List<ConfirmationVariety> _variety = populateVarieties(_list, null);
 
-					_year = _breedOverYear.getKey();
+      return (T) new ConfirmationBreedStatistics()
+            .withYear(_year)
+            .withQtity((int) (long) _qtity)
+            .withVariety(_variety);
+      
+   }
 
-					// Suppression de l'année traitée
-					_serieYear = ArrayUtils.removeElement(_serieYear, _year);
+   @SuppressWarnings("unchecked")
+   @Override
+   protected <T> T emptyYear(int _year) {
+      return (T) new ConfirmationBreedStatistics()
+            .withYear(_year)
+            .withQtity(0)
+            .withVariety(populateVarieties(new ArrayList<ConfirmationStatistics>(), null));
+   }
 
-					// Nb de confirmations
-					_qtity = _breedOverYear.getValue().stream().collect(Collectors.counting());
+   @Override
+   protected <T> T readTopN(List<T> _stats, int _year) {
+      return null;
+   }
 
-					// Lecture des variétés s/ la race en cours (et pour l'année en cours)
-					List<ConfirmationVariety> _variety = extractVariety(_breedOverYear.getValue(), _referencedVarieties);
+   @Override
+   protected <T> T emptyTopN(int _year) {
+      return null;
+   }
 
-					ConfirmationBreedStatistics _breed = new ConfirmationBreedStatistics().withYear(_year)
-							.withQtity((int) (long) _qtity).withVariety(_variety);
-					_breedStatistics.add(_breed);
+   @SuppressWarnings("unchecked")
+   @Override
+   protected <T> T readBreed(List<T> _stats) {
+      
+      List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
 
-				}
+      // Lecture des années (on ajoute un tri)
+      List<ConfirmationBreedStatistics> _breedStatistics = populateYears(_list);
 
-				// On finalise en initialisant les années pour lesquelles on a constaté une rupture
-				for (int i = 0; i < _serieYear.length; i++) {
-					ConfirmationBreedStatistics _breed = new ConfirmationBreedStatistics().withYear(_serieYear[i])
-							.withQtity(0).withVariety(extractVariety(new ArrayList<ConfirmationStatistics>(), _referencedVarieties));
-					_breedStatistics.add(_breed);
-				}
-
-				// Création de l'objet Race
-				ConfirmationBreed _breed = new ConfirmationBreed().withId(this.idBreed).withName(_name)
-						.withStatistics(_breedStatistics);
-
-				// Ajout à la liste
-				_breeds.add(_breed);
-
-			}
-
-			// Réponse
-			return new ConfirmationResponseObject().withBreeds(_breeds).withSize(_breeds.size());
-
-		} finally {
-			newSpan.tag("peer.service", "postgres");
-			newSpan.logEvent(org.springframework.cloud.sleuth.Span.CLIENT_RECV);
-			tracer.close(newSpan);
-		}
-	}
-
-	/**
-	 * Fonction fallbackMethod de la fonction principale <code>getStatistics</code> (Hystrix Latency / Fault Tolerance)
-	 * 
-	 * @param idClub	Identifiant du club
-	 * @return			Objet <code>ConfirmationResponseObject</code>
-	 */
-	private ConfirmationResponseObject buildFallbackConfirmationList(int idClub) {
-
-		List<ConfirmationBreed> list = new ArrayList<ConfirmationBreed>();
-		list.add(new ConfirmationBreed().withId(0));
-		return new ConfirmationResponseObject(list.size(), list);
-	}
-
-	/**
-	 * Retourne les données statistiques pour l'ensemble des variétés de la race
-	 * 
-	 * @param _list					Liste des données de production à analyser
-	 * @param _referencedVarieties	Liste exhaustive des variétés pour la race lue
-	 * @return						Propriété <code>variety</code> de l'objet <code>ConfirmationBreedStatistics</code>
-	 */
-	private List<ConfirmationVariety> extractVariety(List<ConfirmationStatistics> _list, List<TupleVariety> _referencedVarieties) {
-
-		List<ConfirmationVariety> _varietyList = new ArrayList<ConfirmationVariety>();
-		this.idVariety = 0;
-		String _name = "";
-
-		long _qtity = 0;
-
-		Map<TupleVariety, List<ConfirmationStatistics>> _allVariety = _list.stream()
-				.collect(Collectors.groupingBy(r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())));
-
-		// Cas où la race est mono variété, la propriété n'est pas renseignée
-		if (_referencedVarieties.size() == 1
-				&& StreamUtils.breedMonoVariety(_referencedVarieties.stream().findFirst().orElse(new TupleVariety(0,""))) )
-			return _varietyList;
-
-		// On stocke la liste des variétés pour la race 
-		List<TupleVariety> _varieties  = new ArrayList<TupleVariety>(_referencedVarieties);
-		
-		for (Map.Entry<TupleVariety, List<ConfirmationStatistics>> _currentVariety : _allVariety.entrySet()) {
-
-			this.idVariety = _currentVariety.getKey().getId();
-			_name = _currentVariety.getKey().getName();
-
-			// Somme des chiots males, femelles, portée
-			_qtity = _currentVariety.getValue().stream().collect(Collectors.counting());
-
-			// Création de l'objet Variety
-			ConfirmationVariety _variety = new ConfirmationVariety().withId(this.idVariety).withName(_name)
-					.withQtity((int) (long) _qtity);
-			_varietyList.add(_variety);
-
-			// Suppression de la variété traitée
-			_varieties.removeIf(e -> e.getId() == this.idVariety);
-		}
-
-		// Toutes les variétés n'ont pas fait l'objet d'une production doivent être mentionnées
-		if (_varieties.size()>0) {
-			for (TupleVariety v : _varieties) {
-				ConfirmationVariety _variety = new ConfirmationVariety().withId(v.getId()).withName(v.getName())
-						.withQtity(0);
-				_varietyList.add(_variety);
-			}
-		}
-		return _varietyList;
-
-	}
+      // Création de l'objet Race
+      return (T) new ConfirmationBreed()
+            .withId(this._idBreed)
+            .withName(this._nameBreed)
+            .withStatistics(_breedStatistics);
+      
+   }
 
 }

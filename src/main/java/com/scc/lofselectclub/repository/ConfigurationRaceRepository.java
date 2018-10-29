@@ -8,6 +8,6 @@ import com.scc.lofselectclub.model.ConfigurationRace;
 @Repository
 public interface ConfigurationRaceRepository extends CrudRepository<ConfigurationRace, Long> {
 
-	ConfigurationRace findByIdRace(Integer idRace);
+   ConfigurationRace findByIdRace(Integer idRace);
 
 }

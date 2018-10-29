@@ -11,17 +11,17 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "authentification")
 public class AuthenticateConfig {
 
-	@Value("${authentification.value}")
-	private String value;
+   @Value("${authentification.value}")
+   private String value;
 
-	private List<String> keys = new ArrayList<String>();
+   private List<String> keys = new ArrayList<String>();
 
-	public List<String> getKeys() {
-		return this.keys;
-	}
+   public List<String> getKeys() {
+      return this.keys;
+   }
 
-	public String getValue() {
-		return this.value;
-	}
+   public String getValue() {
+      return this.value;
+   }
 
 }

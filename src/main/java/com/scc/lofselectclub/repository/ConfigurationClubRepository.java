@@ -9,6 +9,6 @@ import com.scc.lofselectclub.model.ConfigurationClub;
 @Repository
 public interface ConfigurationClubRepository extends CrudRepository<ConfigurationClub, Long> {
 
-	List<ConfigurationClub> findByIdClub(Integer idClub);
+   List<ConfigurationClub> findByIdClub(Integer idClub);
 
 }
