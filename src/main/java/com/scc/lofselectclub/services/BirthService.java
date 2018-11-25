@@ -64,7 +64,10 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
     * @return        Objet <code>BirthResponseObject</code>
     * @throws EntityNotFoundException
     */
-   @HystrixCommand(fallbackMethod = "buildFallbackBirthList", threadPoolKey = "getStatistics", threadPoolProperties = {
+   @HystrixCommand(commandKey = "lofselectclubservice"
+         , fallbackMethod = "buildFallbackBirthList"
+         , threadPoolKey = "getStatistics"
+         , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),

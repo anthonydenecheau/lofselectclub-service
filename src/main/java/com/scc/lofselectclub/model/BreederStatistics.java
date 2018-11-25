@@ -41,6 +41,8 @@ public class BreederStatistics  extends GenericStatistics {
    Integer cotationEtalon;
    @Column(name = "type_etalon")
    Integer typeEtalon;
+   @Column(name = "new_etalon")
+   String firstSaillie;
    @Column(name = "id_lice")
    Integer idLice;
    @Column(name = "cotation_lice")
@@ -229,6 +231,14 @@ public class BreederStatistics  extends GenericStatistics {
 
    public void setTypeEtalon(Integer typeEtalon) {
       this.typeEtalon = typeEtalon;
+   }
+
+   public String getFirstSaillie() {
+      return firstSaillie;
+   }
+
+   public void setFirstSaillie(String  firstSaillie) {
+      this.firstSaillie = firstSaillie;
    }
 
    public Integer getIdLice() {
@@ -506,7 +516,7 @@ public class BreederStatistics  extends GenericStatistics {
             + idRace + ", nomRace=" + nomRace + ", codeFci=" + codeFci + ", idVariete=" + idVariete + ", nomVariete="
             + nomVariete + ", idEleveur=" + idEleveur + ", affixeEleveur=" + affixeEleveur + ", idSaillie=" + idSaillie
             + ", cotationPortee=" + cotationPortee + ", idEtalon=" + idEtalon + ", nomEtalon=" + nomEtalon
-            + ", cotationEtalon=" + cotationEtalon + ", typeEtalon=" + typeEtalon + ", idLice=" + idLice
+            + ", cotationEtalon=" + cotationEtalon + ", typeEtalon=" + typeEtalon  + ", firstSaillie=" + firstSaillie + ", idLice=" + idLice
             + ", cotationLice=" + cotationLice + ", typeLice=" + typeLice + ", nbMale=" + nbMale + ", nbFemelle="
             + nbFemelle + ", prolificiteRace=" + prolificiteRace + ", prolificiteVariete=" + prolificiteVariete
             + ", nbAncetreCommun=" + nbAncetreCommun + ", consanguinite=" + consanguinite + ", annee=" + annee

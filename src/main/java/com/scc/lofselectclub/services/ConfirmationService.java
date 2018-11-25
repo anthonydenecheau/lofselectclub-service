@@ -10,22 +10,28 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
+import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.model.ConfirmationStatistics;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
+import com.scc.lofselectclub.model.SerieDefinition;
 import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreedStatistics;
+import com.scc.lofselectclub.template.confirmation.ConfirmationHeigthSeries;
 import com.scc.lofselectclub.template.confirmation.ConfirmationVariety;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreed;
 import com.scc.lofselectclub.template.confirmation.ConfirmationResponseObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +64,10 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
     * @return        Objet <code>ConfirmationResponseObject</code>
     * @throws EntityNotFoundException
     */
-   @HystrixCommand(fallbackMethod = "buildFallbackConfirmationList", threadPoolKey = "getStatistics", threadPoolProperties = {
+   @HystrixCommand(commandKey = "lofselectclubservice"
+         , fallbackMethod = "buildFallbackConfirmationList"
+         , threadPoolKey = "getStatistics"
+         , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
@@ -118,11 +127,22 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       _qtity = _list.stream()
             .collect(Collectors.counting());
       
+      // Taille min, max, moyenne pour les races dont ce critère est obligatoire
+      IntSummaryStatistics _summaryStats = _list.stream()
+            .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
+            .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
+      ;
+
+      // lecture du détail par tailles
+      ConfirmationHeigthSeries _series = extractSeries(_summaryStats, _list);
+
       // Création de l'objet Variety
       return (T) new ConfirmationVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
-            .withQtity((int) (long) _qtity);
+            .withQtity((int) (long) _qtity)
+            .withAvgHeight((int) _summaryStats.getAverage())
+            .withSeries(_series);
             
    }
 
@@ -153,12 +173,23 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       // Nb de confirmations
       long _qtity = _list.stream().collect(Collectors.counting());
 
+      // Taille min, max, moyenne pour les races dont ce critère est obligatoire
+      IntSummaryStatistics _summaryStats = _list.stream()
+            .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
+            .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
+      ;
+
+      // lecture du détail par tailles
+      ConfirmationHeigthSeries _series = extractSeries(_summaryStats, _list);
+            
       // Lecture des variétés s/ la race en cours (et pour l'année en cours)
       List<ConfirmationVariety> _variety = populateVarieties(_list, null);
 
       return (T) new ConfirmationBreedStatistics()
             .withYear(_year)
             .withQtity((int) (long) _qtity)
+            .withAvgHeight((int) _summaryStats.getAverage())
+            .withSeries(_series)
             .withVariety(_variety);
       
    }
@@ -199,4 +230,24 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       
    }
 
+   private ConfirmationHeigthSeries extractSeries(IntSummaryStatistics _summaryStats, List<ConfirmationStatistics> _list) {
+
+      Map<String, Object> _series = new HashMap<String, Object>();
+
+      int[] _serieHeight = IntStream.rangeClosed(_summaryStats.getMin(), _summaryStats.getMax()).toArray();
+      for (int i = 0; i < _serieHeight.length; i++) {
+         final int k = i;
+         long _qtityBySerie = _list.stream()
+               .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille() == _serieHeight[k] ))
+               .collect(Collectors.counting())
+         ;
+         _series.put(String.valueOf(_serieHeight[k]), _qtityBySerie);
+           
+      }
+      
+      return new ConfirmationHeigthSeries()
+            .withQtity((int)_summaryStats.getCount())
+            .withSeries(_series);
+   }
+   
 }

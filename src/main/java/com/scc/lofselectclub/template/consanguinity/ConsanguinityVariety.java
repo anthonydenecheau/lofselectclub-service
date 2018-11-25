@@ -1,6 +1,7 @@
 package com.scc.lofselectclub.template.consanguinity;
 
 import java.util.List;
+import java.util.Map;
 
 import io.swagger.annotations.ApiModelProperty;
 
@@ -15,8 +16,8 @@ public class ConsanguinityVariety {
    @ApiModelProperty(notes = "coefficient of consanguinity", position = 3, allowEmptyValue = true)
    String cng;
 
-   @ApiModelProperty(notes = "number of mate by common ancestors", position = 4, allowEmptyValue = true)
-   List<ConsanguintyCommonAncestor> litterByCommonAncestor;
+   @ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Serie", notes = "detail by series", position = 4, allowEmptyValue = true)
+   List<Map<String, Object>> series;
 
    public int getId() {
       return id;
@@ -42,12 +43,12 @@ public class ConsanguinityVariety {
       this.cng = cng;
    }
 
-   public List<ConsanguintyCommonAncestor> getLitterByCommonAncestor() {
-      return litterByCommonAncestor;
+   public List<Map<String, Object>> getSeries() {
+      return series;
    }
 
-   public void setLitterByCommonAncestor(List<ConsanguintyCommonAncestor> litterByCommonAncestor) {
-      this.litterByCommonAncestor = litterByCommonAncestor;
+   public void setSeries(List<Map<String, Object>> series) {
+      this.series = series;
    }
 
    public ConsanguinityVariety withId(int id) {
@@ -65,8 +66,8 @@ public class ConsanguinityVariety {
       return this;
    }
 
-   public ConsanguinityVariety withLitterByCommonAncestor(List<ConsanguintyCommonAncestor> Litter) {
-      this.setLitterByCommonAncestor(Litter);
+   public ConsanguinityVariety withSeries(List<Map<String, Object>> series) {
+      this.setSeries(series);
       return this;
    }
 

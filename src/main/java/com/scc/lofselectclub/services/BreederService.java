@@ -81,7 +81,10 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
     * @return        Objet <code>BreederResponseObject</code>
     * @throws EntityNotFoundException
     */
-   @HystrixCommand(fallbackMethod = "buildFallbackBreederList", threadPoolKey = "getStatistics", threadPoolProperties = {
+   @HystrixCommand(commandKey = "lofselectclubservice"
+         , fallbackMethod = "buildFallbackBreederList"
+         , threadPoolKey = "getStatistics"
+         , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),

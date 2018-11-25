@@ -15,13 +15,10 @@ public class ParentBreedStatistics {
    @ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Origin", notes = "origin by gender", position = 2, allowEmptyValue = true)
    List<Map<String, List<ParentGender>>> origins;
 
-   @ApiModelProperty(notes = "cotations", position = 3, allowEmptyValue = true)
-   List<ParentCotation> cotations;
-
-   @ApiModelProperty(notes = "frequency of use", position = 4, allowEmptyValue = true)
+   @ApiModelProperty(notes = "frequency of use", position = 3, allowEmptyValue = true)
    List<ParentFrequency> frequencies;
 
-   @ApiModelProperty(notes = "detail by variety", position = 5, allowEmptyValue = true)
+   @ApiModelProperty(notes = "detail by variety", position = 4, allowEmptyValue = true)
    List<ParentVariety> variety;
 
    public int getYear() {
@@ -38,14 +35,6 @@ public class ParentBreedStatistics {
 
    public void setOrigins(List<Map<String, List<ParentGender>>> origins) {
       this.origins = origins;
-   }
-
-   public List<ParentCotation> getCotations() {
-      return cotations;
-   }
-
-   public void setCotations(List<ParentCotation> cotations) {
-      this.cotations = cotations;
    }
 
    public List<ParentFrequency> getFrequencies() {
@@ -76,11 +65,6 @@ public class ParentBreedStatistics {
 
    public ParentBreedStatistics withVariety(List<ParentVariety> variety) {
       this.setVariety(variety);
-      return this;
-   }
-
-   public ParentBreedStatistics withCotations(List<ParentCotation> cotations) {
-      this.setCotations(cotations);
       return this;
    }
 

@@ -25,6 +25,8 @@ public class ConfirmationStatistics extends GenericStatistics {
    @Id
    @Column(name = "id_chien")
    Integer idChien;
+   @Column(name = "sexe")
+   String sexe;
    @Column(name = "on_taille_obligatoire")
    String onTailleObligatoire;
    @Column(name = "taille")
@@ -39,7 +41,7 @@ public class ConfirmationStatistics extends GenericStatistics {
    }
 
    public ConfirmationStatistics(Integer idClub, String nomClub, Integer numClub, Integer idRace, String nomRace,
-         String codeFci, Integer idVariete, String nomVariete, Integer idChien, String onTailleObligatoire,
+         String codeFci, Integer idVariete, String nomVariete, Integer idChien, String sexe, String onTailleObligatoire,
          Integer taille, Integer annee, Integer mois) {
       super();
       this.idClub = idClub;
@@ -51,6 +53,7 @@ public class ConfirmationStatistics extends GenericStatistics {
       this.idVariete = idVariete;
       this.nomVariete = nomVariete;
       this.idChien = idChien;
+      this.sexe = sexe;
       this.onTailleObligatoire = onTailleObligatoire;
       this.taille = taille;
       this.annee = annee;
@@ -129,6 +132,14 @@ public class ConfirmationStatistics extends GenericStatistics {
       this.idChien = idChien;
    }
 
+   public String getSexe() {
+      return sexe;
+   }
+
+   public void setSexe(String sexe) {
+      this.sexe = sexe;
+   }
+
    public String getOnTailleObligatoire() {
       return onTailleObligatoire;
    }
@@ -141,7 +152,7 @@ public class ConfirmationStatistics extends GenericStatistics {
       return taille;
    }
 
-   public void setTaille(Integer idSaillie) {
+   public void setTaille(Integer taille) {
       this.taille = taille;
    }
 
@@ -165,7 +176,7 @@ public class ConfirmationStatistics extends GenericStatistics {
    public String toString() {
       return "BreederStatistics [idClub=" + idClub + ", nomClub=" + nomClub + ", numClub=" + numClub + ", idRace="
             + idRace + ", nomRace=" + nomRace + ", codeFci=" + codeFci + ", idVariete=" + idVariete + ", nomVariete="
-            + nomVariete + ", idChien=" + idChien + ", onTailleObligatoire=" + onTailleObligatoire + ", taille="
+            + nomVariete + ", idChien=" + idChien+ ", sexe=" + sexe + ", onTailleObligatoire=" + onTailleObligatoire + ", taille="
             + taille + ", annee=" + annee + ", mois=" + mois + "]";
    }
 

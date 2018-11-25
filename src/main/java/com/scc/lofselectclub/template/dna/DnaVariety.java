@@ -10,16 +10,19 @@ public class DnaVariety {
    @ApiModelProperty(notes = "variety name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of results ", position = 3, allowEmptyValue = true)
+   int qtity;
+   
+   @ApiModelProperty(notes = "number of dna results", position = 4, allowEmptyValue = true)
    int dna;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of dnaComp results", position = 5, allowEmptyValue = true)
    int dnaComp;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 4, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of dnaCompP results", position = 6, allowEmptyValue = true)
    int dnaCompP;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 5, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of dnaCompM results", position = 7, allowEmptyValue = true)
    int dnaCompM;
 
    public int getId() {
@@ -38,6 +41,14 @@ public class DnaVariety {
       this.name = name;
    }
 
+   public int getQtity() {
+      return qtity;
+   }
+
+   public void setQtity(int qtity) {
+      this.qtity = qtity;
+   }
+   
    public int getDna() {
       return dna;
    }
@@ -80,6 +91,11 @@ public class DnaVariety {
       return this;
    }
 
+   public DnaVariety withQtity(int qtity) {
+      this.setQtity(qtity);
+      return this;
+   }
+   
    public DnaVariety withDna(int dna) {
       this.setDna(dna);
       return this;

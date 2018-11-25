@@ -38,7 +38,8 @@ public class UserContextFilter implements Filter {
 
       // Swagger Authentification disabled
       if (httpServletRequest.getRequestURL().toString().indexOf("api-docs") > 0
-            || httpServletRequest.getRequestURL().toString().indexOf("swagger") > 0) {
+            || httpServletRequest.getRequestURL().toString().indexOf("swagger") > 0) 
+      {
          filterChain.doFilter(httpServletRequest, servletResponse);
       } else {
          logger.debug("Incoming Authentification key: {}", UserContextHolder.getContext().getAuthentificationKey());

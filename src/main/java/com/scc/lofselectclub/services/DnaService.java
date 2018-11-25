@@ -58,7 +58,10 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
     * @return        Objet <code>DnaResponseObject</code>
     * @throws EntityNotFoundException
     */
-   @HystrixCommand(fallbackMethod = "buildFallbackDnaList", threadPoolKey = "getStatistics", threadPoolProperties = {
+   @HystrixCommand(commandKey = "lofselectclubservice"
+         , fallbackMethod = "buildFallbackDnaList"
+         , threadPoolKey = "getStatistics"
+         , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
@@ -123,10 +126,13 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
                               , x.getDnaCompM() + y.getDnaCompM());
       });
       
+      int _qtity = sumDna.getDnaComp()+sumDna.getDnaCompP()+sumDna.getDnaCompM();
+      
       // Création de l'objet Variety
       return (T) new DnaVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
+            .withQtity(_qtity)
             .withDna(sumDna.getDna())
             .withDnaComp(sumDna.getDnaComp())
             .withDnaCompP(sumDna.getDnaCompP())
@@ -139,6 +145,7 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
       return (T) new DnaVariety()
             .withId(_variety.getId())
             .withName(_variety.getName())
+            .withQtity(0)
             .withDna(0)
             .withDnaComp(0)
             .withDnaCompP(0)
@@ -169,12 +176,15 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
                      , x.getDnaCompP() + y.getDnaCompP()
                      , x.getDnaCompM() + y.getDnaCompM());
             });
-
+      
+      int _qtity = sumDna.getDnaComp()+sumDna.getDnaCompP()+sumDna.getDnaCompM();
+      
       // Lecture des variétés s/ la race en cours (et pour l'année en cours)
       List<DnaVariety> _variety = populateVarieties(_list, null);
 
       return (T) new DnaBreedStatistics()
             .withYear(_year)
+            .withQtity(_qtity)
             .withDna(sumDna.getDna())
             .withDnaComp(sumDna.getDnaComp())
             .withDnaCompP(sumDna.getDnaCompP())
@@ -188,6 +198,7 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
    protected <T> T emptyYear(int _year) {
       return (T) new DnaBreedStatistics()
             .withYear(_year)
+            .withQtity(0)
             .withDna(0)
             .withDnaComp(0)
             .withDnaCompP(0)

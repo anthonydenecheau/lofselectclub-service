@@ -15,6 +15,8 @@ public interface BreederRepository extends CrudRepository<BreederStatistics, Lon
 
    List<BreederStatistics> findByIdClub(Integer idClub);
 
+   List<BreederStatistics> findByIdRaceAndAnnee(Integer idRace, Integer annee);
+
    @Query("select c from BreederStatistics c where c.idClub = :idClub")
    Stream<BreederStatistics> findByIdClubReturnStream(@Param("idClub") Integer idClub);
 

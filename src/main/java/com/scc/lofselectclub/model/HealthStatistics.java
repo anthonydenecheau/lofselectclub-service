@@ -46,6 +46,8 @@ public class HealthStatistics extends GenericStatistics {
    String codeResultat;
    @Column(name = "libelle_resultat")
    String libelleResultat;
+   @Column(name = "tri_resultat")
+   Integer triResultat;
    @Column(name = "nb_resultat")
    Integer nbResultat;
    @Id
@@ -62,7 +64,7 @@ public class HealthStatistics extends GenericStatistics {
    public HealthStatistics(Integer idClub, String nomClub, Integer numClub, Integer idRace, String nomRace,
          String codeFci, Integer idVariete, String nomVariete, Integer idMaladie, String codeSupraMaladie,
          String libelleSupraMaladie, String codeMaladie, String libelleMaladie, Integer natureSuivi,
-         String codeResultat, String libelleResultat, Integer nbResultat, Integer annee, Integer mois) {
+         String codeResultat, String libelleResultat, Integer triResultat, Integer nbResultat, Integer annee, Integer mois) {
       super();
       this.idClub = idClub;
       this.nomClub = nomClub;
@@ -80,6 +82,7 @@ public class HealthStatistics extends GenericStatistics {
       this.natureSuivi = natureSuivi;
       this.codeResultat = codeResultat;
       this.libelleResultat = libelleResultat;
+      this.triResultat = triResultat;
       this.nbResultat = nbResultat;
       this.annee = annee;
       this.mois = mois;
@@ -217,6 +220,14 @@ public class HealthStatistics extends GenericStatistics {
       this.libelleResultat = libelleResultat;
    }
 
+   public Integer getTriResultat() {
+      return triResultat;
+   }
+
+   public void setTriResultat(Integer triResultat) {
+      this.triResultat = triResultat;
+   }
+   
    public Integer getNbResultat() {
       return nbResultat;
    }
@@ -248,7 +259,7 @@ public class HealthStatistics extends GenericStatistics {
             + nomVariete + ", idMaladie=" + idMaladie + ", codeSupraMaladie=" + codeSupraMaladie
             + ", libelleSupraMaladie=" + libelleSupraMaladie + ", codeMaladie=" + codeMaladie + ", libelleMaladie="
             + libelleMaladie + ", natureSuivi=" + natureSuivi + ", codeResultat=" + codeResultat + ", libelleResultat="
-            + libelleResultat + ", nbResultat=" + nbResultat + ", annee=" + annee + ", mois=" + mois + "]";
+            + libelleResultat + ", triResultat=" + triResultat + ", nbResultat=" + nbResultat + ", annee=" + annee + ", mois=" + mois + "]";
    }
 
 }

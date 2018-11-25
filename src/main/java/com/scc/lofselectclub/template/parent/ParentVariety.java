@@ -16,10 +16,7 @@ public class ParentVariety {
    @ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Origin", notes = "origin by gender", position = 3, allowEmptyValue = true)
    List<Map<String, List<ParentGender>>> origins;
 
-   @ApiModelProperty(notes = "cotations", position = 4, allowEmptyValue = true)
-   List<ParentCotation> cotations;
-
-   @ApiModelProperty(notes = "frequency of use", position = 5, allowEmptyValue = true)
+   @ApiModelProperty(notes = "frequency of use", position = 4, allowEmptyValue = true)
    List<ParentFrequency> frequencies;
 
    public int getId() {
@@ -46,14 +43,6 @@ public class ParentVariety {
       this.origins = origins;
    }
 
-   public List<ParentCotation> getCotations() {
-      return cotations;
-   }
-
-   public void setCotations(List<ParentCotation> cotations) {
-      this.cotations = cotations;
-   }
-
    public List<ParentFrequency> getFrequencies() {
       return frequencies;
    }
@@ -74,11 +63,6 @@ public class ParentVariety {
 
    public ParentVariety withOrigins(List<Map<String, List<ParentGender>>> origins) {
       this.setOrigins(origins);
-      return this;
-   }
-
-   public ParentVariety withCotations(List<ParentCotation> cotations) {
-      this.setCotations(cotations);
       return this;
    }
 

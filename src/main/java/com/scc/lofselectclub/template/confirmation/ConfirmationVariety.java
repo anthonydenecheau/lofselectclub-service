@@ -17,10 +17,10 @@ public class ConfirmationVariety {
    int qtity;
 
    @ApiModelProperty(notes = "average Height (if mandatory for the breed)", position = 3, allowEmptyValue = true)
-   int avgHeight;
+   double avgHeight;
 
    @ApiModelProperty(notes = "detail by Height (if mandatory for the breed)", position = 4, allowEmptyValue = true)
-   List<Map<String, Object>> series;
+   ConfirmationHeigthSeries series;
 
    public int getId() {
       return id;
@@ -46,19 +46,19 @@ public class ConfirmationVariety {
       this.qtity = qtity;
    }
 
-   public int getAvgHeight() {
+   public double getAvgHeight() {
       return avgHeight;
    }
 
-   public void setAvgHeight(int avgHeight) {
+   public void setAvgHeight(double avgHeight) {
       this.avgHeight = avgHeight;
    }
 
-   public List<Map<String, Object>> getSeries() {
+   public ConfirmationHeigthSeries getSeries() {
       return series;
    }
 
-   public void setSeries(List<Map<String, Object>> series) {
+   public void setSeries(ConfirmationHeigthSeries series) {
       this.series = series;
    }
 
@@ -77,12 +77,12 @@ public class ConfirmationVariety {
       return this;
    }
 
-   public ConfirmationVariety withAvgHeight(int avgHeight) {
+   public ConfirmationVariety withAvgHeight(double avgHeight) {
       this.setAvgHeight(avgHeight);
       return this;
    }
 
-   public ConfirmationVariety withSeries(List<Map<String, Object>> series) {
+   public ConfirmationVariety withSeries(ConfirmationHeigthSeries series) {
       this.setSeries(series);
       return this;
    }

@@ -1,7 +1,6 @@
 package com.scc.lofselectclub.template.confirmation;
 
 import java.util.List;
-import java.util.Map;
 
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreedStatistics;
 
@@ -16,12 +15,12 @@ public class ConfirmationBreedStatistics {
    int qtity;
 
    @ApiModelProperty(notes = "average Height (if mandatory for the breed)", position = 3, allowEmptyValue = true)
-   int avgHeight;
+   double avgHeight;
 
    @ApiModelProperty(notes = "detail by Height (if mandatory for the breed)", position = 4, allowEmptyValue = true)
-   List<Map<String, Object>> series;
+   ConfirmationHeigthSeries series;
 
-   @ApiModelProperty(notes = "detail by variety", position = 6, allowEmptyValue = true)
+   @ApiModelProperty(notes = "detail by variety", position = 5, allowEmptyValue = true)
    List<ConfirmationVariety> variety;
 
    public int getYear() {
@@ -40,19 +39,19 @@ public class ConfirmationBreedStatistics {
       this.qtity = qtity;
    }
 
-   public int getAvgHeight() {
+   public double getAvgHeight() {
       return avgHeight;
    }
 
-   public void setAvgHeight(int avgHeight) {
+   public void setAvgHeight(double avgHeight) {
       this.avgHeight = avgHeight;
    }
 
-   public List<Map<String, Object>> getSeries() {
+   public ConfirmationHeigthSeries getSeries() {
       return series;
    }
 
-   public void setSeries(List<Map<String, Object>> series) {
+   public void setSeries(ConfirmationHeigthSeries series) {
       this.series = series;
    }
 
@@ -74,12 +73,12 @@ public class ConfirmationBreedStatistics {
       return this;
    }
 
-   public ConfirmationBreedStatistics withAvgHeight(int avgHeight) {
+   public ConfirmationBreedStatistics withAvgHeight(double avgHeight) {
       this.setAvgHeight(avgHeight);
       return this;
    }
 
-   public ConfirmationBreedStatistics withSeries(List<Map<String, Object>> series) {
+   public ConfirmationBreedStatistics withSeries(ConfirmationHeigthSeries series) {
       this.setSeries(series);
       return this;
    }

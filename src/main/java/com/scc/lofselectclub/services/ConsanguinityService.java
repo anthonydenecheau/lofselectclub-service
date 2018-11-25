@@ -13,6 +13,7 @@ import com.scc.lofselectclub.exceptions.EntityNotFoundException;
 import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
+import com.scc.lofselectclub.model.SerieCng;
 import com.scc.lofselectclub.repository.BreederRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
@@ -25,12 +26,14 @@ import com.scc.lofselectclub.template.consanguinity.ConsanguintyCommonAncestor;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.util.Precision;
@@ -58,6 +61,11 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
    @Autowired
    ServiceConfig config;
 
+   private double minVal = 0;
+   private double maxVal = 0;
+   private List<SerieCng> _serieCng = new ArrayList<SerieCng>();
+   private final List<BreederStatistics> _emptyBreederStatistics = new ArrayList<BreederStatistics>();
+   
    /**
     * Retourne les données statistiques liées à la consanguinité pour l'ensemble des races affiliées au club
     * 
@@ -65,7 +73,10 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
     * @return        Objet <code>ConsanguinityResponseObject</code>
     * @throws EntityNotFoundException
     */
-   @HystrixCommand(fallbackMethod = "buildFallbackConsanguinityList", threadPoolKey = "getStatistics", threadPoolProperties = {
+   @HystrixCommand(commandKey = "lofselectclubservice"
+         , fallbackMethod = "buildFallbackConsanguinityList"
+         , threadPoolKey = "getStatistics"
+         , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
@@ -82,6 +93,9 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
 
       try {
 
+         // Deintition des plages Cng
+         populateSeries();
+         
          // Lecture des données races/variétés pour le club
          setClubBreedData(idClub);
 
@@ -113,50 +127,14 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
       list.add(new ConsanguinityBreed().withId(0));
       return getGenericTemplate().withBreeds(list).withSize(list.size());
    }
-
-   /**
-    * Retourne le nombre de portées ayant n ancêtres communs
-    * 
-    * @param _list   Liste des données de production à analyser
-    * @return        Propriété <code>litterByCommonAncestor</code> de l'objet <code>ConsanguinityBreedStatistics</code>
-    */
-   private List<ConsanguintyCommonAncestor> extractCommonAncestors(List<BreederStatistics> _list) {
-
-      List<ConsanguintyCommonAncestor> _commonAncestors = new ArrayList<ConsanguintyCommonAncestor>();
-
-      Map<Integer, Integer> _breedAndCommonAncestor = _list.stream()
-            .collect(Collectors.groupingBy(BreederStatistics::getNbAncetreCommun
-                        , Collectors.collectingAndThen(
-                                Collectors.mapping(BreederStatistics::getIdSaillie, Collectors.toSet()), Set::size)));
-
-      // Remarque : la liste _breedAndCommonAncestor contient nombre d'ancêtres
-      // communs, la liste des dossier
-      // il faut maintenant compter de min à max (nb d'ancêtres commun), le nombre de
-      // dossiers
-      SortedMap<Integer, Integer> _series = new TreeMap<Integer, Integer>(_breedAndCommonAncestor);
-
-      Integer highestKey = _series.lastKey();
-      // Integer lowestKey = _series.firstKey();
-
-      if (_series.size() > 0)
-         for (int i = 1; i <= highestKey; i++) {
-            ConsanguintyCommonAncestor c = null;
-            if (_series.containsKey(i))
-               c = new ConsanguintyCommonAncestor().withNumberOfCommonAncestor(i).withNumberOfLitter(_series.get(i));
-            else
-               c = new ConsanguintyCommonAncestor().withNumberOfCommonAncestor(i).withNumberOfLitter(0);
-
-            _commonAncestors.add(c);
-         }
-
-      return _commonAncestors;
-   }
-   
+ 
    @SuppressWarnings("unchecked")
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
       
       // Caste la liste
       List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
@@ -166,16 +144,16 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
             .mapToDouble(BreederStatistics::getConsanguinite)
             .average()
             .orElse(0.0);
-
-      // Moyenne du nb d'ancètres communs
-      List<ConsanguintyCommonAncestor> _commonAncestors = extractCommonAncestors(_list);
-
+      
+      // Répartition du nb de chiots pour les plages Cng
+      List<Map<String, Object>> _series = extractSeries(_serieCng, _list);
+      
       // Création de l'objet Variety
       return (T) new ConsanguinityVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
-            .withCng(format.format(Precision.round(_cng, 2)))
-            .withLitterByCommonAncestor(_commonAncestors);
+            .withCng(format.format(Precision.round(_cng, 4)))
+            .withSeries(_series);
       
    }
 
@@ -189,7 +167,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
             .withId(_variety.getId())
             .withName(_variety.getName())
             .withCng(format.format((double) 0))
-            .withLitterByCommonAncestor(new ArrayList<ConsanguintyCommonAncestor>());
+            .withSeries(extractSeries(this._serieCng, this._emptyBreederStatistics));
    }
 
 
@@ -207,6 +185,9 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
    protected <T> T readYear(List<T> _stats, int _year) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
+
       List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
       
       // Moyenne des coef. de consanguinité
@@ -214,16 +195,16 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
             .mapToDouble(BreederStatistics::getConsanguinite)
             .average().orElse(0.0);
 
-      // Nb portées par nb d'ancètres communs
-      List<ConsanguintyCommonAncestor> _commonAncestors = extractCommonAncestors(_list);
-
+      // Répartition du nb de chiots pour les plages Cng
+      List<Map<String, Object>> _series = extractSeries(_serieCng, _list);
+      
       // Lecture des variétés s/ la race en cours (et pour l'année en cours)
       List<ConsanguinityVariety> _variety = populateVarieties(_list, null);
 
       return (T) new ConsanguinityBreedStatistics()
             .withYear(_year)
-            .withCng(format.format(Precision.round(_cng, 2)))
-            .withLitterByCommonAncestor(_commonAncestors)
+            .withCng(format.format(Precision.round(_cng, 4)))
+            .withSeries(_series)
             .withVariety(_variety);
       
    }
@@ -235,7 +216,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
       
       return (T) new ConsanguinityBreedStatistics().withYear(_year)
          .withCng(format.format((double) 0))
-         .withLitterByCommonAncestor(new ArrayList<ConsanguintyCommonAncestor>())
+         .withSeries(extractSeries(this._serieCng, this._emptyBreederStatistics))
          .withVariety(populateVarieties(new ArrayList<BreederStatistics>(), null));
    }
 
@@ -264,6 +245,80 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
             .withName(this._nameBreed)
             .withStatistics(_breedStatistics);
 
+   }
+
+   /**
+    * Construction des plages Cng
+    */
+   private void populateSeries() {
+      
+      _serieCng.clear();
+      _serieCng.add(new SerieCng(0d, null, "0",1));
+      _serieCng.add(new SerieCng(0d, 0.03125d, "0 - 3.125",2));
+      _serieCng.add(new SerieCng(0.03125d, 0.0625d, "3.125 - 6.25",3));
+      _serieCng.add(new SerieCng(0.0625d, 0.125d, "6.25 - 12.5",4));
+      _serieCng.add(new SerieCng(0.125d, 0.25d, "12.5 - 25",5));
+
+   
+   }
+   
+   /**
+    * Retourne le nombre de chiots à naitre ayant un coef. Cng appartenant à la série
+    * 
+    * @param _plages Liste des séries Cng
+    * @param _list   Liste des données de production à analyser
+    * @return        Propriété <code>series</code> des objets <code>ConsanguinityBreedStatistics</code>, <code>ConsanguinityBreedStatistics</code> et <code>ConsanguinityVariety</code>
+    */
+   private List<Map<String, Object>> extractSeries(List<SerieCng> _plages, List<BreederStatistics> _list) {
+
+      List<Map<String, Object>> _series = new ArrayList<Map<String, Object>>();
+
+      // Par tranche
+      for (SerieCng plage : _plages) {
+
+         Map<String, Object> _serie = new HashMap<String, Object>();
+
+         minVal = (plage.getMinValue() == null ? 0 : plage.getMinValue());
+         maxVal = (plage.getMaxValue() == null ? 0 : plage.getMaxValue());
+
+         BreederStatistics sumBirth = _list
+               .stream()
+               .filter(e -> matchesRange(e.getConsanguinite(), minVal, maxVal))
+               .reduce(new BreederStatistics(0, 0),
+                     (x, y) -> {
+                        return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
+                  })
+         ;
+         
+         _serie.put("serie", plage.getLibelle());
+         _serie.put("qtity", sumBirth.getNbMale()+sumBirth.getNbFemelle());
+         _series.add(new HashMap<String, Object>(_serie));
+
+      }
+      return _series;
+   }
+
+   /**
+    * Détermine si les chiots appartiennent à la série lue
+    * 
+    * @param e          Cng de la portée
+    * @param range_min  Limite inférieure de la série
+    * @param range_max  Limite supérieure de la série
+    * @return           <code>true</code> si la portée appartient à la série
+    */
+   private boolean matchesRange(double e, double range_min, double range_max) {
+
+      if (range_min == 0 && range_max == 0)
+         // e and range_min are equals
+         if (Double.compare(e,range_min)==0)
+            return true;
+      
+      if (range_min >= 0 && range_max > 0)
+         // e is greater than range_min and e is lower or equals than range_max
+         if (Double.compare(e,range_min)>0 && Double.compare(e,range_max)<=0 )
+            return true;
+
+      return false;
    }
    
 }

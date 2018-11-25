@@ -1,8 +1,8 @@
 package com.scc.lofselectclub.template;
 
-public class TupleMaladie {
+public class TupleSupraMaladie {
 
-   public TupleMaladie(String code, String name) {
+   public TupleSupraMaladie(String code, String name) {
       super();
       this.code = code;
       this.name = name;
@@ -44,7 +44,7 @@ public class TupleMaladie {
          return false;
       if (getClass() != obj.getClass())
          return false;
-      TupleMaladie other = (TupleMaladie) obj;
+      TupleSupraMaladie other = (TupleSupraMaladie) obj;
       if (code == null) {
          if (other.code != null)
             return false;

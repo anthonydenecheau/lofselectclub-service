@@ -9,19 +9,22 @@ public class DnaBreedStatistics {
    @ApiModelProperty(notes = "year", position = 1, allowEmptyValue = true)
    int year;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of results ", position = 2, allowEmptyValue = true)
+   int qtity;
+   
+   @ApiModelProperty(notes = "number of dna results", position = 3, allowEmptyValue = true)
    int dna;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of dnaComp results", position = 4, allowEmptyValue = true)
    int dnaComp;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 4, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of dnaCompP results", position = 5, allowEmptyValue = true)
    int dnaCompP;
 
-   @ApiModelProperty(notes = "number of dna - id results", position = 5, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of dnaCompM results", position = 6, allowEmptyValue = true)
    int dnaCompM;
 
-   @ApiModelProperty(notes = "detail by variety", position = 6, allowEmptyValue = true)
+   @ApiModelProperty(notes = "detail by variety", position = 7, allowEmptyValue = true)
    List<DnaVariety> variety;
 
    public int getYear() {
@@ -32,6 +35,14 @@ public class DnaBreedStatistics {
       this.year = year;
    }
 
+   public int getQtity() {
+      return qtity;
+   }
+
+   public void setQtity(int qtity) {
+      this.qtity = qtity;
+   }
+   
    public int getDna() {
       return dna;
    }
@@ -77,6 +88,11 @@ public class DnaBreedStatistics {
       return this;
    }
 
+   public DnaBreedStatistics withQtity(int qtity) {
+      this.setQtity(qtity);
+      return this;
+   }
+   
    public DnaBreedStatistics withDna(int dna) {
       this.setDna(dna);
       return this;

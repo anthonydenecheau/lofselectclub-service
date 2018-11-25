@@ -15,10 +15,11 @@ import com.scc.lofselectclub.model.HealthStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
 import com.scc.lofselectclub.repository.HealthRepository;
 import com.scc.lofselectclub.template.TupleBreed;
-import com.scc.lofselectclub.template.TupleMaladie;
+import com.scc.lofselectclub.template.TupleSupraMaladie;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.health.HealthBreed;
 import com.scc.lofselectclub.template.health.HealthBreedStatistics;
+import com.scc.lofselectclub.template.health.HealthFamily;
 import com.scc.lofselectclub.template.health.HealthResponseObject;
 import com.scc.lofselectclub.template.health.HealthResult;
 import com.scc.lofselectclub.template.health.HealthTest;
@@ -31,6 +32,7 @@ import com.scc.lofselectclub.utils.TypeHealth;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -68,22 +70,26 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
     * @return        Objet <code>HealthResponseObject</code>
     * @throws EntityNotFoundException
     */
-   @HystrixCommand(fallbackMethod = "buildFallbackHealthList", threadPoolKey = "getStatistics", threadPoolProperties = {
-         @HystrixProperty(name = "coreSize", value = "30"),
-         @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
-               @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
-               @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "75"),
-               @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "7000"),
-               @HystrixProperty(name = "metrics.rollingStats.timeInMilliseconds", value = "15000"),
-               @HystrixProperty(name = "metrics.rollingStats.numBuckets", value = "5") }, ignoreExceptions = {
-                     EntityNotFoundException.class })
+   @HystrixCommand(commandKey = "lofselectclubservice"
+         , fallbackMethod = "buildFallbackHealthList"
+         , threadPoolKey = "getStatistics"
+         , threadPoolProperties = {
+            @HystrixProperty(name = "coreSize", value = "30"),
+            @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
+//                  @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "7000"),
+                  @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
+                  @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "75"),
+                  @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "7000"),
+                  @HystrixProperty(name = "metrics.rollingStats.timeInMilliseconds", value = "15000"),
+                  @HystrixProperty(name = "metrics.rollingStats.numBuckets", value = "5") }
+         , ignoreExceptions = { EntityNotFoundException.class })
    public HealthResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
       Span newSpan = tracer.createSpan("getStatistics");
       logger.debug("In the HealthService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
 
       try {
-
+         
          // Lecture des données races/variétés pour le club
          setClubBreedData(idClub);
 
@@ -120,7 +126,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
     * Retourne par type d'examen, les données statistiques par maladie
     * 
     * @param _list   Liste des données de production à analyser
-    * @return        Propriété <code>healthType</code> de l'objet <code>HealthBreedStatistics</code>
+    * @return        Propriété <code>healthType</code> de l'objet <code>HealthFamily</code>
     * @see TypeHealth
     */
    private List<HealthType> extractHealthTestType(List<HealthStatistics> _list) {
@@ -145,6 +151,41 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    }
 
    /**
+    * Retourne par famille, les données statistiques par maladie
+    * 
+    * @param _list   Liste des données de production à analyser
+    * @return        Propriété <code>healthFamily</code> de l'objet <code>HealthBreedStatistics</code>
+    * @see TypeHealth
+    */
+   private List<HealthFamily> extractHealthFamily(List<HealthStatistics> _list) {
+
+      List<HealthFamily> _resultByFamily = new ArrayList<HealthFamily>();
+
+      // On parcourt les résultats santé par famille
+      Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthFamily = _list.stream()
+            .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeSupraMaladie(), r.getLibelleSupraMaladie())));
+      for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByHealthFamily : _breedGroupByHealthFamily.entrySet()) {
+
+         double _total = _breedByHealthFamily.getValue()
+               .stream()
+               .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
+         
+         // On parcourt les années (on ajoute un tri)
+         List<HealthBreedStatistics> _breedStatistics = populateYears(_breedByHealthFamily.getValue());
+
+         HealthFamily _type = new HealthFamily()
+               .withCode(_breedByHealthFamily.getKey().getCode())
+               .withName(_breedByHealthFamily.getKey().getName())
+               .withQtity((int) _total)
+               .withStatistics(_breedStatistics);
+         _resultByFamily.add(_type);
+      }
+
+      return _resultByFamily;
+   }
+
+   
+   /**
     * Retourne la liste des maladies pour un type de maladie
     * 
     * @param _list   Liste des données de production à analyser
@@ -155,9 +196,9 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       List<HealthTest> _resultByType = new ArrayList<HealthTest>();
 
       // On parcourt les maladies
-      Map<TupleMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
-            .collect(Collectors.groupingBy(r -> new TupleMaladie(r.getCodeMaladie(), r.getLibelleMaladie())));
-      for (Map.Entry<TupleMaladie, List<HealthStatistics>> _breedByHealthTest : _breedGroupByHealthResult.entrySet()) {
+      Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
+            .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeMaladie(), r.getLibelleMaladie())));
+      for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByHealthTest : _breedGroupByHealthResult.entrySet()) {
 
          double _total = _breedByHealthTest.getValue()
                .stream()
@@ -194,20 +235,29 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       List<HealthResult> _resultByType = new ArrayList<HealthResult>();
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-
+      double _percent = 0;
+            
       // On parcourt les résultats
-      Map<TupleMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
-            .collect(Collectors.groupingBy(r -> new TupleMaladie(r.getCodeResultat(), r.getLibelleResultat())));
-      for (Map.Entry<TupleMaladie, List<HealthStatistics>> _breedByResult : _breedGroupByHealthResult.entrySet()) {
+      Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
+            .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeResultat(), r.getLibelleResultat())));
+      for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByResult : _breedGroupByHealthResult.entrySet()) {
 
          String _code = _breedByResult.getKey().getCode();
          String _name = _breedByResult.getKey().getName();
-
+         
+         int _sort = _breedByResult.getValue()
+               .stream()
+               .findFirst()
+               .map(HealthStatistics::getTriResultat)
+               .orElse(0)
+         ;
+         
          int _qtity = _breedByResult.getValue()
                .stream()
                .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
          
-         double _percent = Precision.round((double) _qtity / _total, 2);
+         if (_total > 0)
+            _percent = Precision.round((double) _qtity / _total, 2);
 
          List<HealthVariety> _variety = populateVarieties(_breedByResult.getValue(), new ParametersVariety(_qtity));
 
@@ -216,11 +266,15 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
                .withName(_name)
                .withQtity(_qtity)
                .withPercentage(format.format(_percent))
-               .withVariety(_variety);
+               .withVariety(_variety)
+               .withSort(_sort);
 
          _resultByType.add(_t);
 
       }
+      
+      // tri des résultats
+      _resultByType.sort(Comparator.comparing(HealthResult::getSort));
 
       return _resultByType;
    }
@@ -228,15 +282,17 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    @SuppressWarnings("unchecked")
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
-      
+
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      double _percent = 0;
+
       // Caste la liste
       List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-      
-      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       int _qtity = _list.stream()
             .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
       
-      double _percent = Precision.round((double) _qtity / _parameters.getTotal(), 2);
+      if (_parameters.getTotal() > 0 )
+         _percent = Precision.round((double) _qtity / _parameters.getTotal(), 2);
 
       // Création de l'objet VarietyStatistics
       HealthVarietyStatistics _varietyStatistics = new HealthVarietyStatistics()
@@ -279,12 +335,12 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
      
       List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
       
-      // Lecture des résultats par catégorie soit pour une maladie type suivie, sous surveillance, emergente, ou gène d'intérêt
-      List<HealthType> _healthType = extractHealthTestType(_list);
+      // Lecture des maladies et de leurs résultats
+      List<HealthType> _test = extractHealthTestType(_list);
 
       return (T) new HealthBreedStatistics()
             .withYear(_year)
-            .withHealthType(_healthType);
+            .withHealthType(_test);
       
    }
 
@@ -312,14 +368,13 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
 
       List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
       
-      // On parcourt les années (on ajoute un tri)
-      List<HealthBreedStatistics> _breedStatistics = populateYears(_list);
-
+      List<HealthFamily> _families = extractHealthFamily(_list);
+      
       // Création de l'objet Race
       return (T) new HealthBreed()
             .withId(this._idBreed)
             .withName(this._nameBreed)
-            .withStatistics(_breedStatistics);
+            .withHealthFamily(_families);
 
    }   
 }

@@ -14,9 +14,11 @@ import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
 import com.scc.lofselectclub.repository.BreederRepository;
+import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.parent.ParentVariety;
+import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.utils.TypeRegistration;
 import com.scc.lofselectclub.template.parent.ParentFather;
 import com.scc.lofselectclub.template.parent.ParentBreed;
@@ -66,13 +68,16 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    protected BreederRepository breederRepository;
 
    @Autowired
+   private ConfirmationRepository confirmationRepository;
+
+   @Autowired
    private Tracer tracer;
 
    @Autowired
    ServiceConfig config;
 
    private int limitTopN = 0;
-   private Set<String> allTopN = new HashSet<String>();
+   private Set<ParentFather> allTopN = new HashSet<ParentFather>();
 
    /**
     * Retourne les données statistiques liées aux géniteurs pour l'ensemble des races affiliées au club
@@ -81,7 +86,10 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @return        Objet <code>ParentResponseObject</code>
     * @throws EntityNotFoundException
     */
-   @HystrixCommand(fallbackMethod = "buildFallbackParentList", threadPoolKey = "getStatistics", threadPoolProperties = {
+   @HystrixCommand(commandKey = "lofselectclubservice"
+         , fallbackMethod = "buildFallbackParentList"
+         , threadPoolKey = "getStatistics"
+         , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
@@ -209,9 +217,14 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             _types.add(_type);
          }
 
+
+         // Lecture du nb de géniteur par cotations
+         List<ParentCotation> _cotations = extractCotation("M", _list);
+         
          ParentGender _male = new ParentGender()
                .withQtity(_qtity)
-               .withRegisterType(_types);
+               .withRegisterType(_types)
+               .withCotations(_cotations);
          _stats.add(_male);
 
       } finally {
@@ -291,9 +304,13 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             _types.add(_type);
          }
 
+         // Lecture du nb de géniteur par cotations
+         List<ParentCotation> _cotations = extractCotation("F", _list);
+         
          ParentGender _female = new ParentGender()
                .withQtity(_qtity)
-               .withRegisterType(_types);
+               .withRegisterType(_types)
+               .withCotations(_cotations);
          _stats.add(_female);
 
       } finally {
@@ -321,18 +338,20 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
       _origins.add(_origin);
 
-      // Lecture du nb de géniteur par cotations
-      List<ParentCotation> _cotations = extractCotation(_list);
-
+      // lecture du nombre de confirmation
+      int year = _list.stream().findFirst().get().getAnnee();
+      long _totalConfirmaton = confirmationRepository.findByIdVarieteAndAnneeAndSexe(this._idVariety, year, "M")
+         .stream()
+         .collect(Collectors.counting());
+      
       // Lecture de la fréquence d'utilisation du géniteur (uniquement étalon)
-      List<ParentFrequency> _frequencies = extractFrequency(_list);
+      List<ParentFrequency> _frequencies = extractFrequency(_totalConfirmaton, _list);
       
       // Création de l'objet Variety
       return (T) new ParentVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withOrigins(_origins)
-            .withCotations(_cotations)
             .withFrequencies(_frequencies);
 
    }
@@ -344,7 +363,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             .withId(_variety.getId())
             .withName(_variety.getName())
             .withOrigins(new ArrayList<Map<String, List<ParentGender>>>())
-            .withCotations(new ArrayList<ParentCotation>())
             .withFrequencies(new ArrayList<ParentFrequency>());
    }
 
@@ -354,44 +372,28 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>frequencies</code> de l'objet <code>ParentBreedStatistics</code>
     */
-   private List<ParentFrequency> extractFrequency(List<BreederStatistics> _list) {
+   private List<ParentFrequency> extractFrequency(long _totalConfirmation, List<BreederStatistics> _list) {
 
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      double _percent = 0;
+      
       List<ParentFrequency> _frequencyList = new ArrayList<ParentFrequency>();
 
       TreeMap<Integer, Integer> _series = new TreeMap<Integer, Integer>();
 
-      Map<Integer, Integer> _frequencyEtalon = _list.stream()
-            .collect(Collectors.groupingBy(BreederStatistics::getIdEtalon
-                     , Collectors.collectingAndThen(
-                           Collectors.mapping(BreederStatistics::getIdSaillie, Collectors.toSet()), Set::size)));
-
-      // Remarque : la liste _frequencyEtalon contient par étalon, le nombre de saillie
-      // il faut maintenant compter de min à max (nb de dossier), le nombre d'étalon
-      // Rq: la demande est normalement : nb d'étalon utilisé pour 1 portée
-      for (Map.Entry<Integer, Integer> _f : _frequencyEtalon.entrySet()) {
-         // la serie n'existe pas, on l'initialise
-         if (!_series.containsKey(_f.getValue()))
-            _series.put(_f.getValue(), 1);
-         else {
-            _series.computeIfPresent(_f.getValue(), (k, v) -> v + 1);
-         }
-
-      }
-
-      Integer highestKey = _series.lastKey();
-      // Integer lowestKey = _series.firstKey();
-
-      if (_series.size() > 0)
-         // for (int i = 1; i <= highestKey; i++) {
-         for (int i = 1; i <= 1; i++) {
-            ParentFrequency c = null;
-            if (_series.containsKey(i))
-               c = new ParentFrequency().withTime(i).withQtity(_series.get(i));
-            else
-               c = new ParentFrequency().withTime(i).withQtity(0);
-
-            _frequencyList.add(c);
-         }
+      // Nb d'étalons utilisés pour la première fois dans une saillie
+      long _qtity = _list.stream()
+            .filter(x -> "O".equals(x.getFirstSaillie()))
+            .collect(Collectors.counting());
+      
+      if (_totalConfirmation != 0) 
+         _percent = Precision.round((double) _qtity / _totalConfirmation, 2);
+      
+      _frequencyList.add (new ParentFrequency()
+               .withTime(1)
+               .withQtity((int) _qtity)
+               .withPercentage(format.format(_percent))
+      );
 
       return _frequencyList;
    }
@@ -402,30 +404,31 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>cotations</code> de l'objet <code>ParentBreedStatistics</code>
     */
-   private List<ParentCotation> extractCotation(List<BreederStatistics> _list) {
+   private List<ParentCotation> extractCotation(String sexe, List<BreederStatistics> _list) {
 
       List<ParentCotation> _cotationList = new ArrayList<ParentCotation>();
       int[] _cotReferences = new int[] { 1, 2, 3, 4, 5, 6 };
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-
-      // Agregat pour les etalons puis les lices ...
-      Map<Integer, Integer> _cotationsEtalon = _list.stream()
-            .collect(Collectors.groupingBy(BreederStatistics::getCotationEtalon
-                     , Collectors.collectingAndThen(
-                           Collectors.mapping(BreederStatistics::getIdEtalon, Collectors.toSet()), Set::size)));
-      Map<Integer, Integer> _cotationsLice = _list.stream()
-            .collect(Collectors.groupingBy(BreederStatistics::getCotationLice, Collectors
+      Map<Integer, Integer> _cotationsGeniteur = null;
+      
+      if ("M".equals(sexe)) {
+         _cotationsGeniteur = _list.stream()
+               .collect(Collectors.groupingBy(BreederStatistics::getCotationEtalon
+                        , Collectors.collectingAndThen(
+                              Collectors.mapping(BreederStatistics::getIdEtalon, Collectors.toSet()), Set::size)));
+      } else {
+         _cotationsGeniteur = _list.stream()
+               .collect(Collectors.groupingBy(BreederStatistics::getCotationLice, Collectors
                      .collectingAndThen(
                            Collectors.mapping(BreederStatistics::getIdLice, Collectors.toSet()), Set::size)));
+      }
+      
 
-      // ... Fusion des 2 Map
-      _cotationsEtalon.forEach((k, v) -> _cotationsLice.merge(k, v, Integer::sum));
-
-      double _total = _cotationsLice.values().stream().mapToInt(Number::intValue).sum();
+      double _total = _cotationsGeniteur.values().stream().mapToInt(Number::intValue).sum();
       double _percent = 0;
 
       // Suppression de la cotation traitée
-      for (Map.Entry<Integer, Integer> _cot : _cotationsLice.entrySet()) {
+      for (Map.Entry<Integer, Integer> _cot : _cotationsGeniteur.entrySet()) {
 
          _percent = Precision.round((double) _cot.getValue() / _total, 2);
          _cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
@@ -494,20 +497,26 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private List<ParentFather> extractTopNOverYear(int _year, List<BreederStatistics> _list) {
 
       List<ParentFather> _topNFathers = new ArrayList<ParentFather>();
-
+      
       try {
 
+         NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+         format.setMaximumFractionDigits(2);
+         format.setMinimumFractionDigits(2);
+
+         double _percent = 0;
+         
          // 1. On groupe les étalons par qtites pour l'année en cours
-         Map<String, Long> _affixes = _list.stream().filter(x -> (_year == x.getAnnee()))
-               .collect(Collectors.groupingBy(BreederStatistics::getNomEtalon, Collectors.counting()));
+         Map<Integer, Long> _fathers = _list.stream().filter(x -> (_year == x.getAnnee()))
+               .collect(Collectors.groupingBy(BreederStatistics::getIdEtalon, Collectors.counting()));
          ;
 
          // 3. On complète par les étalons potentiellement manquants
          boolean g = false;
-         for (String s : this.allTopN) {
+         for (ParentFather _fatherTopN : this.allTopN) {
             g = false;
-            for (Map.Entry<String, Long> entry : _affixes.entrySet()) {
-               if (s.equals(entry.getKey())) {
+            for (Map.Entry<Integer, Long> entry : _fathers.entrySet()) {
+               if (_fatherTopN.getId() == entry.getKey()) {
                   g = true;
                   break;
                }
@@ -515,17 +524,30 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
             if (!g) {
                ParentFather _currentEtalon = new ParentFather()
-                     .withName(s)
-                     .withQtity(0);
+                     .withId(_fatherTopN.getId())
+                     .withName(_fatherTopN.getName())
+                     .withQtity(0)
+                     .withPercentage(format.format(0));
                _topNFathers.add(_currentEtalon);
             }
          }
 
+         int _idBreed = _list.stream().findFirst().get().getIdRace();
+         long _qtity = breederRepository
+               .findByIdRaceAndAnnee(_idBreed, _year)
+               .stream()
+               .collect(Collectors.counting())
+         ;
+         
          // 2. On alimente notre Map
-         for (Entry<String, Long> _father : _affixes.entrySet()) {
+         for (Entry<Integer, Long> _father : _fathers.entrySet()) {
+            
+            _percent = Precision.round((double) _father.getValue() / (double) _qtity, 4);
             ParentFather _currentFather = new ParentFather()
-                  .withName(_father.getKey())
-                  .withQtity((int) (long) _father.getValue());
+                  .withId(_father.getKey())
+                  .withName(getNameFather(_father.getKey()))
+                  .withQtity((int) (long) _father.getValue())
+                  .withPercentage(format.format(_percent));
             _topNFathers.add(_currentFather);
          }
 
@@ -539,6 +561,16 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return _topNFathers;
 
    }
+   
+   /**
+    * Lecture du nom de l'étalon
+    * 
+    * @param _id  Identifiant de l'etalon
+    * @return
+    */
+   private String getNameFather(Integer _id) {
+      return this.allTopN.stream().filter(p -> p.getId() == _id).findAny().orElse(null).getName();
+   } 
 
    /**
     * Construction de la liste des étalons qui ont le plus produit sur les 5 dernières années
@@ -549,7 +581,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private List<BreederStatistics> extractTopNFathers(List<BreederStatistics> _list) {
 
       List<BreederStatistics> _topNFathers = new ArrayList<BreederStatistics>();
-      Set<String> _sortedFathers = new HashSet<String>();
+      Set<ParentFather> _sortedFathers = new HashSet<ParentFather>();
 
       // Sélection de l'année
       Map<Integer, List<BreederStatistics>> _breedGroupByYear = getYearStatistics(_list);
@@ -565,7 +597,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                _bestOfFathersOverYear.entrySet().stream()
                   .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
                   .limit(this.limitTopN)
-                  .map(a -> a.getKey().getNomEtalon())
+                  .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon()))
                   .collect(Collectors.toSet())
                   );
 
@@ -578,8 +610,9 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             .collect(Collectors.toSet());
 
       // 3. On (re)construit la liste qui sera utilisée pour la lecture des filtres par année et/ou par mois.
-      _topNFathers = _list.stream().filter(x -> _sortedFathers.contains(x.getNomEtalon())).collect(Collectors.toList());
-
+      // Cette liste ne contient que les données des étalons préselectionnés
+      _topNFathers = StreamUtils.filterTopNFathers(_list, StreamUtils.isTopNFather(_sortedFathers));
+      
       return _topNFathers;
    }
 
@@ -612,16 +645,17 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       // Lecture des variétés s/ la race en cours (et pour l'année en cours)
       List<ParentVariety> _variety = populateVarieties(_list, null);
 
-      // Lecture du nb de géniteur par cotations
-      List<ParentCotation> _cotations = extractCotation(_list);
-
+      // lecture du nombre de confirmation
+      long _totalConfirmaton = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "M")
+         .stream()
+         .collect(Collectors.counting());
+      
       // Lecture de la fréquence d'utilisation du géniteur (uniquement étalon)
-      List<ParentFrequency> _frequencies = extractFrequency(_list);
+      List<ParentFrequency> _frequencies = extractFrequency(_totalConfirmaton, _list);
 
       return (T) new ParentBreedStatistics()
             .withYear(_year)
             .withOrigins(_origins)
-            .withCotations(_cotations)
             .withFrequencies(_frequencies)
             .withVariety(_variety);
 
@@ -665,8 +699,10 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     */
    private List<ParentFather> fullEmptyTopN () {
       
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      
       return this.allTopN.stream()
-            .map (s -> new ParentFather(s,0))
+            .map (s -> new ParentFather(s.getId(), s.getName(), 0, format.format(0)))
             .collect(Collectors.toList());
    }   
 

@@ -2,6 +2,8 @@ package com.scc.lofselectclub.template.health;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class HealthResult {
@@ -20,6 +22,9 @@ public class HealthResult {
 
    @ApiModelProperty(notes = "detail by variety", position = 4, allowEmptyValue = true)
    List<HealthVariety> variety;
+
+   @JsonIgnore
+   private int sort;
 
    public String getCode() {
       return code;
@@ -61,6 +66,15 @@ public class HealthResult {
       this.variety = variety;
    }
 
+   
+   public int getSort() {
+      return sort;
+   }
+
+   public void setSort(int sort) {
+      this.sort = sort;
+   }
+   
    public HealthResult withCode(String code) {
       this.setCode(code);
       return this;
@@ -83,6 +97,11 @@ public class HealthResult {
 
    public HealthResult withVariety(List<HealthVariety> variety) {
       this.setVariety(variety);
+      return this;
+   }
+
+   public HealthResult withSort(int sort) {
+      this.setSort(sort);
       return this;
    }
 
