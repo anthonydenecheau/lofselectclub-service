@@ -60,7 +60,7 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
     */
    @HystrixCommand(commandKey = "lofselectclubservice"
          , fallbackMethod = "buildFallbackDnaList"
-         , threadPoolKey = "getStatistics"
+         , threadPoolKey = "getStatisticsDna"
          , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {

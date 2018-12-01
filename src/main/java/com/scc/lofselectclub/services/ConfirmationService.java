@@ -66,7 +66,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
     */
    @HystrixCommand(commandKey = "lofselectclubservice"
          , fallbackMethod = "buildFallbackConfirmationList"
-         , threadPoolKey = "getStatistics"
+         , threadPoolKey = "getStatisticsConfirmation"
          , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {

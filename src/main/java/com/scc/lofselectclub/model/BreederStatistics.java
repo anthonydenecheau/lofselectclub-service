@@ -42,13 +42,15 @@ public class BreederStatistics  extends GenericStatistics {
    @Column(name = "type_etalon")
    Integer typeEtalon;
    @Column(name = "new_etalon")
-   String firstSaillie;
+   String premiereSaillieEtalon;
    @Column(name = "id_lice")
    Integer idLice;
    @Column(name = "cotation_lice")
    Integer cotationLice;
    @Column(name = "type_lice")
    Integer typeLice;
+   @Column(name = "new_lice")
+   String premiereSaillieLice;
    @Column(name = "nb_male")
    Integer nbMale;
    @Column(name = "nb_femelle")
@@ -229,16 +231,16 @@ public class BreederStatistics  extends GenericStatistics {
       return typeEtalon;
    }
 
+   public String getPremiereSaillieEtalon() {
+      return premiereSaillieEtalon;
+   }
+
+   public void setPremiereSaillieEtalon(String  premiereSaillieEtalon) {
+      this.premiereSaillieEtalon = premiereSaillieEtalon;
+   }
+
    public void setTypeEtalon(Integer typeEtalon) {
       this.typeEtalon = typeEtalon;
-   }
-
-   public String getFirstSaillie() {
-      return firstSaillie;
-   }
-
-   public void setFirstSaillie(String  firstSaillie) {
-      this.firstSaillie = firstSaillie;
    }
 
    public Integer getIdLice() {
@@ -267,6 +269,14 @@ public class BreederStatistics  extends GenericStatistics {
 
    public Integer getNbMale() {
       return nbMale;
+   }
+
+   public String getPremiereSaillieLice() {
+      return premiereSaillieLice;
+   }
+
+   public void setPremiereSaillieLice(String  premiereSaillieLice) {
+      this.premiereSaillieLice = premiereSaillieLice;
    }
 
    public void setNbMale(Integer nbMale) {
@@ -516,8 +526,8 @@ public class BreederStatistics  extends GenericStatistics {
             + idRace + ", nomRace=" + nomRace + ", codeFci=" + codeFci + ", idVariete=" + idVariete + ", nomVariete="
             + nomVariete + ", idEleveur=" + idEleveur + ", affixeEleveur=" + affixeEleveur + ", idSaillie=" + idSaillie
             + ", cotationPortee=" + cotationPortee + ", idEtalon=" + idEtalon + ", nomEtalon=" + nomEtalon
-            + ", cotationEtalon=" + cotationEtalon + ", typeEtalon=" + typeEtalon  + ", firstSaillie=" + firstSaillie + ", idLice=" + idLice
-            + ", cotationLice=" + cotationLice + ", typeLice=" + typeLice + ", nbMale=" + nbMale + ", nbFemelle="
+            + ", cotationEtalon=" + cotationEtalon + ", typeEtalon=" + typeEtalon  + ", premiereSaillieEtalon=" + premiereSaillieEtalon  
+            + ", idLice=" + idLice + ", cotationLice=" + cotationLice + ", typeLice=" + typeLice + ", premiereSaillieLice=" + premiereSaillieLice + ", nbMale=" + nbMale + ", nbFemelle="
             + nbFemelle + ", prolificiteRace=" + prolificiteRace + ", prolificiteVariete=" + prolificiteVariete
             + ", nbAncetreCommun=" + nbAncetreCommun + ", consanguinite=" + consanguinite + ", annee=" + annee
             + ", mois=" + mois + "]";

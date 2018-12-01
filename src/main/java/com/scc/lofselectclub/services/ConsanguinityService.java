@@ -75,7 +75,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
     */
    @HystrixCommand(commandKey = "lofselectclubservice"
          , fallbackMethod = "buildFallbackConsanguinityList"
-         , threadPoolKey = "getStatistics"
+         , threadPoolKey = "getStatisticsConsanguinity"
          , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {

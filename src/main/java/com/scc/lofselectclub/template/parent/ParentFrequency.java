@@ -1,26 +1,22 @@
 package com.scc.lofselectclub.template.parent;
 
+import java.util.Map;
+
+import com.scc.lofselectclub.utils.TypeGender;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class ParentFrequency {
 
-   @ApiModelProperty(notes = "n time use", position = 1, allowEmptyValue = true)
-   int time;
-
-   @ApiModelProperty(notes = "number of male", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of parents used for the first time", position = 1, allowEmptyValue = true)
    int qtity;
 
-   @ApiModelProperty(notes = "percentage", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "percentage number of parents used for the first time over total confirmations (on the same period)", position = 3, allowEmptyValue = true)
    String percentage;
 
-   public int getTime() {
-      return time;
-   }
-
-   public void setTime(int time) {
-      this.time = time;
-   }
-
+   @ApiModelProperty(dataType="Map[String, ParentFrequencyDetail]", allowableValues = "FATHER, MOTHER",notes = "detail by gender", position = 4, allowEmptyValue = true)
+   Map<TypeGender, ParentFrequencyDetail> details;
+   
    public int getQtity() {
       return qtity;
    }
@@ -37,9 +33,12 @@ public class ParentFrequency {
       this.percentage = percentage;
    }
    
-   public ParentFrequency withTime(int time) {
-      this.setTime(time);
-      return this;
+   public Map<TypeGender, ParentFrequencyDetail> getDetails() {
+      return details;
+   }
+
+   public void setDetails(Map<TypeGender, ParentFrequencyDetail> details) {
+      this.details = details;
    }
 
    public ParentFrequency withQtity(int qtity) {
@@ -49,6 +48,11 @@ public class ParentFrequency {
 
    public ParentFrequency withPercentage(String percentage) {
       this.setPercentage(percentage);
+      return this;
+   }
+
+   public ParentFrequency withDetails(Map<TypeGender, ParentFrequencyDetail> details) {
+      this.setDetails(details);
       return this;
    }
 

@@ -83,7 +83,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
     */
    @HystrixCommand(commandKey = "lofselectclubservice"
          , fallbackMethod = "buildFallbackBreederList"
-         , threadPoolKey = "getStatistics"
+         , threadPoolKey = "getStatisticsBreeder"
          , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {

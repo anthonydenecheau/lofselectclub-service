@@ -72,7 +72,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
     */
    @HystrixCommand(commandKey = "lofselectclubservice"
          , fallbackMethod = "buildFallbackHealthList"
-         , threadPoolKey = "getStatistics"
+         , threadPoolKey = "getStatisticsHealth"
          , threadPoolProperties = {
             @HystrixProperty(name = "coreSize", value = "30"),
             @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {

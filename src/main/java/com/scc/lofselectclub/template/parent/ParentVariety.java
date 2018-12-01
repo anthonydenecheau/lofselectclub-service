@@ -1,7 +1,8 @@
 package com.scc.lofselectclub.template.parent;
 
-import java.util.List;
 import java.util.Map;
+
+import com.scc.lofselectclub.utils.TypeGender;
 
 import io.swagger.annotations.ApiModelProperty;
 
@@ -13,11 +14,11 @@ public class ParentVariety {
    @ApiModelProperty(notes = "variety name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Origin", notes = "origin by gender", position = 3, allowEmptyValue = true)
-   List<Map<String, List<ParentGender>>> origins;
+   @ApiModelProperty(notes = "origin by gender", position = 3, allowEmptyValue = true)
+   Map<TypeGender, ParentGender> origins;
 
-   @ApiModelProperty(notes = "frequency of use", position = 4, allowEmptyValue = true)
-   List<ParentFrequency> frequencies;
+   @ApiModelProperty(notes = "frequency of first use", position = 4, allowEmptyValue = true)
+   ParentFrequency firstUse;
 
    public int getId() {
       return id;
@@ -35,20 +36,20 @@ public class ParentVariety {
       this.name = name;
    }
 
-   public List<Map<String, List<ParentGender>>> getOrigins() {
+   public Map<TypeGender, ParentGender> getOrigins() {
       return origins;
    }
 
-   public void setOrigins(List<Map<String, List<ParentGender>>> origins) {
+   public void setOrigins(Map<TypeGender, ParentGender> origins) {
       this.origins = origins;
    }
 
-   public List<ParentFrequency> getFrequencies() {
-      return frequencies;
+   public ParentFrequency getFirstUse() {
+      return firstUse;
    }
 
-   public void setFrequencies(List<ParentFrequency> frequencies) {
-      this.frequencies = frequencies;
+   public void setFirstUse(ParentFrequency firstUse) {
+      this.firstUse = firstUse;
    }
 
    public ParentVariety withId(int id) {
@@ -61,13 +62,13 @@ public class ParentVariety {
       return this;
    }
 
-   public ParentVariety withOrigins(List<Map<String, List<ParentGender>>> origins) {
+   public ParentVariety withOrigins(Map<TypeGender, ParentGender> origins) {
       this.setOrigins(origins);
       return this;
    }
 
-   public ParentVariety withFrequencies(List<ParentFrequency> frequencies) {
-      this.setFrequencies(frequencies);
+   public ParentVariety withFirstUse(ParentFrequency firstUse) {
+      this.setFirstUse(firstUse);
       return this;
    }
 

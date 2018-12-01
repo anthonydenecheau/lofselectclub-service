@@ -66,7 +66,7 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
     */
    @HystrixCommand(commandKey = "lofselectclubservice"
          , fallbackMethod = "buildFallbackBirthList"
-         , threadPoolKey = "getStatistics"
+         , threadPoolKey = "getStatisticsBirth"
          , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {

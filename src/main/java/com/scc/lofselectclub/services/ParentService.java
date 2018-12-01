@@ -19,6 +19,7 @@ import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.parent.ParentVariety;
 import com.scc.lofselectclub.utils.StreamUtils;
+import com.scc.lofselectclub.utils.TypeGender;
 import com.scc.lofselectclub.utils.TypeRegistration;
 import com.scc.lofselectclub.template.parent.ParentFather;
 import com.scc.lofselectclub.template.parent.ParentBreed;
@@ -27,6 +28,7 @@ import com.scc.lofselectclub.template.parent.ParentBreedStatistics;
 import com.scc.lofselectclub.template.parent.ParentCotation;
 import com.scc.lofselectclub.template.parent.ParentFatherStatistics;
 import com.scc.lofselectclub.template.parent.ParentFrequency;
+import com.scc.lofselectclub.template.parent.ParentFrequencyDetail;
 import com.scc.lofselectclub.template.parent.ParentGender;
 import com.scc.lofselectclub.template.parent.ParentRegisterType;
 
@@ -42,7 +44,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -88,7 +89,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     */
    @HystrixCommand(commandKey = "lofselectclubservice"
          , fallbackMethod = "buildFallbackParentList"
-         , threadPoolKey = "getStatistics"
+         , threadPoolKey = "getStatisticsParent"
          , threadPoolProperties = {
          @HystrixProperty(name = "coreSize", value = "30"),
          @HystrixProperty(name = "maxQueueSize", value = "10") }, commandProperties = {
@@ -147,9 +148,9 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @return        Propriété <code>origins</code> de l'objet <code>ParentBreedStatistics</code>
     * @see TypeRegistration
     */
-   private List<ParentGender> extractFather(List<BreederStatistics> _list) {
+   private ParentGender extractFather(List<BreederStatistics> _list) {
 
-      List<ParentGender> _stats = new ArrayList<ParentGender>();
+      ParentGender _male = new ParentGender();
 
       int _qtity = 0;
       int _qtityTypeFrancais = 0;
@@ -221,17 +222,16 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          // Lecture du nb de géniteur par cotations
          List<ParentCotation> _cotations = extractCotation("M", _list);
          
-         ParentGender _male = new ParentGender()
+         _male = _male 
                .withQtity(_qtity)
                .withRegisterType(_types)
                .withCotations(_cotations);
-         _stats.add(_male);
 
       } finally {
 
       }
 
-      return _stats;
+      return _male ;
    }
 
    /**
@@ -241,9 +241,9 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @return        Propriété <code>origins</code> de l'objet <code>ParentBreedStatistics</code>
     * @see TypeRegistration
     */
-   private List<ParentGender> extractMother(List<BreederStatistics> _list) {
+   private ParentGender extractMother(List<BreederStatistics> _list) {
 
-      List<ParentGender> _stats = new ArrayList<ParentGender>();
+      ParentGender _female = new ParentGender();
 
       int _qtity = 0;
       int _qtityTypeFrancais = 0;
@@ -307,17 +307,16 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          // Lecture du nb de géniteur par cotations
          List<ParentCotation> _cotations = extractCotation("F", _list);
          
-         ParentGender _female = new ParentGender()
+         _female = _female
                .withQtity(_qtity)
                .withRegisterType(_types)
                .withCotations(_cotations);
-         _stats.add(_female);
 
       } finally {
 
       }
 
-      return _stats;
+      return _female;
    }
 
    @SuppressWarnings("unchecked")
@@ -327,32 +326,32 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       // Caste la liste
       List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
       
-      List<Map<String, List<ParentGender>>> _origins = new ArrayList<Map<String, List<ParentGender>>>();
-      Map<String, List<ParentGender>> _origin = new HashMap<String, List<ParentGender>>();
+      Map<TypeGender, ParentGender> _origins = new HashMap<TypeGender, ParentGender>();
 
-      List<ParentGender> _statsFather = extractFather(_list);
-      _origin.put("father", _statsFather);
+      ParentGender _statsFather = extractFather(_list);
+      _origins.put(TypeGender.FATHER, _statsFather);
 
-      List<ParentGender> _statsMother = extractMother(_list);
-      _origin.put("mother", _statsMother);
-
-      _origins.add(_origin);
+      ParentGender _statsMother = extractMother(_list);
+      _origins.put(TypeGender.MOTHER, _statsMother);
 
       // lecture du nombre de confirmation
       int year = _list.stream().findFirst().get().getAnnee();
-      long _totalConfirmaton = confirmationRepository.findByIdVarieteAndAnneeAndSexe(this._idVariety, year, "M")
+      long _totalConfirmatonM = confirmationRepository.findByIdVarieteAndAnneeAndSexe(this._idVariety, year, "M")
          .stream()
          .collect(Collectors.counting());
+      long _totalConfirmatonF = confirmationRepository.findByIdVarieteAndAnneeAndSexe(this._idVariety, year, "F")
+            .stream()
+            .collect(Collectors.counting());
       
-      // Lecture de la fréquence d'utilisation du géniteur (uniquement étalon)
-      List<ParentFrequency> _frequencies = extractFrequency(_totalConfirmaton, _list);
+      // Lecture de la fréquence d'utilisation des géniteurs
+      ParentFrequency _firstUse = extractFrequency(_totalConfirmatonM, _totalConfirmatonF, _list);
       
       // Création de l'objet Variety
       return (T) new ParentVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withOrigins(_origins)
-            .withFrequencies(_frequencies);
+            .withFirstUse(_firstUse);
 
    }
    
@@ -362,8 +361,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return (T) new ParentVariety()
             .withId(_variety.getId())
             .withName(_variety.getName())
-            .withOrigins(new ArrayList<Map<String, List<ParentGender>>>())
-            .withFrequencies(new ArrayList<ParentFrequency>());
+            .withOrigins(new HashMap<TypeGender, ParentGender>())
+            .withFirstUse(new ParentFrequency());
    }
 
    /**
@@ -372,30 +371,69 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>frequencies</code> de l'objet <code>ParentBreedStatistics</code>
     */
-   private List<ParentFrequency> extractFrequency(long _totalConfirmation, List<BreederStatistics> _list) {
+   private ParentFrequency extractFrequency(long _totalConfirmationM, long _totalConfirmationF, List<BreederStatistics> _list) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       double _percent = 0;
       
-      List<ParentFrequency> _frequencyList = new ArrayList<ParentFrequency>();
+      Map<TypeGender, ParentFrequencyDetail> _details = new HashMap<TypeGender, ParentFrequencyDetail>();
 
-      TreeMap<Integer, Integer> _series = new TreeMap<Integer, Integer>();
+      ParentFrequencyDetail _statsFather = extractFrequencyFather(_totalConfirmationM, _list);
+      _details.put(TypeGender.FATHER, _statsFather);
+
+      ParentFrequencyDetail _statsMother = extractFrequencyMother(_totalConfirmationF, _list);
+      _details.put(TypeGender.MOTHER, _statsMother);
+
+      // Nb de geniteurs utilisés pour la première fois dans une saillie
+      long _qtity =_statsFather.getQtity() + _statsMother.getQtity();
+      
+      long _totalConfirmation = _totalConfirmationM + _totalConfirmationF;
+      if (_totalConfirmation != 0) 
+         _percent = Precision.round((double) _qtity / _totalConfirmation, 2);
+      
+      return new ParentFrequency()
+         .withQtity((int) _qtity)
+         .withPercentage(format.format(_percent))
+         .withDetails(_details);
+         
+   }
+
+   private ParentFrequencyDetail extractFrequencyFather(long _totalConfirmation, List<BreederStatistics> _list) {
+
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      double _percent = 0;
 
       // Nb d'étalons utilisés pour la première fois dans une saillie
       long _qtity = _list.stream()
-            .filter(x -> "O".equals(x.getFirstSaillie()))
+            .filter(x -> "O".equals(x.getPremiereSaillieEtalon()))
             .collect(Collectors.counting());
       
       if (_totalConfirmation != 0) 
          _percent = Precision.round((double) _qtity / _totalConfirmation, 2);
       
-      _frequencyList.add (new ParentFrequency()
-               .withTime(1)
-               .withQtity((int) _qtity)
-               .withPercentage(format.format(_percent))
-      );
+      return new ParentFrequencyDetail()
+            .withQtity((int) _qtity)
+            .withPercentage(format.format(_percent));
+   
+   }
 
-      return _frequencyList;
+   private ParentFrequencyDetail extractFrequencyMother(long _totalConfirmation, List<BreederStatistics> _list) {
+
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      double _percent = 0;
+      
+      // Nb de lices utilisées pour la première fois dans une saillie
+      long _qtity = _list.stream()
+            .filter(x -> "O".equals(x.getPremiereSaillieLice()))
+            .collect(Collectors.counting());
+      
+      if (_totalConfirmation != 0) 
+         _percent = Precision.round((double) _qtity / _totalConfirmation, 2);
+      
+      return new ParentFrequencyDetail()
+            .withQtity((int) _qtity)
+            .withPercentage(format.format(_percent));
+   
    }
 
    /**
@@ -631,32 +669,33 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
       List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
       
-      List<Map<String, List<ParentGender>>> _origins = new ArrayList<Map<String, List<ParentGender>>>();
-      Map<String, List<ParentGender>> _origin = new HashMap<String, List<ParentGender>>();
+      Map<TypeGender, ParentGender> _origins = new HashMap<TypeGender, ParentGender>();
 
-      List<ParentGender> _statsFather = extractFather(_list);
-      _origin.put("father", _statsFather);
+      ParentGender _statsFather = extractFather(_list);
+      _origins.put(TypeGender.FATHER, _statsFather);
 
-      List<ParentGender> _statsMother = extractMother(_list);
-      _origin.put("mother", _statsMother);
-
-      _origins.add(_origin);
+      ParentGender _statsMother = extractMother(_list);
+      _origins.put(TypeGender.MOTHER, _statsMother);
 
       // Lecture des variétés s/ la race en cours (et pour l'année en cours)
       List<ParentVariety> _variety = populateVarieties(_list, null);
 
       // lecture du nombre de confirmation
-      long _totalConfirmaton = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "M")
+      long _totalConfirmatonM = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "M")
          .stream()
          .collect(Collectors.counting());
-      
-      // Lecture de la fréquence d'utilisation du géniteur (uniquement étalon)
-      List<ParentFrequency> _frequencies = extractFrequency(_totalConfirmaton, _list);
+
+      long _totalConfirmatonF = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "F")
+            .stream()
+            .collect(Collectors.counting());
+
+      // Lecture de la fréquence d'utilisation des géniteurs
+      ParentFrequency _firstUse = extractFrequency(_totalConfirmatonM, _totalConfirmatonF, _list);
 
       return (T) new ParentBreedStatistics()
             .withYear(_year)
             .withOrigins(_origins)
-            .withFrequencies(_frequencies)
+            .withFirstUse(_firstUse)
             .withVariety(_variety);
 
    }
@@ -666,7 +705,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    protected <T> T emptyYear(int _year) {
       return (T) new ParentBreedStatistics()
             .withYear(_year)
-            .withOrigins(new ArrayList<Map<String, List<ParentGender>>>())
+            .withOrigins(new HashMap<TypeGender, ParentGender>())
             .withVariety(populateVarieties(new ArrayList<BreederStatistics>(), null));
    }
 
