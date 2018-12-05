@@ -139,11 +139,11 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       for (Map.Entry<Integer, List<HealthStatistics>> _breedByHealthType : _breedGroupByHealthType.entrySet()) {
 
          // Lecture des maladies et de leurs résultats
-         List<HealthTest> _test = extractHealthTest(_breedByHealthType.getValue());
+         List<HealthFamily> _families = extractHealthFamily(_breedByHealthType.getValue());
 
          HealthType _type = new HealthType()
                .withType(TypeHealth.fromId(_breedByHealthType.getKey()))
-               .withHealthTest(_test);
+               . withHealthFamily(_families);
          _resultByType.add(_type);
       }
 
@@ -336,11 +336,11 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
       
       // Lecture des maladies et de leurs résultats
-      List<HealthType> _test = extractHealthTestType(_list);
+      List<HealthTest> _test = extractHealthTest(_list);
 
       return (T) new HealthBreedStatistics()
             .withYear(_year)
-            .withHealthType(_test);
+            .withHealthTest(_test);
       
    }
 
@@ -349,7 +349,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    protected <T> T emptyYear(int _year) {
       return (T) new HealthBreedStatistics()
             .withYear(_year)
-            .withHealthType(extractHealthTestType(new ArrayList<HealthStatistics>()));
+            .withHealthTest(extractHealthTest(new ArrayList<HealthStatistics>()));
    }
 
    @Override
@@ -368,13 +368,14 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
 
       List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
       
-      List<HealthFamily> _families = extractHealthFamily(_list);
+      //List<HealthFamily> _families = extractHealthFamily(_list);
+      List<HealthType> _types = extractHealthTestType(_list);
       
       // Création de l'objet Race
       return (T) new HealthBreed()
             .withId(this._idBreed)
             .withName(this._nameBreed)
-            .withHealthFamily(_families);
+            .withHealthType(_types);
 
    }   
 }

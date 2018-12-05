@@ -11,8 +11,8 @@ public class HealthType {
    @ApiModelProperty(notes = "type", dataType = "com.scc.lofselectclub.utils.TypeHealth", position = 1, allowEmptyValue = true)
    TypeHealth type;
 
-   @ApiModelProperty(notes = "health tests", position = 2, allowEmptyValue = true)
-   List<HealthTest> healthTest;
+   @ApiModelProperty(notes = "health family", position = 2, allowEmptyValue = true)
+   List<HealthFamily> healthFamily;
 
    public TypeHealth getType() {
       return type;
@@ -22,12 +22,12 @@ public class HealthType {
       this.type = type;
    }
 
-   public List<HealthTest> getHealthTest() {
-      return healthTest;
+   public List<HealthFamily> getHealthFamily() {
+      return healthFamily;
    }
 
-   public void setHealthTest(List<HealthTest> healthTest) {
-      this.healthTest = healthTest;
+   public void setHealthFamily(List<HealthFamily> healthFamily) {
+      this.healthFamily = healthFamily;
    }
 
    public HealthType withType(TypeHealth type) {
@@ -35,8 +35,8 @@ public class HealthType {
       return this;
    }
 
-   public HealthType withHealthTest(List<HealthTest> healthTest) {
-      this.setHealthTest(healthTest);
+   public HealthType withHealthFamily(List<HealthFamily> healthFamily) {
+      this.setHealthFamily(healthFamily);
       return this;
    }
 

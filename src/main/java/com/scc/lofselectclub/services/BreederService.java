@@ -345,7 +345,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    /**
     * @param _seriesDefinition   Liste des plages définies pour la race
     * @param _stats              Liste des données de production à analyser
-    * @return                    Propriété <code>variety</code> dde l'objet <code>BreederBreedStatistics</code>
+    * @return                    Propriété <code>variety</code> de l'objet <code>BreederBreedStatistics</code>
     */
    @SuppressWarnings("unchecked")
    private <T> T readVariety(List<SerieDefinition> _seriesDefinition, List<T> _stats) {

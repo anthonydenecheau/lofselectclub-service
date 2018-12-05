@@ -21,7 +21,6 @@ import com.scc.lofselectclub.template.consanguinity.ConsanguinityBreed;
 import com.scc.lofselectclub.template.consanguinity.ConsanguinityBreedStatistics;
 import com.scc.lofselectclub.template.consanguinity.ConsanguinityResponseObject;
 import com.scc.lofselectclub.template.consanguinity.ConsanguinityVariety;
-import com.scc.lofselectclub.template.consanguinity.ConsanguintyCommonAncestor;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -30,10 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.util.Precision;
@@ -153,6 +148,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withCng(format.format(Precision.round(_cng, 4)))
+            .withQtity(0)
             .withSeries(_series);
       
    }
@@ -167,6 +163,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
             .withId(_variety.getId())
             .withName(_variety.getName())
             .withCng(format.format((double) 0))
+            .withQtity(0)
             .withSeries(extractSeries(this._serieCng, this._emptyBreederStatistics));
    }
 
@@ -204,6 +201,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
       return (T) new ConsanguinityBreedStatistics()
             .withYear(_year)
             .withCng(format.format(Precision.round(_cng, 4)))
+            .withQtity(0)
             .withSeries(_series)
             .withVariety(_variety);
       
@@ -216,6 +214,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
       
       return (T) new ConsanguinityBreedStatistics().withYear(_year)
          .withCng(format.format((double) 0))
+         .withQtity(0)
          .withSeries(extractSeries(this._serieCng, this._emptyBreederStatistics))
          .withVariety(populateVarieties(new ArrayList<BreederStatistics>(), null));
    }
@@ -271,6 +270,10 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
     */
    private List<Map<String, Object>> extractSeries(List<SerieCng> _plages, List<BreederStatistics> _list) {
 
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
+      
       List<Map<String, Object>> _series = new ArrayList<Map<String, Object>>();
 
       // Par tranche
@@ -292,6 +295,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
          
          _serie.put("serie", plage.getLibelle());
          _serie.put("qtity", sumBirth.getNbMale()+sumBirth.getNbFemelle());
+         _serie.put("percentage",format.format(Precision.round(0, 2)));
          _series.add(new HashMap<String, Object>(_serie));
 
       }

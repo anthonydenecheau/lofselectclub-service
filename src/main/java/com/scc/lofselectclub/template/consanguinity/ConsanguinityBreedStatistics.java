@@ -13,10 +13,13 @@ public class ConsanguinityBreedStatistics {
    @ApiModelProperty(notes = "coefficient of consanguinity", position = 2, allowEmptyValue = true)
    String cng;
 
-   @ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Serie", notes = "detail by series", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "Quantity property", position = 3, allowEmptyValue = true)
+   private int qtity;
+   
+   @ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Serie", notes = "detail by series", position = 4, allowEmptyValue = true)
    List<Map<String, Object>> series;
    
-   @ApiModelProperty(notes = "detail by variety", position = 4, allowEmptyValue = true)
+   @ApiModelProperty(notes = "detail by variety", position = 5, allowEmptyValue = true)
    List<ConsanguinityVariety> variety;
 
    public int getYear() {
@@ -35,6 +38,14 @@ public class ConsanguinityBreedStatistics {
       this.cng = cng;
    }
 
+   public int getQtity() {
+      return qtity;
+   }
+
+   public void setQtity(int qtity) {
+      this.qtity = qtity;
+   }
+   
    public List<Map<String, Object>> getSeries() {
       return series;
    }
@@ -58,6 +69,11 @@ public class ConsanguinityBreedStatistics {
 
    public ConsanguinityBreedStatistics withCng(String cng) {
       this.setCng(cng);
+      return this;
+   }
+   
+   public ConsanguinityBreedStatistics withQtity(int qtity) {
+      this.setQtity(qtity);
       return this;
    }
 

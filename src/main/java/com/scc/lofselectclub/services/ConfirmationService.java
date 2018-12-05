@@ -10,11 +10,9 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
-import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.model.ConfirmationStatistics;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
-import com.scc.lofselectclub.model.SerieDefinition;
 import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
@@ -226,6 +224,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       return (T) new ConfirmationBreed()
             .withId(this._idBreed)
             .withName(this._nameBreed)
+            .witMandatoryHeight(true)
             .withStatistics(_breedStatistics);
       
    }

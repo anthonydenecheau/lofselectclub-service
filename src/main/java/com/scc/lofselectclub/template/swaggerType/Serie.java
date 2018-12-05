@@ -10,6 +10,9 @@ public class Serie {
    @ApiModelProperty(notes = "Quantity property", position = 2, allowEmptyValue = true)
    private String qtity;
 
+   @ApiModelProperty(notes = "percentage", position = 3, allowEmptyValue = true)
+   String percentage;
+
    public String getSerie() {
       return serie;
    }
@@ -24,6 +27,14 @@ public class Serie {
 
    public void setQtity(String qtity) {
       this.qtity = qtity;
+   }
+   
+   public String getPercentage() {
+      return percentage;
+   }
+
+   public void setPercentage(String percentage) {
+      this.percentage = percentage;
    }
 
 }

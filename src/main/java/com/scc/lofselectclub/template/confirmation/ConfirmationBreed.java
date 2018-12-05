@@ -12,7 +12,10 @@ public class ConfirmationBreed {
    @ApiModelProperty(notes = "Breed name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(notes = "Breed statistics", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "Breed Height statistics is mandatory", position = 3, allowEmptyValue = true)
+   boolean mandatoryHeight;
+
+   @ApiModelProperty(notes = "Breed statistics", position = 4, allowEmptyValue = true)
    List<ConfirmationBreedStatistics> statistics;
 
    public int getId() {
@@ -31,6 +34,14 @@ public class ConfirmationBreed {
       this.name = name;
    }
 
+   public boolean isMandatoryHeight() {
+      return mandatoryHeight;
+   }
+
+   public void setMandatoryHeight(boolean mandatoryHeight) {
+      this.mandatoryHeight = mandatoryHeight;
+   }
+   
    public List<ConfirmationBreedStatistics> getStatistics() {
       return statistics;
    }
@@ -48,6 +59,11 @@ public class ConfirmationBreed {
       this.setName(name);
       return this;
    }
+   
+   public ConfirmationBreed witMandatoryHeight(boolean mandatoryHeight) {
+      this.setMandatoryHeight(mandatoryHeight);
+      return this;
+   }
 
    public ConfirmationBreed withStatistics(List<ConfirmationBreedStatistics> statistics) {
       this.setStatistics(statistics);
@@ -56,7 +72,7 @@ public class ConfirmationBreed {
 
    @Override
    public String toString() {
-      return "Breed [id=" + id + ", name=" + name + ", statistics=" + statistics + "]";
+      return "Breed [id=" + id + ", name=" + name + ", mandatoryHeight=" + mandatoryHeight + ", statistics=" + statistics + "]";
    }
 
 }

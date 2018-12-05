@@ -12,9 +12,8 @@ public class ParentFatherStatistics {
    @ApiModelProperty(notes = "top N fathers", position = 2, allowEmptyValue = true)
    List<ParentFather> fathers;
 
-   // @ApiModelProperty(notes = "detail by variety", position = 3,
-   // allowEmptyValue=true)
-   // List<AffixVariety> variety;
+    @ApiModelProperty(notes = "detail by variety", position = 3, allowEmptyValue=true)
+   List<ParentAffixVariety> variety;
 
    public int getYear() {
       return year;
@@ -32,9 +31,11 @@ public class ParentFatherStatistics {
       this.fathers = fathers;
    }
 
-   // public List<AffixVariety> getVariety() { return variety; }
-   // public void setVariety(List<AffixVariety> variety) { this.variety = variety;
-   // }
+   public List<ParentAffixVariety> getVariety() { return variety; }
+   
+   public void setVariety(List<ParentAffixVariety> variety) { 
+      this.variety = variety;
+   }
 
    public ParentFatherStatistics withYear(int year) {
       this.setYear(year);
@@ -45,8 +46,11 @@ public class ParentFatherStatistics {
       this.setFathers(fathers);
       return this;
    }
-   // public FatherStatistics withVariety(List<AffixVariety> variety){
-   // this.setVariety(variety); return this; }
+
+   public ParentFatherStatistics withVariety(List<ParentAffixVariety> variety){
+      this.setVariety(variety); 
+      return this; 
+   }
 
    // @Override
    // public String toString() {

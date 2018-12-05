@@ -22,6 +22,7 @@ import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.utils.TypeGender;
 import com.scc.lofselectclub.utils.TypeRegistration;
 import com.scc.lofselectclub.template.parent.ParentFather;
+import com.scc.lofselectclub.template.parent.ParentAffixVariety;
 import com.scc.lofselectclub.template.parent.ParentBreed;
 import com.scc.lofselectclub.template.parent.ParentResponseObject;
 import com.scc.lofselectclub.template.parent.ParentBreedStatistics;
@@ -79,6 +80,9 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
    private int limitTopN = 0;
    private Set<ParentFather> allTopN = new HashSet<ParentFather>();
+   
+   private final List<BreederStatistics> _emptyParentsStatistics = new ArrayList<BreederStatistics>();
+
 
    /**
     * Retourne les données statistiques liées aux géniteurs pour l'ensemble des races affiliées au club
@@ -319,9 +323,23 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return _female;
    }
 
-   @SuppressWarnings("unchecked")
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
+      
+      // cas de l'objet topN
+      if (_parameters.isTopN())
+         return readVariety(_parameters.getYear(), _stats);
+      else
+         return readVariety(_stats);
+
+   }
+   
+   /**
+    * @param _stats              Liste des données de production à analyser
+    * @return                    Propriété <code>variety</code> de l'objet <code>ParentFatherStatistics</code>
+    */
+   @SuppressWarnings("unchecked")
+   private <T> T readVariety(List<T> _stats) {
       
       // Caste la liste
       List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
@@ -351,8 +369,28 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withOrigins(_origins)
-            .withFirstUse(_firstUse);
-
+            .withFirstUse(_firstUse);      
+      
+   }
+   
+   /**
+    * Retourne le classement des géniteurs ayant produit le plus de portée (ventilées sur les variétés de la race) dans l'année
+    * 
+    * @param _year         Année
+    * @param _stats        Référentiel des meilleurs géniteurs sur les 5 dernières années
+    * @return              Propriété <code>variety</code> de l'objet <code>ParentAffixVariety</code>
+    */
+   @SuppressWarnings("unchecked")
+   private <T> T readVariety(int _year, List<T> _stats) {
+      
+      // Caste la liste
+      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      
+      return (T) new ParentAffixVariety()
+         .withId(this._idVariety)
+         .withName(this._nameVariety)
+         .withFathers(extractTopNOverYear(_year, _list));
+      
    }
    
    @SuppressWarnings("unchecked")
@@ -678,7 +716,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       _origins.put(TypeGender.MOTHER, _statsMother);
 
       // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-      List<ParentVariety> _variety = populateVarieties(_list, null);
+      List<ParentVariety> _variety = populateVarieties(_list, new ParametersVariety(_year,true));
 
       // lecture du nombre de confirmation
       long _totalConfirmatonM = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "M")
@@ -717,9 +755,14 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       
       // Recherche TopN Etalon de l'année en cours s/ la race et sur les varietes
       List<ParentFather> _topsN = extractTopNOverYear(_year, _list);
+      
+      // Lecture TopN Affixe par variétés s/ la race en cours (et pour l'année en cours)      
+      List<ParentAffixVariety> _topNVariety = populateVarieties(_list, new ParametersVariety(_year,true));
+      
       return (T) new ParentFatherStatistics()
             .withYear(_year)
-            .withFathers(_topsN);
+            .withFathers(_topsN)
+            .withVariety(_topNVariety);
       
    }
 
@@ -728,7 +771,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    protected <T> T emptyTopN(int _year) {
       return (T) new ParentFatherStatistics()
             .withYear(_year)
-            .withFathers(fullEmptyTopN());
+            .withFathers(fullEmptyTopN())
+            .withVariety(populateVarieties(this._emptyParentsStatistics, new ParametersVariety(_year,true)));
    }
    
    /**

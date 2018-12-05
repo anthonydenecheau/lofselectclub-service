@@ -12,8 +12,8 @@ public class HealthBreed {
    @ApiModelProperty(notes = "Breed name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(notes = "Breed statistics by health family", position = 3, allowEmptyValue = true)
-   List<HealthFamily> healthFamily;
+   @ApiModelProperty(notes = "Breed statistics by health type", position = 3, allowEmptyValue = true)
+   List<HealthType> healthType;
    
    public int getId() {
       return id;
@@ -31,12 +31,12 @@ public class HealthBreed {
       this.name = name;
    }
 
-   public List<HealthFamily> getHealthFamily() {
-      return healthFamily;
+   public List<HealthType> getHealthType() {
+      return healthType;
    }
 
-   public void setHealthFamily(List<HealthFamily> healthFamily) {
-      this.healthFamily = healthFamily;
+   public void setHealthType(List<HealthType> healthType) {
+      this.healthType = healthType;
    }
 
    public HealthBreed withId(int id) {
@@ -49,14 +49,14 @@ public class HealthBreed {
       return this;
    }
 
-   public HealthBreed withHealthFamily(List<HealthFamily> healthFamily) {
-      this.setHealthFamily(healthFamily);
+   public HealthBreed withHealthType(List<HealthType> healthType) {
+      this.setHealthType(healthType);
       return this;
    }
 
    @Override
    public String toString() {
-      return "Breed [id=" + id + ", name=" + name + ", healthFamily=" + healthFamily + "]";
+      return "Breed [id=" + id + ", name=" + name + ", healthType=" + healthType + "]";
    }
 
 }

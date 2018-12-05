@@ -10,7 +10,7 @@ package com.scc.lofselectclub.utils;
  */
 public enum TypeHealth {
 
-   SUIVI(1), SOUS_SURVEILLANCE(2), EMERGENTE(3), GENE_INTERET(4);
+   SUIVIE(1), SOUS_SURVEILLANCE(2), EMERGENTE(3), GENE_INTERET(4);
 
    private int value;
 
