@@ -17,6 +17,7 @@ import com.scc.lofselectclub.repository.BreederRepository;
 import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
+import com.scc.lofselectclub.template.breeder.BreederAffixVariety;
 import com.scc.lofselectclub.template.parent.ParentVariety;
 import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.utils.TypeGender;
@@ -396,11 +397,18 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    @SuppressWarnings("unchecked")
    @Override
    protected <T> T emptyVariety(TupleVariety _variety, ParametersVariety _parameters) {
-      return (T) new ParentVariety()
-            .withId(_variety.getId())
-            .withName(_variety.getName())
-            .withOrigins(new HashMap<TypeGender, ParentGender>())
-            .withFirstUse(new ParentFrequency());
+      
+      if (_parameters.isTopN())
+         return (T) new ParentAffixVariety()
+               .withId(_variety.getId())
+               .withName(_variety.getName())
+               .withFathers(fullEmptyTopN());
+      else
+         return (T) new ParentVariety()
+               .withId(_variety.getId())
+               .withName(_variety.getName())
+               .withOrigins(new HashMap<TypeGender, ParentGender>())
+               .withFirstUse(new ParentFrequency());
    }
 
    /**
