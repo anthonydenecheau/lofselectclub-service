@@ -716,7 +716,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       _origins.put(TypeGender.MOTHER, _statsMother);
 
       // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-      List<ParentVariety> _variety = populateVarieties(_list, new ParametersVariety(_year,true));
+      List<ParentVariety> _variety = populateVarieties(_list, new ParametersVariety(_year,false));
 
       // lecture du nombre de confirmation
       long _totalConfirmatonM = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "M")
