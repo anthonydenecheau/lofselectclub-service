@@ -302,6 +302,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
       _serieCng.add(new SerieCng(0.03125d, 0.0625d, "3.125 - 6.25",3));
       _serieCng.add(new SerieCng(0.0625d, 0.125d, "6.25 - 12.5",4));
       _serieCng.add(new SerieCng(0.125d, 0.25d, "12.5 - 25",5));
+      _serieCng.add(new SerieCng(0.25d, 1d, "> 25",6));
 
    
    }
@@ -375,7 +376,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
          // e is greater than range_min and e is lower or equals than range_max
          if (Double.compare(e,range_min)>0 && Double.compare(e,range_max)<=0 )
             return true;
-
+      
       return false;
    }
    
