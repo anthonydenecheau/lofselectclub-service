@@ -113,20 +113,29 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
 
-      // Caste la liste
-      List<DnaStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-
-      // Somme des resultats Adn
-      DnaStatistics sumDna = _list.stream()
-            .reduce(new DnaStatistics(0, 0, 0, 0), (x, y) -> {
-                        return new DnaStatistics(
-                              x.getDna() + y.getDna()
-                              , x.getDnaComp() + y.getDnaComp()
-                              , x.getDnaCompP() + y.getDnaCompP()
-                              , x.getDnaCompM() + y.getDnaCompM());
-      });
+      int _qtity = 0;
+      DnaStatistics sumDna = null; 
+            
+      try { 
+         // Caste la liste
+         List<DnaStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+   
+         // Somme des resultats Adn
+         sumDna = _list.stream()
+               .reduce(new DnaStatistics(0, 0, 0, 0), (x, y) -> {
+                           return new DnaStatistics(
+                                 x.getDna() + y.getDna()
+                                 , x.getDnaComp() + y.getDnaComp()
+                                 , x.getDnaCompP() + y.getDnaCompP()
+                                 , x.getDnaCompM() + y.getDnaCompM());
+         });
+         
+         _qtity = sumDna.getDnaComp()+sumDna.getDnaCompP()+sumDna.getDnaCompM();
       
-      int _qtity = sumDna.getDnaComp()+sumDna.getDnaCompP()+sumDna.getDnaCompM();
+      } catch (Exception e) {
+         logger.error("readVariety : {}",e.getMessage());
+      } finally {
+      }
       
       // Création de l'objet Variety
       return (T) new DnaVariety()
@@ -165,23 +174,33 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
    @Override
    protected <T> T readYear(List<T> _stats, int _year) {
 
-      List<DnaStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      int _qtity = 0; 
+      DnaStatistics sumDna = null;
+      List<DnaVariety> _variety = null;
       
-      // Somme des resultats Adn
-      DnaStatistics sumDna = _list.stream().reduce(new DnaStatistics(0, 0, 0, 0),
-            (x, y) -> {
-               return new DnaStatistics(
-                     x.getDna() + y.getDna()
-                     , x.getDnaComp() + y.getDnaComp()
-                     , x.getDnaCompP() + y.getDnaCompP()
-                     , x.getDnaCompM() + y.getDnaCompM());
-            });
+      try {
+         List<DnaStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Somme des resultats Adn
+         sumDna = _list.stream().reduce(new DnaStatistics(0, 0, 0, 0),
+               (x, y) -> {
+                  return new DnaStatistics(
+                        x.getDna() + y.getDna()
+                        , x.getDnaComp() + y.getDnaComp()
+                        , x.getDnaCompP() + y.getDnaCompP()
+                        , x.getDnaCompM() + y.getDnaCompM());
+               });
+         
+         _qtity = sumDna.getDnaComp()+sumDna.getDnaCompP()+sumDna.getDnaCompM();
+         
+         // Lecture des variétés s/ la race en cours (et pour l'année en cours)
+         _variety = populateVarieties(_list, null);
       
-      int _qtity = sumDna.getDnaComp()+sumDna.getDnaCompP()+sumDna.getDnaCompM();
+      } catch (Exception e) {
+         logger.error("readYear : {}",e.getMessage());
+      } finally {
+      }
       
-      // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-      List<DnaVariety> _variety = populateVarieties(_list, null);
-
       return (T) new DnaBreedStatistics()
             .withYear(_year)
             .withQtity(_qtity)
@@ -220,11 +239,19 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
    @Override
    protected <T> T readBreed(List<T> _stats) {
 
-      List<DnaStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      List<DnaBreedStatistics> _breedStatistics = null;
       
-      // On parcourt les années (on ajoute un tri)
-      List<DnaBreedStatistics> _breedStatistics = populateYears(_list);
+      try {
+         List<DnaStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // On parcourt les années (on ajoute un tri)
+         _breedStatistics = populateYears(_list);
 
+      } catch (Exception e) {
+         logger.error("readBreed : {}",e.getMessage());
+      } finally {
+      }
+   
       // Création de l'objet Race
       return (T) new DnaBreed()
             .withId(this._idBreed)

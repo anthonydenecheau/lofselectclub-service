@@ -17,6 +17,7 @@ public class ParentFrequency {
    @ApiModelProperty(dataType="Map[String, ParentFrequencyDetail]", allowableValues = "FATHER, MOTHER",notes = "detail by gender", position = 4, allowEmptyValue = true)
    Map<TypeGender, ParentFrequencyDetail> details;
    
+  
    public int getQtity() {
       return qtity;
    }

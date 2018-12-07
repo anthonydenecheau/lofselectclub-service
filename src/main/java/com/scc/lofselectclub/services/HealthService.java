@@ -133,20 +133,26 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
 
       List<HealthType> _resultByType = new ArrayList<HealthType>();
 
-      // On parcourt les résultats santé par type 
-      Map<Integer, List<HealthStatistics>> _breedGroupByHealthType = _list.stream()
-            .collect(StreamUtils.sortedGroupingBy(HealthStatistics::getNatureSuivi));
-      for (Map.Entry<Integer, List<HealthStatistics>> _breedByHealthType : _breedGroupByHealthType.entrySet()) {
-
-         // Lecture des maladies et de leurs résultats
-         List<HealthFamily> _families = extractHealthFamily(_breedByHealthType.getValue());
-
-         HealthType _type = new HealthType()
-               .withType(TypeHealth.fromId(_breedByHealthType.getKey()))
-               . withHealthFamily(_families);
-         _resultByType.add(_type);
+      try {
+         // On parcourt les résultats santé par type 
+         Map<Integer, List<HealthStatistics>> _breedGroupByHealthType = _list.stream()
+               .collect(StreamUtils.sortedGroupingBy(HealthStatistics::getNatureSuivi));
+         for (Map.Entry<Integer, List<HealthStatistics>> _breedByHealthType : _breedGroupByHealthType.entrySet()) {
+   
+            // Lecture des maladies et de leurs résultats
+            List<HealthFamily> _families = extractHealthFamily(_breedByHealthType.getValue());
+   
+            HealthType _type = new HealthType()
+                  .withType(TypeHealth.fromId(_breedByHealthType.getKey()))
+                  . withHealthFamily(_families);
+            _resultByType.add(_type);
+         }
+      
+      } catch (Exception e) {
+         logger.error("extractHealthTestType : {}",e.getMessage());
+      } finally {
       }
-
+      
       return _resultByType;
    }
 
@@ -161,26 +167,32 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
 
       List<HealthFamily> _resultByFamily = new ArrayList<HealthFamily>();
 
-      // On parcourt les résultats santé par famille
-      Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthFamily = _list.stream()
-            .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeSupraMaladie(), r.getLibelleSupraMaladie())));
-      for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByHealthFamily : _breedGroupByHealthFamily.entrySet()) {
+      try {
+         // On parcourt les résultats santé par famille
+         Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthFamily = _list.stream()
+               .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeSupraMaladie(), r.getLibelleSupraMaladie())));
+         for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByHealthFamily : _breedGroupByHealthFamily.entrySet()) {
+   
+            double _total = _breedByHealthFamily.getValue()
+                  .stream()
+                  .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
+            
+            // On parcourt les années (on ajoute un tri)
+            List<HealthBreedStatistics> _breedStatistics = populateYears(_breedByHealthFamily.getValue());
+   
+            HealthFamily _type = new HealthFamily()
+                  .withCode(_breedByHealthFamily.getKey().getCode())
+                  .withName(_breedByHealthFamily.getKey().getName())
+                  .withQtity((int) _total)
+                  .withStatistics(_breedStatistics);
+            _resultByFamily.add(_type);
+         }
 
-         double _total = _breedByHealthFamily.getValue()
-               .stream()
-               .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
-         
-         // On parcourt les années (on ajoute un tri)
-         List<HealthBreedStatistics> _breedStatistics = populateYears(_breedByHealthFamily.getValue());
-
-         HealthFamily _type = new HealthFamily()
-               .withCode(_breedByHealthFamily.getKey().getCode())
-               .withName(_breedByHealthFamily.getKey().getName())
-               .withQtity((int) _total)
-               .withStatistics(_breedStatistics);
-         _resultByFamily.add(_type);
+      } catch (Exception e) {
+         logger.error("extractHealthFamily : {}",e.getMessage());
+      } finally {
       }
-
+      
       return _resultByFamily;
    }
 
@@ -195,31 +207,37 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
 
       List<HealthTest> _resultByType = new ArrayList<HealthTest>();
 
-      // On parcourt les maladies
-      Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
-            .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeMaladie(), r.getLibelleMaladie())));
-      for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByHealthTest : _breedGroupByHealthResult.entrySet()) {
+      try { 
+         // On parcourt les maladies
+         Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
+               .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeMaladie(), r.getLibelleMaladie())));
+         for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByHealthTest : _breedGroupByHealthResult.entrySet()) {
+   
+            double _total = _breedByHealthTest.getValue()
+                  .stream()
+                  .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
+   
+            // Lecture des résultats pour la maladie en cours
+            List<HealthResult> _healthResults = extractHealthResult(_breedByHealthTest.getValue(), _total);
+   
+            String _code = _breedByHealthTest.getKey().getCode();
+            String _name = _breedByHealthTest.getKey().getName();
+   
+            HealthTest _i = new HealthTest()
+                  .withCode(_code)
+                  .withName(_name)
+                  .withQtity((int) _total)
+                  .withHealthResults(_healthResults);
+   
+            _resultByType.add(_i);
+   
+         }
 
-         double _total = _breedByHealthTest.getValue()
-               .stream()
-               .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
-
-         // Lecture des résultats pour la maladie en cours
-         List<HealthResult> _healthResults = extractHealthResult(_breedByHealthTest.getValue(), _total);
-
-         String _code = _breedByHealthTest.getKey().getCode();
-         String _name = _breedByHealthTest.getKey().getName();
-
-         HealthTest _i = new HealthTest()
-               .withCode(_code)
-               .withName(_name)
-               .withQtity((int) _total)
-               .withHealthResults(_healthResults);
-
-         _resultByType.add(_i);
-
+      } catch (Exception e) {
+         logger.error("extractHealthTest : {}",e.getMessage());
+      } finally {
       }
-
+      
       return _resultByType;
    }
 
@@ -237,45 +255,51 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       double _percent = 0;
             
-      // On parcourt les résultats
-      Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
-            .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeResultat(), r.getLibelleResultat())));
-      for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByResult : _breedGroupByHealthResult.entrySet()) {
-
-         String _code = _breedByResult.getKey().getCode();
-         String _name = _breedByResult.getKey().getName();
+      try {
+         // On parcourt les résultats
+         Map<TupleSupraMaladie, List<HealthStatistics>> _breedGroupByHealthResult = _list.stream()
+               .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeResultat(), r.getLibelleResultat())));
+         for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByResult : _breedGroupByHealthResult.entrySet()) {
+   
+            String _code = _breedByResult.getKey().getCode();
+            String _name = _breedByResult.getKey().getName();
+            
+            int _sort = _breedByResult.getValue()
+                  .stream()
+                  .findFirst()
+                  .map(HealthStatistics::getTriResultat)
+                  .orElse(0)
+            ;
+            
+            int _qtity = _breedByResult.getValue()
+                  .stream()
+                  .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
+            
+            if (_total > 0)
+               _percent = Precision.round((double) _qtity / _total, 2);
+   
+            List<HealthVariety> _variety = populateVarieties(_breedByResult.getValue(), new ParametersVariety(_qtity));
+   
+            HealthResult _t = new HealthResult()
+                  .withCode(_code)
+                  .withName(_name)
+                  .withQtity(_qtity)
+                  .withPercentage(format.format(_percent))
+                  .withVariety(_variety)
+                  .withSort(_sort);
          
-         int _sort = _breedByResult.getValue()
-               .stream()
-               .findFirst()
-               .map(HealthStatistics::getTriResultat)
-               .orElse(0)
-         ;
-         
-         int _qtity = _breedByResult.getValue()
-               .stream()
-               .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
-         
-         if (_total > 0)
-            _percent = Precision.round((double) _qtity / _total, 2);
-
-         List<HealthVariety> _variety = populateVarieties(_breedByResult.getValue(), new ParametersVariety(_qtity));
-
-         HealthResult _t = new HealthResult()
-               .withCode(_code)
-               .withName(_name)
-               .withQtity(_qtity)
-               .withPercentage(format.format(_percent))
-               .withVariety(_variety)
-               .withSort(_sort);
-
          _resultByType.add(_t);
 
-      }
+         }
       
       // tri des résultats
       _resultByType.sort(Comparator.comparing(HealthResult::getSort));
 
+      } catch (Exception e) {
+         logger.error("extractHealthResult : {}",e.getMessage());
+      } finally {
+      }
+      
       return _resultByType;
    }
 
@@ -285,19 +309,26 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       double _percent = 0;
-
-      // Caste la liste
-      List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-      int _qtity = _list.stream()
-            .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
+      HealthVarietyStatistics _varietyStatistics = null;
       
-      if (_parameters.getTotal() > 0 )
-         _percent = Precision.round((double) _qtity / _parameters.getTotal(), 2);
+      try {
+         // Caste la liste
+         List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         int _qtity = _list.stream()
+               .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
+         
+         if (_parameters.getTotal() > 0 )
+            _percent = Precision.round((double) _qtity / _parameters.getTotal(), 2);
+   
+         // Création de l'objet VarietyStatistics
+         _varietyStatistics = new HealthVarietyStatistics()
+               .withQtity(_qtity)
+               .withPercentage(format.format(_percent));
 
-      // Création de l'objet VarietyStatistics
-      HealthVarietyStatistics _varietyStatistics = new HealthVarietyStatistics()
-            .withQtity(_qtity)
-            .withPercentage(format.format(_percent));
+      } catch (Exception e) {
+         logger.error("readVariety : {}",e.getMessage());
+      } finally {
+      }
       
       // Création de l'objet Variety
       return (T) new HealthVariety()
@@ -333,11 +364,19 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    @Override
    protected <T> T readYear(List<T> _stats, int _year) {
      
-      List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      List<HealthTest> _test = null;
       
-      // Lecture des maladies et de leurs résultats
-      List<HealthTest> _test = extractHealthTest(_list);
-
+      try { 
+         List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Lecture des maladies et de leurs résultats
+         _test = extractHealthTest(_list);
+      
+      } catch (Exception e) {
+         logger.error("readYear : {}",e.getMessage());
+      } finally {
+      }
+      
       return (T) new HealthBreedStatistics()
             .withYear(_year)
             .withHealthTest(_test);
@@ -366,10 +405,18 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    @Override
    protected <T> T readBreed(List<T> _stats) {
 
-      List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      List<HealthType> _types = null;
       
-      //List<HealthFamily> _families = extractHealthFamily(_list);
-      List<HealthType> _types = extractHealthTestType(_list);
+      try { 
+         List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         //List<HealthFamily> _families = extractHealthFamily(_list);
+         _types = extractHealthTestType(_list);
+
+      } catch (Exception e) {
+         logger.error("readBreed : {}",e.getMessage());
+      } finally {
+      }
       
       // Création de l'objet Race
       return (T) new HealthBreed()

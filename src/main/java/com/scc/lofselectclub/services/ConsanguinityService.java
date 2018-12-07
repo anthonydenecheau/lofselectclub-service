@@ -127,28 +127,46 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
 
+      int _qtity = 0;
+      double _cng = 0d;
+      List<Map<String, Object>> _series = null;
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       format.setMaximumFractionDigits(2);
       format.setMinimumFractionDigits(2);
       
-      // Caste la liste
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-      
-      // Moyenne des coef. de consanguinité
-      double _cng = _list.stream()
-            .mapToDouble(BreederStatistics::getConsanguinite)
-            .average()
-            .orElse(0.0);
-      
-      // Répartition du nb de chiots pour les plages Cng
-      List<Map<String, Object>> _series = extractSeries(_serieCng, _list);
+      try {
+         // Caste la liste
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Moyenne des coef. de consanguinité
+         _cng = _list.stream()
+               .mapToDouble(BreederStatistics::getConsanguinite)
+               .average()
+               .orElse(0.0);
+   
+         // Somme des chiots males, femelles
+         BreederStatistics sumBirth = _list
+               .stream()
+               .reduce(new BreederStatistics(0, 0),
+                  (x, y) -> {
+                     return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
+               });
+         _qtity = sumBirth.getNbMale() + sumBirth.getNbFemelle();
+   
+         // Répartition du nb de chiots pour les plages Cng
+         _series = extractSeries(_serieCng, _qtity, _list);
+
+      } catch (Exception e) {
+         logger.error("readVariety : {}",e.getMessage());
+      } finally {
+      }
       
       // Création de l'objet Variety
       return (T) new ConsanguinityVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withCng(format.format(Precision.round(_cng, 4)))
-            .withQtity(0)
+            .withQtity(_qtity)
             .withSeries(_series);
       
    }
@@ -164,7 +182,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
             .withName(_variety.getName())
             .withCng(format.format((double) 0))
             .withQtity(0)
-            .withSeries(extractSeries(this._serieCng, this._emptyBreederStatistics));
+            .withSeries(extractSeries(this._serieCng, 0, this._emptyBreederStatistics));
    }
 
 
@@ -181,27 +199,46 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
    @Override
    protected <T> T readYear(List<T> _stats, int _year) {
 
+      int _qtity = 0;
+      double _cng = 0d;
+      List<Map<String, Object>> _series = null;
+      List<ConsanguinityVariety> _variety = null;
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       format.setMaximumFractionDigits(2);
       format.setMinimumFractionDigits(2);
 
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-      
-      // Moyenne des coef. de consanguinité
-      double _cng = _list.stream()
-            .mapToDouble(BreederStatistics::getConsanguinite)
-            .average().orElse(0.0);
+      try {
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Moyenne des coef. de consanguinité
+         _cng = _list.stream()
+               .mapToDouble(BreederStatistics::getConsanguinite)
+               .average().orElse(0.0);
+   
+         // Somme des chiots males, femelles
+         BreederStatistics sumBirth = _list
+               .stream()
+               .reduce(new BreederStatistics(0, 0),
+                  (x, y) -> {
+                     return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
+               });
+         _qtity = sumBirth.getNbMale() + sumBirth.getNbFemelle();
+         
+         // Répartition du nb de chiots pour les plages Cng
+         _series = extractSeries(_serieCng, _qtity, _list);
+         
+         // Lecture des variétés s/ la race en cours (et pour l'année en cours)
+         _variety = populateVarieties(_list, null);
 
-      // Répartition du nb de chiots pour les plages Cng
-      List<Map<String, Object>> _series = extractSeries(_serieCng, _list);
-      
-      // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-      List<ConsanguinityVariety> _variety = populateVarieties(_list, null);
+      } catch (Exception e) {
+         logger.error("readYear : {}",e.getMessage());
+      } finally {
+      }
 
       return (T) new ConsanguinityBreedStatistics()
             .withYear(_year)
             .withCng(format.format(Precision.round(_cng, 4)))
-            .withQtity(0)
+            .withQtity(_qtity)
             .withSeries(_series)
             .withVariety(_variety);
       
@@ -215,7 +252,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
       return (T) new ConsanguinityBreedStatistics().withYear(_year)
          .withCng(format.format((double) 0))
          .withQtity(0)
-         .withSeries(extractSeries(this._serieCng, this._emptyBreederStatistics))
+         .withSeries(extractSeries(this._serieCng, 0, this._emptyBreederStatistics))
          .withVariety(populateVarieties(new ArrayList<BreederStatistics>(), null));
    }
 
@@ -233,11 +270,19 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
    @Override
    protected <T> T readBreed(List<T> _stats) {
 
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      List<ConsanguinityBreedStatistics> _breedStatistics = null;
       
-      // Lecture des années (on ajoute un tri)
-      List<ConsanguinityBreedStatistics> _breedStatistics = populateYears(_list);
-
+      try {
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Lecture des années (on ajoute un tri)
+         _breedStatistics = populateYears(_list);
+      
+      } catch (Exception e) {
+         logger.error("readBreed : {}",e.getMessage());
+      } finally {
+      }
+      
       // Création de l'objet Race
       return (T) new ConsanguinityBreed()
             .withId(this._idBreed)
@@ -268,37 +313,46 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>series</code> des objets <code>ConsanguinityBreedStatistics</code>, <code>ConsanguinityBreedStatistics</code> et <code>ConsanguinityVariety</code>
     */
-   private List<Map<String, Object>> extractSeries(List<SerieCng> _plages, List<BreederStatistics> _list) {
+   private List<Map<String, Object>> extractSeries(List<SerieCng> _plages, int _total, List<BreederStatistics> _list) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-      format.setMaximumFractionDigits(2);
-      format.setMinimumFractionDigits(2);
       
       List<Map<String, Object>> _series = new ArrayList<Map<String, Object>>();
 
-      // Par tranche
-      for (SerieCng plage : _plages) {
+      try {
+         // Par tranche
+         for (SerieCng plage : _plages) {
+   
+            Map<String, Object> _serie = new HashMap<String, Object>();
+   
+            minVal = (plage.getMinValue() == null ? 0 : plage.getMinValue());
+            maxVal = (plage.getMaxValue() == null ? 0 : plage.getMaxValue());
+   
+            BreederStatistics sumBirth = _list
+                  .stream()
+                  .filter(e -> matchesRange(e.getConsanguinite(), minVal, maxVal))
+                  .reduce(new BreederStatistics(0, 0),
+                        (x, y) -> {
+                           return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
+                     })
+            ;
+            double _qtity = sumBirth.getNbMale()+sumBirth.getNbFemelle();
+            double _percent = 0;
+            if (_total>0)
+               _percent = Precision.round( _qtity / _total, 2);
+   
+            _serie.put("serie", plage.getLibelle());
+            _serie.put("qtity", _qtity);
+            _serie.put("percentage",format.format(_percent));
+            _series.add(new HashMap<String, Object>(_serie));
+   
+         }
 
-         Map<String, Object> _serie = new HashMap<String, Object>();
-
-         minVal = (plage.getMinValue() == null ? 0 : plage.getMinValue());
-         maxVal = (plage.getMaxValue() == null ? 0 : plage.getMaxValue());
-
-         BreederStatistics sumBirth = _list
-               .stream()
-               .filter(e -> matchesRange(e.getConsanguinite(), minVal, maxVal))
-               .reduce(new BreederStatistics(0, 0),
-                     (x, y) -> {
-                        return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
-                  })
-         ;
-         
-         _serie.put("serie", plage.getLibelle());
-         _serie.put("qtity", sumBirth.getNbMale()+sumBirth.getNbFemelle());
-         _serie.put("percentage",format.format(Precision.round(0, 2)));
-         _series.add(new HashMap<String, Object>(_serie));
-
+      } catch (Exception e) {
+         logger.error("extractSeries : {}",e.getMessage());
+      } finally {
       }
+      
       return _series;
    }
 

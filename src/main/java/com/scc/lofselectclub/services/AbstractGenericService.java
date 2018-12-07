@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
@@ -26,6 +28,8 @@ import com.scc.lofselectclub.utils.StreamUtils;
 
 public abstract class AbstractGenericService<T, U> {
 
+   private static final Logger logger = LoggerFactory.getLogger(AbstractGenericService.class);
+         
    public AbstractGenericService() {
       super();
    }
@@ -75,19 +79,25 @@ public abstract class AbstractGenericService<T, U> {
 
       List<ConfigurationClub> _breedsManagedByClub = new ArrayList<ConfigurationClub>();
 
-      // Initialisation des données races / varietes associées au club
-      _breedsManagedByClub = configurationClubRepository.findByIdClub(idClub);
-
-      // Exception si le club n'a pas de races connues == l'id club n'existe pas
-      if (_breedsManagedByClub.size() == 0)
-         throw new EntityNotFoundException(getGenericTemplate().getClass(), "idClub", String.valueOf(idClub));
-
-      // Intialisation des races du club
-      this._varietyByBreed = _breedsManagedByClub.stream()
-            .collect(Collectors.groupingBy(
-                  r -> new TupleBreed(r.getIdRace(), r.getLibelleRace())
-                  , Collectors.mapping(e -> new TupleVariety(e.getIdVariete(), e.getLibelleVariete()), Collectors.toSet())));
-
+      try { 
+         // Initialisation des données races / varietes associées au club
+         _breedsManagedByClub = configurationClubRepository.findByIdClub(idClub);
+   
+         // Exception si le club n'a pas de races connues == l'id club n'existe pas
+         if (_breedsManagedByClub.size() == 0)
+            throw new EntityNotFoundException(getGenericTemplate().getClass(), "idClub", String.valueOf(idClub));
+   
+         // Intialisation des races du club
+         this._varietyByBreed = _breedsManagedByClub.stream()
+               .collect(Collectors.groupingBy(
+                     r -> new TupleBreed(r.getIdRace(), r.getLibelleRace())
+                     , Collectors.mapping(e -> new TupleVariety(e.getIdVariete(), e.getLibelleVariete()), Collectors.toSet())));
+      
+      } catch (Exception e) {
+         logger.error("setClubBreedData : {}",e.getMessage());
+      } finally {
+      }
+      
    }
 
    /**
@@ -109,9 +119,16 @@ public abstract class AbstractGenericService<T, U> {
     * @param idBreed Identifiant de la race
     */
    protected void setQtitySeries(int idBreed) {
-      ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(idBreed);
-      this._serieQtity = rangeDefinitionRepository
-            .findByIdSerieGroupOrderBySequence(_configurationRace.getIdSerieGroup());
+      
+      try {
+         ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(idBreed);
+         this._serieQtity = rangeDefinitionRepository
+               .findByIdSerieGroupOrderBySequence(_configurationRace.getIdSerieGroup());
+      } catch (Exception e) {
+         logger.error("setQtitySeries : {}",e.getMessage());
+      } finally {
+      } 
+      
    }
    
    /**
@@ -120,9 +137,16 @@ public abstract class AbstractGenericService<T, U> {
     * @param idBreed Identifiant de la race
     */
    protected void setYearSeries(int idBreed) {
-      ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(idBreed);
-      this._serieYear = StreamUtils.findSerieYear(_configurationRace.getLastDate());
-      this._period = _configurationRace.getBreakPeriod();
+      
+      try {
+         ConfigurationRace _configurationRace = configurationRaceRepository.findByIdRace(idBreed);
+         this._serieYear = StreamUtils.findSerieYear(_configurationRace.getLastDate());
+         this._period = _configurationRace.getBreakPeriod();
+      } catch (Exception e) {
+         logger.error("setYearSeries : {}",e.getMessage());
+      } finally {
+      }      
+      
    }
    
    /**
@@ -182,41 +206,48 @@ public abstract class AbstractGenericService<T, U> {
     */
    @SuppressWarnings("hiding")
    protected <T> List<T> populateVarieties(List<? extends GenericStatistics> _list, ParametersVariety _parameters) {
-      
+
       this._idVariety = 0;
       this._nameVariety = "";
       List<T> _varietyList = new ArrayList<T>();
-      
-      // Cas où la race est mono variété, la propriété n'est pas renseignée
-      if (!isPopulateVarieties())
-         return _varietyList;
-      
-      // On stocke la liste des variétés pour la race
-      List<TupleVariety> _varieties = new ArrayList<TupleVariety>(this._referencedVarieties);
 
-      // Lecture des variétés associées à la race pour lesquelles des données ont été calculées
-      Map<TupleVariety, List<T>> _allVariety = getVarietyStatistics(_list);
-      for (Map.Entry<TupleVariety, List<T>> _currentVariety : _allVariety.entrySet()) {
-
-         this._idVariety = _currentVariety.getKey().getId();
-         this._nameVariety = _currentVariety.getKey().getName();
+      try {
          
-         _varietyList.add(
-               readVariety(_currentVariety.getValue(), _parameters)
-          );
+         // Cas où la race est mono variété, la propriété n'est pas renseignée
+         if (!isPopulateVarieties())
+            return _varietyList;
          
-         // Suppression de la variété traitée
-         _varieties.removeIf(e -> e.getId() == this._idVariety);
-      }
-      
-      // Toutes les variétés n'ont pas fait l'objet d'une production doivent être mentionnées
-      if (_varieties.size() > 0) {
-            for (TupleVariety v : _varieties) {
-               _varietyList.add(
-                     emptyVariety(v, _parameters)
-                );
+         // On stocke la liste des variétés pour la race
+         List<TupleVariety> _varieties = new ArrayList<TupleVariety>(this._referencedVarieties);
+   
+         // Lecture des variétés associées à la race pour lesquelles des données ont été calculées
+         Map<TupleVariety, List<T>> _allVariety = getVarietyStatistics(_list);
+         for (Map.Entry<TupleVariety, List<T>> _currentVariety : _allVariety.entrySet()) {
+   
+            this._idVariety = _currentVariety.getKey().getId();
+            this._nameVariety = _currentVariety.getKey().getName();
+            
+            _varietyList.add(
+                  readVariety(_currentVariety.getValue(), _parameters)
+             );
+            
+            // Suppression de la variété traitée
+            _varieties.removeIf(e -> e.getId() == this._idVariety);
          }
-      }
+         
+         // Toutes les variétés n'ont pas fait l'objet d'une production doivent être mentionnées
+         if (_varieties.size() > 0) {
+               for (TupleVariety v : _varieties) {
+                  _varietyList.add(
+                        emptyVariety(v, _parameters)
+                   );
+            }
+         }
+
+      } catch (Exception e) {
+         logger.error("populateVarieties : {}",e.getMessage());
+      } finally {
+      }   
       
       return _varietyList;
 
@@ -258,35 +289,41 @@ public abstract class AbstractGenericService<T, U> {
       int _year = 0;
       List<T> _breedYearStatistics = new ArrayList<T>();
 
-      // Lecture de la dernière date de calcul pour définir la période (rupture dans les années)
-      // A voir si les années précédentes ne feront pas l'objet d'une suppression côté
-      // data (BdD); auquel cas, ce code sera obsolète
-      setYearSeries(this._idBreed);
+      try {
+         // Lecture de la dernière date de calcul pour définir la période (rupture dans les années)
+         // A voir si les années précédentes ne feront pas l'objet d'une suppression côté
+         // data (BdD); auquel cas, ce code sera obsolète
+         setYearSeries(this._idBreed);
+   
+         // Lecture des variétés référencées
+         // si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
+         setVarietiesByIdBreed(this._idBreed);
+         
+         Map<Integer, List<T>> _breedGroupByYear = getYearStatistics(_list);
+         for (Map.Entry<Integer, List<T>> _breedOverYear : _breedGroupByYear.entrySet()) {
+            
+            _year = _breedOverYear.getKey();
+   
+            // Suppression de l'année traitée
+            this._serieYear = ArrayUtils.removeElement(this._serieYear, _year);
+            
+            _breedYearStatistics.add(
+                  readYear(_breedOverYear.getValue(), _year)
+             );
+            
+         }
+         
+         // On finalise en initialisant les années pour lesquelles on a constaté une rupture
+         for (int i = 0; i < this._serieYear.length; i++) {
+            _breedYearStatistics.add(
+                  emptyYear(this._serieYear[i])
+             );
+         }
 
-      // Lecture des variétés référencées
-      // si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
-      setVarietiesByIdBreed(this._idBreed);
-      
-      Map<Integer, List<T>> _breedGroupByYear = getYearStatistics(_list);
-      for (Map.Entry<Integer, List<T>> _breedOverYear : _breedGroupByYear.entrySet()) {
-         
-         _year = _breedOverYear.getKey();
-
-         // Suppression de l'année traitée
-         this._serieYear = ArrayUtils.removeElement(this._serieYear, _year);
-         
-         _breedYearStatistics.add(
-               readYear(_breedOverYear.getValue(), _year)
-          );
-         
-      }
-      
-      // On finalise en initialisant les années pour lesquelles on a constaté une rupture
-      for (int i = 0; i < this._serieYear.length; i++) {
-         _breedYearStatistics.add(
-               emptyYear(this._serieYear[i])
-          );
-      }
+      } catch (Exception e) {
+         logger.error("populateYears : {}",e.getMessage());
+      } finally {
+      } 
       
       return _breedYearStatistics;
       
@@ -310,35 +347,41 @@ public abstract class AbstractGenericService<T, U> {
       int _year = 0;
       List<T> _topNStatistics = new ArrayList<T>();
 
-      // Lecture de la dernière date de calcul pour définir la période (rupture dans les années)
-      // A voir si les années précédentes ne feront pas l'objet d'une suppression côté
-      // data (BdD); auquel cas, ce code sera obsolète
-      setYearSeries(this._idBreed);
+      try {
+         // Lecture de la dernière date de calcul pour définir la période (rupture dans les années)
+         // A voir si les années précédentes ne feront pas l'objet d'une suppression côté
+         // data (BdD); auquel cas, ce code sera obsolète
+         setYearSeries(this._idBreed);
+   
+         // Lecture des variétés référencées
+         // si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
+         setVarietiesByIdBreed(this._idBreed);
+         
+         Map<Integer, List<T>> _breedGroupByYear = getYearStatistics(_list);
+         for (Map.Entry<Integer, List<T>> _breedOverYear : _breedGroupByYear.entrySet()) {
+            
+            _year = _breedOverYear.getKey();
+   
+            // Suppression de l'année traitée
+            this._serieYear = ArrayUtils.removeElement(this._serieYear, _year);
+            
+            _topNStatistics.add(
+                  readTopN(_breedOverYear.getValue(), _year)
+            );
+            
+         }
+         
+         // On finalise en initialisant les années pour lesquelles on a constaté une rupture
+         for (int i = 0; i < this._serieYear.length; i++) {
+            _topNStatistics.add(
+                  emptyTopN(this._serieYear[i])
+             );
+         }
 
-      // Lecture des variétés référencées
-      // si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
-      setVarietiesByIdBreed(this._idBreed);
-      
-      Map<Integer, List<T>> _breedGroupByYear = getYearStatistics(_list);
-      for (Map.Entry<Integer, List<T>> _breedOverYear : _breedGroupByYear.entrySet()) {
-         
-         _year = _breedOverYear.getKey();
-
-         // Suppression de l'année traitée
-         this._serieYear = ArrayUtils.removeElement(this._serieYear, _year);
-         
-         _topNStatistics.add(
-               readTopN(_breedOverYear.getValue(), _year)
-         );
-         
-      }
-      
-      // On finalise en initialisant les années pour lesquelles on a constaté une rupture
-      for (int i = 0; i < this._serieYear.length; i++) {
-         _topNStatistics.add(
-               emptyTopN(this._serieYear[i])
-          );
-      }
+      } catch (Exception e) {
+         logger.error("populateTopN : {}",e.getMessage());
+      } finally {
+      } 
       
       return _topNStatistics;      
    }
@@ -361,23 +404,30 @@ public abstract class AbstractGenericService<T, U> {
       
       List<T> _breeds = new ArrayList<T>();
       
-      // Lecture des races associées au club pour lesquelles des données ont été calculées
-      Map<TupleBreed, List<T>> _allBreeds = getDataStatistics(idClub);
-      for (Map.Entry<TupleBreed, List<T>> _currentBreed : _allBreeds.entrySet()) {
+      try { 
+         // Lecture des races associées au club pour lesquelles des données ont été calculées
+         Map<TupleBreed, List<T>> _allBreeds = getDataStatistics(idClub);
+         for (Map.Entry<TupleBreed, List<T>> _currentBreed : _allBreeds.entrySet()) {
+   
+            this._idBreed = _currentBreed.getKey().getId();
+            this._nameBreed = _currentBreed.getKey().getName();
+   
+            // Ajout à la liste
+            _breeds.add(
+                  readBreed(_currentBreed.getValue())
+             );
+   
+         }
 
-         this._idBreed = _currentBreed.getKey().getId();
-         this._nameBreed = _currentBreed.getKey().getName();
-
-         // Ajout à la liste
-         _breeds.add(
-               readBreed(_currentBreed.getValue())
-          );
-
-      }
+      } catch (Exception e) {
+         logger.error("populateBreeds : {}",e.getMessage());
+      } finally {
+      } 
       
       return _breeds;
    }
 
    @SuppressWarnings("hiding")
    protected abstract <T> T readBreed(List<T> _stats);
+
 }

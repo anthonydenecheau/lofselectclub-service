@@ -119,21 +119,30 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
    
       long _qtity = 0;
-      List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-            
-      // Somme des chiots males, femelles, portée
-      _qtity = _list.stream()
-            .collect(Collectors.counting());
+      IntSummaryStatistics _summaryStats = null;
+      ConfirmationHeigthSeries _series = null;
       
-      // Taille min, max, moyenne pour les races dont ce critère est obligatoire
-      IntSummaryStatistics _summaryStats = _list.stream()
-            .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
-            .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
-      ;
+      try {
+         List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+               
+         // Somme des chiots males, femelles, portée
+         _qtity = _list.stream()
+               .collect(Collectors.counting());
+         
+         // Taille min, max, moyenne pour les races dont ce critère est obligatoire
+         _summaryStats = _list.stream()
+               .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
+               .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
+         ;
+   
+         // lecture du détail par tailles
+         _series = extractSeries(_summaryStats, _list);
 
-      // lecture du détail par tailles
-      ConfirmationHeigthSeries _series = extractSeries(_summaryStats, _list);
-
+      } catch (Exception e) {
+         logger.error("readVariety : {}",e.getMessage());
+      } finally {
+      }
+      
       // Création de l'objet Variety
       return (T) new ConfirmationVariety()
             .withId(this._idVariety)
@@ -166,23 +175,34 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    @Override
    protected <T> T readYear(List<T> _stats, int _year) {
       
-      List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-
-      // Nb de confirmations
-      long _qtity = _list.stream().collect(Collectors.counting());
-
-      // Taille min, max, moyenne pour les races dont ce critère est obligatoire
-      IntSummaryStatistics _summaryStats = _list.stream()
-            .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
-            .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
-      ;
-
-      // lecture du détail par tailles
-      ConfirmationHeigthSeries _series = extractSeries(_summaryStats, _list);
-            
-      // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-      List<ConfirmationVariety> _variety = populateVarieties(_list, null);
-
+      long _qtity = 0;
+      IntSummaryStatistics _summaryStats = null;
+      ConfirmationHeigthSeries _series = null;
+      List<ConfirmationVariety> _variety = null;
+      
+      try {
+         List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+   
+         // Nb de confirmations
+         _qtity = _list.stream().collect(Collectors.counting());
+   
+         // Taille min, max, moyenne pour les races dont ce critère est obligatoire
+          _summaryStats = _list.stream()
+               .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
+               .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
+         ;
+   
+         // lecture du détail par tailles
+         _series = extractSeries(_summaryStats, _list);
+               
+         // Lecture des variétés s/ la race en cours (et pour l'année en cours)
+         _variety = populateVarieties(_list, null);
+      
+      } catch (Exception e) {
+         logger.error("readYear : {}",e.getMessage());
+      } finally {
+      }
+      
       return (T) new ConfirmationBreedStatistics()
             .withYear(_year)
             .withQtity((int) (long) _qtity)
@@ -214,17 +234,36 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    @SuppressWarnings("unchecked")
    @Override
    protected <T> T readBreed(List<T> _stats) {
+
+      boolean _mandatoryHeight = false;  
+      List<ConfirmationBreedStatistics> _breedStatistics = null;
       
-      List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      try {
+         List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+   
+         // Donnée taille est elle une donnée de confirmation
+         String _height = _list
+               .stream()
+               .findFirst()
+               .map(ConfirmationStatistics::getOnTailleObligatoire)
+               .orElse("N");
+         
+         if ("O".equals(_height))
+            _mandatoryHeight = true;
+         
+         // Lecture des années (on ajoute un tri)
+         _breedStatistics = populateYears(_list);
 
-      // Lecture des années (on ajoute un tri)
-      List<ConfirmationBreedStatistics> _breedStatistics = populateYears(_list);
-
+      } catch (Exception e) {
+         logger.error("readBreed : {}",e.getMessage());
+      } finally {
+      }
+      
       // Création de l'objet Race
       return (T) new ConfirmationBreed()
             .withId(this._idBreed)
             .withName(this._nameBreed)
-            .witMandatoryHeight(true)
+            .witMandatoryHeight(_mandatoryHeight)
             .withStatistics(_breedStatistics);
       
    }
@@ -233,15 +272,21 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
 
       Map<String, Object> _series = new HashMap<String, Object>();
 
-      int[] _serieHeight = IntStream.rangeClosed(_summaryStats.getMin(), _summaryStats.getMax()).toArray();
-      for (int i = 0; i < _serieHeight.length; i++) {
-         final int k = i;
-         long _qtityBySerie = _list.stream()
-               .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille() == _serieHeight[k] ))
-               .collect(Collectors.counting())
-         ;
-         _series.put(String.valueOf(_serieHeight[k]), _qtityBySerie);
-           
+      try {
+         int[] _serieHeight = IntStream.rangeClosed(_summaryStats.getMin(), _summaryStats.getMax()).toArray();
+         for (int i = 0; i < _serieHeight.length; i++) {
+            final int k = i;
+            long _qtityBySerie = _list.stream()
+                  .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille() == _serieHeight[k] ))
+                  .collect(Collectors.counting())
+            ;
+            _series.put(String.valueOf(_serieHeight[k]), _qtityBySerie);
+              
+         }
+         
+      } catch (Exception e) {
+         logger.error("extractSeries : {}",e.getMessage());
+      } finally {
       }
       
       return new ConfirmationHeigthSeries()

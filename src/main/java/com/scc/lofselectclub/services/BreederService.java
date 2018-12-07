@@ -147,26 +147,32 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
 
       List<Map<String, Object>> _series = new ArrayList<Map<String, Object>>();
 
-      // Par tranche
-      for (SerieDefinition plage : _plages) {
-
-         Map<String, Object> _serie = new HashMap<String, Object>();
-
-         minVal = (plage.getMinValue() == null ? 0 : plage.getMinValue());
-         maxVal = (plage.getMaxValue() == null ? 0 : plage.getMaxValue());
-
-         Set<Integer> units = _list
-               .stream()
-               .collect(Collectors.collectingAndThen(
-                     Collectors.groupingBy(BreederStatistics::getIdEleveur, Collectors.counting()),
-                     (map) -> map.entrySet().stream().filter(e -> matchesRange(e, minVal, maxVal)).map(e -> e.getKey())
-                           .collect(Collectors.toSet())));
-
-         _serie.put("serie", plage.getLibelle());
-         _serie.put("qtity", units.size());
-         _series.add(new HashMap<String, Object>(_serie));
-
-      }
+      try {
+         // Par tranche
+         for (SerieDefinition plage : _plages) {
+   
+            Map<String, Object> _serie = new HashMap<String, Object>();
+   
+            minVal = (plage.getMinValue() == null ? 0 : plage.getMinValue());
+            maxVal = (plage.getMaxValue() == null ? 0 : plage.getMaxValue());
+   
+            Set<Integer> units = _list
+                  .stream()
+                  .collect(Collectors.collectingAndThen(
+                        Collectors.groupingBy(BreederStatistics::getIdEleveur, Collectors.counting()),
+                        (map) -> map.entrySet().stream().filter(e -> matchesRange(e, minVal, maxVal)).map(e -> e.getKey())
+                              .collect(Collectors.toSet())));
+   
+            _serie.put("serie", plage.getLibelle());
+            _serie.put("qtity", units.size());
+            _series.add(new HashMap<String, Object>(_serie));
+   
+         }
+      } catch (Exception e) {
+         logger.error("extractSeries : {}",e.getMessage());
+      } finally {
+      } 
+      
       return _series;
    }
 
@@ -251,21 +257,20 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    }
 
    /**
-    * Retourne le nombre de portées
+    * Retourne le nombre d'éleveurs
     * 
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>qtity</code> de l'objet <code>BreederBreedStatistics</code> et <code>BreederVarietyStatistics</code>
     */
-   private int sumLitter(List<BreederStatistics> _list) {
+   private int sumBreeders(List<BreederStatistics> _list) {
 
-      // Map<Integer, Long> _breeder = _list.stream()
-      // .collect(Collectors.groupingBy(BreederStatistics::getIdEleveur,
-      // Collectors.counting()));
-      // ;
-      //
-      // return _breeder.size();
+       Map<Integer, Long> _breeder = _list.stream()
+             .collect(Collectors.groupingBy(BreederStatistics::getIdEleveur,
+                   Collectors.counting()));
+       ;
+      
+       return _breeder.size();
 
-      return _list.size();
    }
 
    /**
@@ -278,46 +283,51 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    private List<BreederStatistics> extractTopNAffixes(int _minYear, List<BreederStatistics> _list) {
 
       List<BreederStatistics> _topNAffixes = new ArrayList<BreederStatistics>();
-
       Set<String> _sortedAffixes = new HashSet<String>();
 
-      // Sélection de l'année
-      Map<Integer, List<BreederStatistics>> _breedGroupByYear = _list
-            .stream()
-            .filter(x -> x.getAnnee() >= _minYear)
-            .collect(StreamUtils.sortedGroupingBy(BreederStatistics::getAnnee));
-      for (Map.Entry<Integer, List<BreederStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
-
-         // 1. On groupe les affixes par qtites (ne prends pas en compte les affixes vides)
-         Map<String, Long> _bestOfAffixesOverYear = _breedOverYear.getValue()
+      try {
+         // Sélection de l'année
+         Map<Integer, List<BreederStatistics>> _breedGroupByYear = _list
                .stream()
-               .filter(x -> (!"".equals(x.getAffixeEleveur()) && x.getAffixeEleveur() != null))
-               .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
-
-         // 2. On ne conserve que les 20 meilleurs que l'on ajouté à notre liste existante (l'objet Set nous prémunit des doublons)
-         _sortedAffixes.addAll(
-               _bestOfAffixesOverYear.entrySet()
+               .filter(x -> x.getAnnee() >= _minYear)
+               .collect(StreamUtils.sortedGroupingBy(BreederStatistics::getAnnee));
+         for (Map.Entry<Integer, List<BreederStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
+   
+            // 1. On groupe les affixes par qtites (ne prends pas en compte les affixes vides)
+            Map<String, Long> _bestOfAffixesOverYear = _breedOverYear.getValue()
                   .stream()
-                  .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-                  .limit(this.limitTopN)
-                  .map(Entry::getKey)
-                  .collect(Collectors.toSet())
-               );
+                  .filter(x -> (!"".equals(x.getAffixeEleveur()) && x.getAffixeEleveur() != null))
+                  .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
+   
+            // 2. On ne conserve que les 20 meilleurs que l'on ajouté à notre liste existante (l'objet Set nous prémunit des doublons)
+            _sortedAffixes.addAll(
+                  _bestOfAffixesOverYear.entrySet()
+                     .stream()
+                     .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+                     .limit(this.limitTopN)
+                     .map(Entry::getKey)
+                     .collect(Collectors.toSet())
+                  );
+   
+         }
+   
+         // On conserve le topN affixe (null-safe way)
+         this.allTopN = Optional.ofNullable(_sortedAffixes)
+               .map(Set::stream)
+               .orElseGet(Stream::empty)
+               .collect(Collectors.toSet());
+   
+         // 3. On (re)construit la liste qui sera utilisée pour la lecture des filtres par année et/ou par mois.
+         _topNAffixes = _list
+               .stream()
+               .filter(x -> _sortedAffixes.contains(x.getAffixeEleveur()))
+               .collect(Collectors.toList());
 
-      }
-
-      // On conserve le topN affixe (null-safe way)
-      this.allTopN = Optional.ofNullable(_sortedAffixes)
-            .map(Set::stream)
-            .orElseGet(Stream::empty)
-            .collect(Collectors.toSet());
-
-      // 3. On (re)construit la liste qui sera utilisée pour la lecture des filtres par année et/ou par mois.
-      _topNAffixes = _list
-            .stream()
-            .filter(x -> _sortedAffixes.contains(x.getAffixeEleveur()))
-            .collect(Collectors.toList());
-
+      } catch (Exception e) {
+         logger.error("extractTopNAffixes : {}",e.getMessage());
+      } finally {
+      } 
+      
       return _topNAffixes;
    }
 
@@ -351,20 +361,27 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    private <T> T readVariety(List<SerieDefinition> _seriesDefinition, List<T> _stats) {
       
       int _qtity = 0;
+      BreederVarietyStatistics _varietyStatistics = null;
       
-      // Caste la liste
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      try {
+         // Caste la liste
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+   
+         // Total des éleveurs de l'année en cours
+         _qtity = sumBreeders(_list);
+   
+         // Recherche Production pour les plages paramétrées s/ la variété en cours
+         List<Map<String, Object>> _series = extractSeries(_seriesDefinition, _list);
+   
+         // Création de l'objet VarietyStatistics
+         _varietyStatistics = new BreederVarietyStatistics()
+               .withQtity(_qtity)
+               .withSeries(_series);
 
-      // Total de la production de l'année en cours
-      _qtity = sumLitter(_list);
-
-      // Recherche Production pour les plages paramétrées s/ la variété en cours
-      List<Map<String, Object>> _series = extractSeries(_seriesDefinition, _list);
-
-      // Création de l'objet VarietyStatistics
-      BreederVarietyStatistics _varietyStatistics = new BreederVarietyStatistics()
-            .withQtity(_qtity)
-            .withSeries(_series);
+      } catch (Exception e) {
+         logger.error("readVariety : {}",e.getMessage());
+      } finally {
+      } 
       
       return (T) new BreederVariety()
             .withId(this._idVariety)
@@ -420,70 +437,80 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    protected <T> T readYear(List<T> _stats, int _year) {
       
       int _qtity = 0;
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-
-      // Total de la production de l'année en cours
-      _qtity = sumLitter(_list);
+      List<Map<String, Object>> _series = null;
+      List<BreederVariety> _variety = null;
+      List<BreederMonthStatistics> _months = null;
       
-      // Recherche Production de l'année en cours pour les plages paramétrées s/ la race
-      List<Map<String, Object>> _series = extractSeries(this._serieQtity, _list);
-
-      // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-      List<BreederVariety> _variety = populateVarieties(_list, new ParametersVariety(this._serieQtity));
-
-      List<BreederMonthStatistics> _months = new ArrayList<BreederMonthStatistics>();
-
-      // Attention : traitement des mois pour lesquels aucune production n'a été enregistrée
-      if ("MM".equals(this._period)) {
-
-         int _month = 0;
-         int _monthQtity = 0;
-         int[] _listMonths = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-
-         // On complète les données mensuelles (on ajoute un tri == permet de détecter
-         // les ruptures dans la production)
-         Map<Integer, List<BreederStatistics>> _breedGroupByMonth = _list
-               .stream()
-               .collect(StreamUtils.sortedGroupingBy(BreederStatistics::getMois));
-         for (Map.Entry<Integer, List<BreederStatistics>> _breedOverMonth : _breedGroupByMonth.entrySet()) {
-
-            _month = _breedOverMonth.getKey();
-
-            // Suppression du mois traité
-            _listMonths = ArrayUtils.removeElement(_listMonths, _month);
-
-            // Total de la production du mois en cours
-            _monthQtity = sumLitter(_breedOverMonth.getValue());
-
-            // Recherche Production du mois en cours pour les plages paramétrées s/ la race
-            List<Map<String, Object>> _seriesMonth = extractSeries(this._serieQtity, _breedOverMonth.getValue());
-
-            // Lecture des variétés s/ la race en cours (et pour le mois en cours)
-            List<BreederVariety> _varietyMonth = populateVarieties(_breedOverMonth.getValue(), new ParametersVariety(this._serieQtity));
-
-            BreederMonthStatistics _monthStatitics = new BreederMonthStatistics()
-                  .withMonth(_month)
-                  .withQtity(_monthQtity)
-                  .withSeries(_seriesMonth)
-                  .withVariety(_varietyMonth);
-
-            _months.add(_monthStatitics);
+      try {
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+   
+         // Total des éleveurs de l'année en cours
+         _qtity = sumBreeders(_list);
+         
+         // Recherche Production de l'année en cours pour les plages paramétrées s/ la race
+         _series = extractSeries(this._serieQtity, _list);
+   
+         // Lecture des variétés s/ la race en cours (et pour l'année en cours)
+         _variety = populateVarieties(_list, new ParametersVariety(this._serieQtity));
+   
+         // Attention : traitement des mois pour lesquels aucune production n'a été enregistrée
+         if ("MM".equals(this._period)) {
+   
+            int _month = 0;
+            int _monthQtity = 0;
+            int[] _listMonths = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+            
+            _months = new ArrayList<BreederMonthStatistics>();
+   
+            // On complète les données mensuelles (on ajoute un tri == permet de détecter
+            // les ruptures dans la production)
+            Map<Integer, List<BreederStatistics>> _breedGroupByMonth = _list
+                  .stream()
+                  .collect(StreamUtils.sortedGroupingBy(BreederStatistics::getMois));
+            for (Map.Entry<Integer, List<BreederStatistics>> _breedOverMonth : _breedGroupByMonth.entrySet()) {
+   
+               _month = _breedOverMonth.getKey();
+   
+               // Suppression du mois traité
+               _listMonths = ArrayUtils.removeElement(_listMonths, _month);
+   
+               // Total des éleveurs du mois en cours
+               _monthQtity = sumBreeders(_breedOverMonth.getValue());
+   
+               // Recherche Production du mois en cours pour les plages paramétrées s/ la race
+               List<Map<String, Object>> _seriesMonth = extractSeries(this._serieQtity, _breedOverMonth.getValue());
+   
+               // Lecture des variétés s/ la race en cours (et pour le mois en cours)
+               List<BreederVariety> _varietyMonth = populateVarieties(_breedOverMonth.getValue(), new ParametersVariety(this._serieQtity));
+   
+               BreederMonthStatistics _monthStatitics = new BreederMonthStatistics()
+                     .withMonth(_month)
+                     .withQtity(_monthQtity)
+                     .withSeries(_seriesMonth)
+                     .withVariety(_varietyMonth);
+   
+               _months.add(_monthStatitics);
+            }
+   
+            // Complète les infos s/ les mois manquants
+            if (_listMonths.length > 0)
+               for (int i = 0; i < _listMonths.length; i++) {
+                  _months.add(new BreederMonthStatistics()
+                        .withMonth(_listMonths[i])
+                        .withQtity(0)
+                        .withSeries(extractSeries(this._serieQtity, this._emptyBreederStatistics))
+                        .withVariety(populateVarieties(this._emptyBreederStatistics, new ParametersVariety(this._serieQtity))));
+               }
+   
+            // Mise à jour == Tri s/ les mois
+            _months.sort(Comparator.comparing(BreederMonthStatistics::getMonth));
          }
 
-         // Complète les infos s/ les mois manquants
-         if (_listMonths.length > 0)
-            for (int i = 0; i < _listMonths.length; i++) {
-               _months.add(new BreederMonthStatistics()
-                     .withMonth(_listMonths[i])
-                     .withQtity(0)
-                     .withSeries(extractSeries(this._serieQtity, this._emptyBreederStatistics))
-                     .withVariety(populateVarieties(this._emptyBreederStatistics, new ParametersVariety(this._serieQtity))));
-            }
-
-         // Mise à jour == Tri s/ les mois
-         _months.sort(Comparator.comparing(BreederMonthStatistics::getMonth));
-      }
-
+      } catch (Exception e) {
+         logger.error("readYear : {}",e.getMessage());
+      } finally {
+      } 
+      
       // Création de l'objet Statistique de l'année en cours pour la race (inclus variété)
       return (T) new BreederBreedStatistics()
             .withYear(_year)
@@ -509,14 +536,23 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    @Override
    protected <T> T readTopN(List<T> _stats, int _year) {
       
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      List<Map<String, Object>> _topsN = null; 
+      List<BreederAffixVariety> _topNVariety =  null;
       
-      // Recherche TopN Affixe de l'année en cours s/ la race et sur les varietes
-      List<Map<String, Object>> _topsN = extractTopNOverYear(_year, _list);
-
-      // Lecture TopN Affixe par variétés s/ la race en cours (et pour l'année en cours)      
-      List<BreederAffixVariety> _topNVariety = populateVarieties(_list, new ParametersVariety(_year,true));
-
+      try {
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Recherche TopN Affixe de l'année en cours s/ la race et sur les varietes
+         _topsN = extractTopNOverYear(_year, _list);
+   
+         // Lecture TopN Affixe par variétés s/ la race en cours (et pour l'année en cours)      
+         _topNVariety = populateVarieties(_list, new ParametersVariety(_year,true));
+      
+      } catch (Exception e) {
+         logger.error("readTopN : {}",e.getMessage());
+      } finally {
+      }
+      
       return (T) new BreederAffixStatistics()
             .withYear(_year)
             .withAffixes(_topsN)
@@ -554,22 +590,32 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    @Override
    protected <T> T readBreed(List<T> _stats) {
 
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      List<BreederBreedStatistics> _breedStatistics = null;
+      List<BreederStatistics> _topsNAffixes = null;
+      List<BreederAffixStatistics> _affixesStatistics = null;
       
-      // Lecture des plages paramétrées des quantités pour la race en cours
-      setQtitySeries(this._idBreed);
-
-      // Lecture des années (on ajoute un tri)
-      List<BreederBreedStatistics> _breedStatistics = populateYears(_list);
-
-      // Recherche TopN Affixe s/ la race
-      // Regle de sélection :
-      // Pour chaque année, on sélectionne le top 20.
-      // On en déduit les 100 meilleurs affixes (les doublons sont supprimés) qui vont
-      // nous servir de base pour construire le classement s/ chaque année
-      setYearSeries(this._idBreed);
-      List<BreederStatistics> _topsNAffixes = extractTopNAffixes(this._serieYear[0], _list);
-      List<BreederAffixStatistics> _affixesStatistics = populateTopN(_topsNAffixes);
+      try {
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Lecture des plages paramétrées des quantités pour la race en cours
+         setQtitySeries(this._idBreed);
+   
+         // Lecture des années (on ajoute un tri)
+         _breedStatistics = populateYears(_list);
+   
+         // Recherche TopN Affixe s/ la race
+         // Regle de sélection :
+         // Pour chaque année, on sélectionne le top 20.
+         // On en déduit les 100 meilleurs affixes (les doublons sont supprimés) qui vont
+         // nous servir de base pour construire le classement s/ chaque année
+         setYearSeries(this._idBreed);
+         _topsNAffixes = extractTopNAffixes(this._serieYear[0], _list);
+         _affixesStatistics = populateTopN(_topsNAffixes);
+      
+      } catch (Exception e) {
+         logger.error("readBreed : {}",e.getMessage());
+      } finally {
+      }
       
       // Création de l'objet Race
       return (T) new BreederBreed()

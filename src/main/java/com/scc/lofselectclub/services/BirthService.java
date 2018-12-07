@@ -127,38 +127,44 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
       int[] _cotReferences = new int[] { 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
 
-      Map<Integer, Long> _cotations = _list
-            .stream()
-            .collect(Collectors.groupingBy(BreederStatistics::getCotationPortee, Collectors.counting()));
+      try {
+         Map<Integer, Long> _cotations = _list
+               .stream()
+               .collect(Collectors.groupingBy(BreederStatistics::getCotationPortee, Collectors.counting()));
+   
+         double _total = _cotations.values()
+               .stream()
+               .mapToInt(Number::intValue)
+               .sum();
+         double _percent = 0;
+   
+         for (Map.Entry<Integer, Long> _cot : _cotations.entrySet()) {
+   
+            _percent = Precision.round((double) _cot.getValue() / _total, 2);
+            // Suppression de la cotation traitée
+            _cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
+            BirthCotation c = new BirthCotation()
+                  .withGrade(_cot.getKey())
+                  .withQtity((int) (long) _cot.getValue())
+                  .withPercentage(format.format(_percent));
+            _cotationList.add(c);
+         }
+   
+         for (int i : _cotReferences) {
+            BirthCotation c = new BirthCotation()
+                  .withGrade(i)
+                  .withQtity(0)
+                  .withPercentage(format.format(0));
+            _cotationList.add(c);
+         }
+   
+         _cotationList.sort(Comparator.comparing(BirthCotation::getGrade));
 
-      double _total = _cotations.values()
-            .stream()
-            .mapToInt(Number::intValue)
-            .sum();
-      double _percent = 0;
-
-      for (Map.Entry<Integer, Long> _cot : _cotations.entrySet()) {
-
-         _percent = Precision.round((double) _cot.getValue() / _total, 2);
-         // Suppression de la cotation traitée
-         _cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
-         BirthCotation c = new BirthCotation()
-               .withGrade(_cot.getKey())
-               .withQtity((int) (long) _cot.getValue())
-               .withPercentage(format.format(_percent));
-         _cotationList.add(c);
+      } catch (Exception e) {
+         logger.error("extractCotation : {}",e.getMessage());
+      } finally {
       }
-
-      for (int i : _cotReferences) {
-         BirthCotation c = new BirthCotation()
-               .withGrade(i)
-               .withQtity(0)
-               .withPercentage(format.format(0));
-         _cotationList.add(c);
-      }
-
-      _cotationList.sort(Comparator.comparing(BirthCotation::getGrade));
-
+      
       return _cotationList;
    }
 
@@ -166,39 +172,50 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
 
-      // Caste la liste
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      BreederStatistics _sumBirth = null;
+      long _qtity = 0;
+      double _prolificity = 0d;
+      List<BirthCotation> _cotations = null; 
+            
+      try {
+         // Caste la liste
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Somme des chiots males, femelles, portée
+         _sumBirth = _list
+               .stream()
+               .reduce(new BreederStatistics(0, 0),
+                  (x, y) -> {
+                     return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
+               });
+   
+         _qtity = _list
+               .stream()
+               .collect(Collectors.counting());
+   
+         _prolificity = _list
+               .stream()
+               .findFirst()
+               .map(BreederStatistics::getProlificiteVariete)
+               .orElse(0.0);
+   
+         // Lecture des cotations des portée
+         _cotations = extractCotation(_list);
+
+      } catch (Exception e) {
+         logger.error("readVariety : {}",e.getMessage());
+      } finally {
+      }
       
-      // Somme des chiots males, femelles, portée
-      BreederStatistics sumBirth = _list
-            .stream()
-            .reduce(new BreederStatistics(0, 0),
-               (x, y) -> {
-                  return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
-            });
-
-      long _qtity = _list
-            .stream()
-            .collect(Collectors.counting());
-
-      double prolificity = _list
-            .stream()
-            .findFirst()
-            .map(BreederStatistics::getProlificiteVariete)
-            .orElse(0.0);
-
-      // Lecture des cotations des portée
-      List<BirthCotation> _cotations = extractCotation(_list);
-
       // Création de l'objet Variety
       return (T) new BirthVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
-            .withNumberOfMale(sumBirth.getNbMale())
-            .withNumberOfFemale(sumBirth.getNbFemelle())
-            .withNumberOfPuppies(sumBirth.getNbMale() + sumBirth.getNbFemelle())
+            .withNumberOfMale(_sumBirth.getNbMale())
+            .withNumberOfFemale(_sumBirth.getNbFemelle())
+            .withNumberOfPuppies(_sumBirth.getNbMale() + _sumBirth.getNbFemelle())
             .withTotalOfLitter((int) (long) _qtity)
-            .withProlificity(Precision.round(prolificity, 2))
+            .withProlificity(Precision.round(_prolificity, 2))
             .withCotations(_cotations);
 
    }
@@ -230,40 +247,52 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
    @Override
    protected <T> T readYear(List<T> _stats, int _year) {
 
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      BreederStatistics _sumBirth = null; 
+      long _qtity = 0;
+      double _prolificity = 0d;
+      List<BirthCotation> _cotations = null; 
+      List<BirthVariety> _variety = null;
       
-      // Somme des chiots males, femelles, portée
-      BreederStatistics sumBirth = _list
-            .stream()
-            .reduce(new BreederStatistics(0, 0),
-               (x, y) -> {
-                  return new BreederStatistics(x.getNbMale() + y.getNbMale(),
-                        x.getNbFemelle() + y.getNbFemelle());
-            });
+      try {
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Somme des chiots males, femelles, portée
+         _sumBirth = _list
+               .stream()
+               .reduce(new BreederStatistics(0, 0),
+                  (x, y) -> {
+                     return new BreederStatistics(x.getNbMale() + y.getNbMale(),
+                           x.getNbFemelle() + y.getNbFemelle());
+               });
+   
+         _qtity = _stats
+               .stream()
+               .collect(Collectors.counting());
+   
+         _prolificity = _list
+               .stream()
+               .findFirst()
+               .map(BreederStatistics::getProlificiteRace)
+               .orElse(0.0);
+   
+         // Lecture des cotations des portées s/ la race en cours (et pour l'année en cours)
+         _cotations = extractCotation(_list);
+   
+         // Lecture des variétés s/ la race en cours (et pour l'année en cours)
+         _variety = populateVarieties(_list,null);
 
-      long _qtity = _stats
-            .stream()
-            .collect(Collectors.counting());
-
-      double prolificity = _list
-            .stream()
-            .findFirst()
-            .map(BreederStatistics::getProlificiteRace)
-            .orElse(0.0);
-
-      // Lecture des cotations des portées s/ la race en cours (et pour l'année en cours)
-      List<BirthCotation> _cotations = extractCotation(_list);
-
-      // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-      List<BirthVariety> _variety = populateVarieties(_list,null);
+      } catch (Exception e) {
+         logger.error("readYear : {}",e.getMessage());
+      } finally {
+      }
       
       return (T) new BirthBreedStatistics()
             .withYear(_year)
-            .withNumberOfMale(sumBirth.getNbMale())
-            .withNumberOfFemale(sumBirth.getNbFemelle())
-            .withNumberOfPuppies(sumBirth.getNbMale() + sumBirth.getNbFemelle())
+            .withNumberOfMale(_sumBirth.getNbMale())
+            .withNumberOfFemale(_sumBirth.getNbFemelle())
+            .withNumberOfPuppies(_sumBirth.getNbMale() + _sumBirth.getNbFemelle())
             .withTotalOfLitter((int) (long) _qtity)
-            .withProlificity(Precision.round(prolificity, 2))
+            .withProlificity(Precision.round(_prolificity, 2))
             .withVariety(_variety)
             .withCotations(_cotations);
       
@@ -297,11 +326,19 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
    @Override
    protected <T> T readBreed(List<T> _stats) {
 
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+      List<BirthBreedStatistics> _breedStatistics = null;
       
-      // Lecture des années (on ajoute un tri)
-      List<BirthBreedStatistics> _breedStatistics = populateYears(_list);
-
+      try { 
+         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         
+         // Lecture des années (on ajoute un tri)
+         _breedStatistics = populateYears(_list);
+      
+      } catch (Exception e) {
+         logger.error("readBreed : {}",e.getMessage());
+      } finally {
+      }
+      
       // Création de l'objet Race
       return (T) new BirthBreed()
             .withId(this._idBreed)
