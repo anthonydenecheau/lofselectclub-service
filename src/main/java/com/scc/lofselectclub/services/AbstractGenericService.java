@@ -93,8 +93,6 @@ public abstract class AbstractGenericService<T, U> {
                      r -> new TupleBreed(r.getIdRace(), r.getLibelleRace())
                      , Collectors.mapping(e -> new TupleVariety(e.getIdVariete(), e.getLibelleVariete()), Collectors.toSet())));
       
-      } catch (Exception e) {
-         logger.error("setClubBreedData : {}",e.getMessage());
       } finally {
       }
       
