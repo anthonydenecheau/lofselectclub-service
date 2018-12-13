@@ -1,8 +1,5 @@
 package com.scc.lofselectclub.template.confirmation;
 
-import java.util.List;
-import java.util.Map;
-
 import io.swagger.annotations.ApiModelProperty;
 
 public class ConfirmationVariety {
@@ -13,14 +10,11 @@ public class ConfirmationVariety {
    @ApiModelProperty(notes = "variety name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(notes = "number of confirmation", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of confirmation", position = 3, allowEmptyValue = true)
    int qtity;
 
-   @ApiModelProperty(notes = "average Height (if mandatory for the breed)", position = 3, allowEmptyValue = true)
-   double avgHeight;
-
-   @ApiModelProperty(notes = "detail by Height (if mandatory for the breed)", position = 4, allowEmptyValue = true)
-   ConfirmationHeigthSeries series;
+   @ApiModelProperty(notes = "detail by Height", position = 3, allowEmptyValue = true)
+   ConfirmationHeight height;
 
    public int getId() {
       return id;
@@ -46,20 +40,12 @@ public class ConfirmationVariety {
       this.qtity = qtity;
    }
 
-   public double getAvgHeight() {
-      return avgHeight;
+   public ConfirmationHeight getHeight() {
+      return height;
    }
 
-   public void setAvgHeight(double avgHeight) {
-      this.avgHeight = avgHeight;
-   }
-
-   public ConfirmationHeigthSeries getSeries() {
-      return series;
-   }
-
-   public void setSeries(ConfirmationHeigthSeries series) {
-      this.series = series;
+   public void setHeight(ConfirmationHeight height) {
+      this.height = height;
    }
 
    public ConfirmationVariety withId(int id) {
@@ -77,20 +63,14 @@ public class ConfirmationVariety {
       return this;
    }
 
-   public ConfirmationVariety withAvgHeight(double avgHeight) {
-      this.setAvgHeight(avgHeight);
-      return this;
-   }
-
-   public ConfirmationVariety withSeries(ConfirmationHeigthSeries series) {
-      this.setSeries(series);
+   public ConfirmationVariety withHeight(ConfirmationHeight height) {
+      this.setHeight(height);
       return this;
    }
 
    @Override
    public String toString() {
-      return "Variety [id=" + id + ", name=" + name + ", qtity=" + qtity + ", avgHeight=" + avgHeight + ", series="
-            + series + "]";
+      return "Variety [id=" + id + ", name=" + name + ", qtity=" + qtity + ", height=" + height + "]";
    }
 
 }
