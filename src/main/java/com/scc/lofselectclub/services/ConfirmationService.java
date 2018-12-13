@@ -17,20 +17,23 @@ import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreedStatistics;
-import com.scc.lofselectclub.template.confirmation.ConfirmationHeigthSeries;
+import com.scc.lofselectclub.template.confirmation.ConfirmationHeight;
+import com.scc.lofselectclub.template.confirmation.ConfirmationHeightDetail;
 import com.scc.lofselectclub.template.confirmation.ConfirmationVariety;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreed;
 import com.scc.lofselectclub.template.confirmation.ConfirmationResponseObject;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.IntSummaryStatistics;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,8 +122,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
    
       long _qtity = 0;
-      IntSummaryStatistics _summaryStats = null;
-      ConfirmationHeigthSeries _series = null;
+      ConfirmationHeight _height = null;
       
       try {
          List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
@@ -129,14 +131,8 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
          _qtity = _list.stream()
                .collect(Collectors.counting());
          
-         // Taille min, max, moyenne pour les races dont ce critère est obligatoire
-         _summaryStats = _list.stream()
-               .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
-               .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
-         ;
-   
          // lecture du détail par tailles
-         _series = extractSeries(_summaryStats, _list);
+         _height = extractHeight(_list);
 
       } catch (Exception e) {
          logger.error("readVariety : {}",e.getMessage());
@@ -148,8 +144,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withQtity((int) (long) _qtity)
-            .withAvgHeight((int) _summaryStats.getAverage())
-            .withSeries(_series);
+            .withHeight(_height);
             
    }
 
@@ -176,8 +171,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    protected <T> T readYear(List<T> _stats, int _year) {
       
       long _qtity = 0;
-      IntSummaryStatistics _summaryStats = null;
-      ConfirmationHeigthSeries _series = null;
+      ConfirmationHeight _height = null;
       List<ConfirmationVariety> _variety = null;
       
       try {
@@ -186,14 +180,8 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
          // Nb de confirmations
          _qtity = _list.stream().collect(Collectors.counting());
    
-         // Taille min, max, moyenne pour les races dont ce critère est obligatoire
-          _summaryStats = _list.stream()
-               .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
-               .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
-         ;
-   
          // lecture du détail par tailles
-         _series = extractSeries(_summaryStats, _list);
+         _height = extractHeight(_list);
                
          // Lecture des variétés s/ la race en cours (et pour l'année en cours)
          _variety = populateVarieties(_list, null);
@@ -206,8 +194,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       return (T) new ConfirmationBreedStatistics()
             .withYear(_year)
             .withQtity((int) (long) _qtity)
-            .withAvgHeight((int) _summaryStats.getAverage())
-            .withSeries(_series)
+            .withHeight(_height)
             .withVariety(_variety);
       
    }
@@ -268,11 +255,22 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       
    }
 
-   private ConfirmationHeigthSeries extractSeries(IntSummaryStatistics _summaryStats, List<ConfirmationStatistics> _list) {
+   private ConfirmationHeight extractHeight(List<ConfirmationStatistics> _list) {
 
-      Map<String, Object> _series = new HashMap<String, Object>();
-
+      List<ConfirmationHeightDetail> _details = new ArrayList<ConfirmationHeightDetail>();
+      IntSummaryStatistics _summaryStats = null;
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      
       try {
+         
+         double _percent = 0;
+         
+         // Taille min, max, moyenne pour les races dont ce critère est obligatoire
+         _summaryStats = _list.stream()
+              .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille()>0))
+              .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
+         ;
+         
          int[] _serieHeight = IntStream.rangeClosed(_summaryStats.getMin(), _summaryStats.getMax()).toArray();
          for (int i = 0; i < _serieHeight.length; i++) {
             final int k = i;
@@ -280,18 +278,27 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
                   .filter(x -> "O".equals(x.getOnTailleObligatoire()) && ( x.getTaille()!= null && x.getTaille() == _serieHeight[k] ))
                   .collect(Collectors.counting())
             ;
-            _series.put(String.valueOf(_serieHeight[k]), _qtityBySerie);
+
+            _percent = Precision.round((double)_qtityBySerie / _summaryStats.getCount(), 2);
+            
+            _details.add(
+                  new ConfirmationHeightDetail()
+                     .withHeight(_serieHeight[k])
+                     .withQtity((int)_qtityBySerie)
+                     .withPercentage(format.format(_percent))
+             );
               
          }
          
       } catch (Exception e) {
-         logger.error("extractSeries : {}",e.getMessage());
+         logger.error("extractHeight : {}",e.getMessage());
       } finally {
       }
       
-      return new ConfirmationHeigthSeries()
+      return new ConfirmationHeight()
             .withQtity((int)_summaryStats.getCount())
-            .withSeries(_series);
+            .withAvg((int) _summaryStats.getAverage())
+            .withDetails(_details);
    }
    
 }

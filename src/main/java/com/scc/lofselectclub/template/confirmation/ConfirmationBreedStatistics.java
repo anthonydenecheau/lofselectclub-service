@@ -14,13 +14,10 @@ public class ConfirmationBreedStatistics {
    @ApiModelProperty(notes = "number of confirmation", position = 2, allowEmptyValue = true)
    int qtity;
 
-   @ApiModelProperty(notes = "average Height (if mandatory for the breed)", position = 3, allowEmptyValue = true)
-   double avgHeight;
+   @ApiModelProperty(notes = "detail by Height (if mandatory for the breed)", position = 3, allowEmptyValue = true)
+   ConfirmationHeight height;
 
-   @ApiModelProperty(notes = "detail by Height (if mandatory for the breed)", position = 4, allowEmptyValue = true)
-   ConfirmationHeigthSeries series;
-
-   @ApiModelProperty(notes = "detail by variety", position = 5, allowEmptyValue = true)
+   @ApiModelProperty(notes = "detail by variety", position = 4, allowEmptyValue = true)
    List<ConfirmationVariety> variety;
 
    public int getYear() {
@@ -39,20 +36,12 @@ public class ConfirmationBreedStatistics {
       this.qtity = qtity;
    }
 
-   public double getAvgHeight() {
-      return avgHeight;
+   public ConfirmationHeight getHeight() {
+      return height;
    }
 
-   public void setAvgHeight(double avgHeight) {
-      this.avgHeight = avgHeight;
-   }
-
-   public ConfirmationHeigthSeries getSeries() {
-      return series;
-   }
-
-   public void setSeries(ConfirmationHeigthSeries series) {
-      this.series = series;
+   public void setHeight(ConfirmationHeight height) {
+      this.height = height;
    }
 
    public List<ConfirmationVariety> getVariety() {
@@ -73,13 +62,8 @@ public class ConfirmationBreedStatistics {
       return this;
    }
 
-   public ConfirmationBreedStatistics withAvgHeight(double avgHeight) {
-      this.setAvgHeight(avgHeight);
-      return this;
-   }
-
-   public ConfirmationBreedStatistics withSeries(ConfirmationHeigthSeries series) {
-      this.setSeries(series);
+   public ConfirmationBreedStatistics withHeight(ConfirmationHeight height) {
+      this.setHeight(height);
       return this;
    }
 
@@ -90,8 +74,7 @@ public class ConfirmationBreedStatistics {
 
    @Override
    public String toString() {
-      return "BreedStatistics [year=" + year + ", qtity=" + qtity + ", avgHeight=" + avgHeight + ", series=" + series
-            + ", variety=" + variety + "]";
+      return "BreedStatistics [year=" + year + ", qtity=" + qtity + ", height=" + height + ", variety=" + variety + "]";
    }
 
 }
