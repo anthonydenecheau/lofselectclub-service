@@ -13,6 +13,7 @@ import com.scc.lofselectclub.exceptions.EntityNotFoundException;
 import com.scc.lofselectclub.model.ConfirmationStatistics;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
+import com.scc.lofselectclub.model.SerieHeight;
 import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
@@ -25,6 +26,7 @@ import com.scc.lofselectclub.template.confirmation.ConfirmationResponseObject;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.IntSummaryStatistics;
 import java.util.List;
@@ -84,7 +86,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             tracer.getCurrentSpan().traceIdString());
 
       try {
-
+         
          // Lecture des données races/variétés pour le club
          setClubBreedData(idClub);
 
@@ -131,8 +133,9 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
          _qtity = _list.stream()
                .collect(Collectors.counting());
          
-         // lecture du détail par tailles
-         _height = extractHeight(_list);
+         // lecture du détail par taille
+         if (this._mandatoryHeight) 
+            _height = extractHeight(_list, false);
 
       } catch (Exception e) {
          logger.error("readVariety : {}",e.getMessage());
@@ -154,7 +157,8 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       return (T) new ConfirmationVariety()
             .withId(_variety.getId())
             .withName(_variety.getName())
-            .withQtity(0);
+            .withQtity(0)
+            .withHeight(emptyHeight(false, _variety.getId()));
    }
 
    @SuppressWarnings("unchecked")
@@ -180,8 +184,9 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
          // Nb de confirmations
          _qtity = _list.stream().collect(Collectors.counting());
    
-         // lecture du détail par tailles
-         _height = extractHeight(_list);
+         // lecture du détail par taille
+         if (this._mandatoryHeight) 
+            _height = extractHeight(_list, true);
                
          // Lecture des variétés s/ la race en cours (et pour l'année en cours)
          _variety = populateVarieties(_list, null);
@@ -205,6 +210,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       return (T) new ConfirmationBreedStatistics()
             .withYear(_year)
             .withQtity(0)
+            .withHeight(emptyHeight(true,-1))
             .withVariety(populateVarieties(new ArrayList<ConfirmationStatistics>(), null));
    }
 
@@ -222,7 +228,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    @Override
    protected <T> T readBreed(List<T> _stats) {
 
-      boolean _mandatoryHeight = false;  
+      this._mandatoryHeight = false;  
       List<ConfirmationBreedStatistics> _breedStatistics = null;
       
       try {
@@ -235,8 +241,11 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
                .map(ConfirmationStatistics::getOnTailleObligatoire)
                .orElse("N");
          
-         if ("O".equals(_height))
-            _mandatoryHeight = true;
+         if ("O".equals(_height)) {
+            this._mandatoryHeight = true;
+         } else {
+            this._serieHeight = null;
+         }
          
          // Lecture des années (on ajoute un tri)
          _breedStatistics = populateYears(_list);
@@ -250,15 +259,51 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       return (T) new ConfirmationBreed()
             .withId(this._idBreed)
             .withName(this._nameBreed)
-            .witMandatoryHeight(_mandatoryHeight)
+            .witMandatoryHeight(this._mandatoryHeight)
             .withStatistics(_breedStatistics);
       
    }
+   
+   private ConfirmationHeight emptyHeight(boolean _overBreed, int idVariety) {
+      return new ConfirmationHeight()
+            .withQtity(0)
+            .withAvg(0d)
+            .withDetails(emptyHeightDetail(_overBreed, idVariety));
+   }
 
-   private ConfirmationHeight extractHeight(List<ConfirmationStatistics> _list) {
+   private List<ConfirmationHeightDetail> emptyHeightDetail(boolean _overBreed, int idVariety) {
+
+      IntSummaryStatistics _summaryHeights = null;
+      List<ConfirmationHeightDetail> _details = new ArrayList<ConfirmationHeightDetail>();
+      
+      if (_overBreed) { 
+         _summaryHeights = this._serieHeight.stream()
+               .collect(Collectors.summarizingInt(SerieHeight::getHeight))
+               ;
+      } else {
+         _summaryHeights = this._serieHeight.stream()
+               .filter(x -> x.getIdVariety() == idVariety)
+               .collect(Collectors.summarizingInt(SerieHeight::getHeight))
+               ;
+         logger.error("emptyHeightDetail {}: {} {}",this._idVariety,_summaryHeights.getMin(), _summaryHeights.getMax());
+         
+      }
+
+      int[] _serieHeight = IntStream.rangeClosed(_summaryHeights.getMin(), _summaryHeights.getMax()).toArray();
+      for (int i = 0; i < _serieHeight.length; i++) {
+         _details.add(
+               emptyHeightDetail(_serieHeight[i])
+          );
+      }
+      return _details;
+
+   }
+   
+   private ConfirmationHeight extractHeight(List<ConfirmationStatistics> _list, boolean _overBreed) {
 
       List<ConfirmationHeightDetail> _details = new ArrayList<ConfirmationHeightDetail>();
       IntSummaryStatistics _summaryStats = null;
+      IntSummaryStatistics _summaryHeights = null;
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       
       try {
@@ -271,7 +316,22 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
               .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
          ;
          
-         int[] _serieHeight = IntStream.rangeClosed(_summaryStats.getMin(), _summaryStats.getMax()).toArray();
+         if (_overBreed) { 
+            _summaryHeights = this._serieHeight.stream()
+                  .collect(Collectors.summarizingInt(SerieHeight::getHeight))
+                  ;
+         } else {
+            _summaryHeights = this._serieHeight.stream()
+                  .filter(x -> x.getIdVariety() == this._idVariety)
+                  .collect(Collectors.summarizingInt(SerieHeight::getHeight))
+                  ;
+         }
+
+         int[] _serieHeight = IntStream.rangeClosed(_summaryHeights.getMin(), _summaryHeights.getMax()).toArray();
+
+         // On stocke la liste des tailles
+         List<Integer> _tmpSerie = Arrays.stream(_serieHeight).boxed().collect(Collectors.toList());
+
          for (int i = 0; i < _serieHeight.length; i++) {
             final int k = i;
             long _qtityBySerie = _list.stream()
@@ -279,7 +339,10 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
                   .collect(Collectors.counting())
             ;
 
-            _percent = Precision.round((double)_qtityBySerie / _summaryStats.getCount(), 2);
+            if (_summaryStats.getCount() > 0)
+               _percent = Precision.round((double)_qtityBySerie / _summaryStats.getCount(), 2);
+            else
+               _percent = 0;
             
             _details.add(
                   new ConfirmationHeightDetail()
@@ -288,8 +351,20 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
                      .withPercentage(format.format(_percent))
              );
               
+            // Suppression de la taille traitée
+            _tmpSerie.remove(Integer.valueOf(_serieHeight[k]));
+            
          }
          
+         // Toutes les tailles n'ont pas fait l'objet d'une production doivent être mentionnées
+         if (_tmpSerie.size() > 0) {
+            for (Integer v : _tmpSerie) {
+               _details.add(
+                     emptyHeightDetail(v)
+                );
+            }
+         }
+
       } catch (Exception e) {
          logger.error("extractHeight : {}",e.getMessage());
       } finally {
@@ -299,6 +374,18 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             .withQtity((int)_summaryStats.getCount())
             .withAvg((int) _summaryStats.getAverage())
             .withDetails(_details);
+   }
+   
+   private ConfirmationHeightDetail emptyHeightDetail(Integer _height) {
+
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+
+      return new ConfirmationHeightDetail()
+         .withHeight(_height)
+         .withQtity(0)
+         .withPercentage(format.format(0d))
+      ;
+      
    }
    
 }

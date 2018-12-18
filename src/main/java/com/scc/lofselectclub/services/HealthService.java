@@ -424,5 +424,6 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
             .withName(this._nameBreed)
             .withHealthType(_types);
 
-   }   
+   }
+
 }
