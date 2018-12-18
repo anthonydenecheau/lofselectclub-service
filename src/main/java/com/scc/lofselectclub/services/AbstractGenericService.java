@@ -3,10 +3,12 @@ package com.scc.lofselectclub.services;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -17,8 +19,10 @@ import com.scc.lofselectclub.exceptions.EntityNotFoundException;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
 import com.scc.lofselectclub.model.SerieDefinition;
+import com.scc.lofselectclub.model.SerieHeight;
 import com.scc.lofselectclub.model.ConfigurationClub;
 import com.scc.lofselectclub.model.ConfigurationRace;
+import com.scc.lofselectclub.model.ConfirmationStatistics;
 import com.scc.lofselectclub.repository.ConfigurationClubRepository;
 import com.scc.lofselectclub.repository.ConfigurationRaceRepository;
 import com.scc.lofselectclub.repository.SerieDefinitionRepository;
@@ -68,6 +72,8 @@ public abstract class AbstractGenericService<T, U> {
    protected String _nameBreed = "";
    protected int _idVariety = 0;
    protected String _nameVariety = "";
+   protected boolean _mandatoryHeight = false;
+   protected List<SerieHeight> _serieHeight = null;
 
    /**
     * Construit la liste des races ainsi que la (ou les) variété(s) affiliée(s) et dont le club à la charge
@@ -297,6 +303,11 @@ public abstract class AbstractGenericService<T, U> {
          // si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
          setVarietiesByIdBreed(this._idBreed);
          
+         // Pour le WS confirmation, on relève l'intégralité des tailles (quand elle est obligatoire)
+         if (this.getType().getClass().isInstance(ConfirmationStatistics.class) && (this._mandatoryHeight)) {
+            populateHeightSeries(_list);
+         }
+         
          Map<Integer, List<T>> _breedGroupByYear = getYearStatistics(_list);
          for (Map.Entry<Integer, List<T>> _breedOverYear : _breedGroupByYear.entrySet()) {
             
@@ -428,4 +439,41 @@ public abstract class AbstractGenericService<T, U> {
    @SuppressWarnings("hiding")
    protected abstract <T> T readBreed(List<T> _stats);
 
+   protected void populateHeightSeries(List<? extends GenericStatistics> _stats) {
+      
+      IntSummaryStatistics _summaryStats = null;
+      this._serieHeight = new ArrayList<SerieHeight>();
+      
+      try {
+         @SuppressWarnings("unchecked")
+         List<ConfirmationStatistics> _list = (List<ConfirmationStatistics>) _stats;
+         
+         // Pour la race, on prendra le min/max s/ l'ensemble des variétés
+         // Pour les variétés
+         for (TupleVariety _variety : this._referencedVarieties) {
+            int id = _variety.getId();
+            _summaryStats = _list.stream()
+                  .filter(
+                        ( x -> "O".equals(x.getOnTailleObligatoire()) 
+                        && ( x.getTaille()!= null && x.getTaille()>0) 
+                        && ( x.getIdVariete() == id ) 
+                   ))
+                  .collect(Collectors.summarizingInt(ConfirmationStatistics::getTaille))
+             ;      
+             
+            int[] _serieHeight = IntStream.rangeClosed(_summaryStats.getMin(), _summaryStats.getMax()).toArray();
+            for (int i = 0; i < _serieHeight.length; i++) {
+               // Taille min/max s/ la variété toutes années confondues
+               this._serieHeight.add( new SerieHeight(_variety.getId(), _serieHeight[i]) );
+            }               
+               
+         }
+         
+      } catch (Exception e) {
+         logger.error("populateSeries : {}",e.getMessage());
+      } finally {
+      } 
+      
+   }
+   
 }

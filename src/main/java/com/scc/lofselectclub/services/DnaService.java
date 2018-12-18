@@ -258,5 +258,6 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
             .withName(_nameBreed)
             .withStatistics(_breedStatistics);
 
-   }  
+   }
+
 }

@@ -88,7 +88,7 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
 
       try {
 
-         // Deintition des plages Cng
+         // Defintition des plages Cng
          populateSeries();
          
          // Lecture des données races/variétés pour le club
@@ -379,5 +379,5 @@ public class ConsanguinityService extends AbstractGenericService<ConsanguinityRe
       
       return false;
    }
-   
+
 }
