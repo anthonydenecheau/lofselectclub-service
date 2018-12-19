@@ -1,5 +1,6 @@
 package com.scc.lofselectclub.template.parent;
 
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class ParentFather {
@@ -14,26 +15,38 @@ public class ParentFather {
       this.name = name;
    }
    
-   public ParentFather(int id, String name, int qtity, String percentage) {
+   public ParentFather(int id, String name, int qtity, String percentage, int position) {
       super();
       this.id = id;
       this.name = name;
       this.qtity = qtity;
       this.percentage = percentage;
+      this.position = position;
    }
 
-   @ApiModelProperty(notes = "Dog id", position = 1, allowEmptyValue = true)
+   @ApiModelProperty(notes = "position", position = 1, allowEmptyValue = true)
+   int position;
+   
+   @ApiModelProperty(notes = "Dog id", position = 2, allowEmptyValue = true)
    private int id;
 
-   @ApiModelProperty(notes = "Dog name", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "Dog name", position = 3, allowEmptyValue = true)
    private String name;
 
-   @ApiModelProperty(notes = "number of mating", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "number of mating", position = 4, allowEmptyValue = true)
    private int qtity;
    
-   @ApiModelProperty(notes = "part of the genitor in the total litters", position = 4, allowEmptyValue = true)
+   @ApiModelProperty(notes = "part of the genitor in the total litters", position = 5, allowEmptyValue = true)
    private String percentage;
 
+   public int getPosition() {
+      return position;
+   }
+
+   public void setPosition(int position) {
+      this.position = position;
+   }
+   
    public int getId() {
       return id;
    }
@@ -64,6 +77,11 @@ public class ParentFather {
 
    public void setPercentage(String percentage) {
       this.percentage = percentage;
+   }
+   
+   public ParentFather withPosition(int position) {
+      this.setPosition(position);
+      return this;
    }
    
    public ParentFather withId(int id) {

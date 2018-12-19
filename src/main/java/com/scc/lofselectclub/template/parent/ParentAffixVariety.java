@@ -1,7 +1,6 @@
 package com.scc.lofselectclub.template.parent;
 
 import java.util.List;
-import java.util.Map;
 
 import io.swagger.annotations.ApiModelProperty;
 

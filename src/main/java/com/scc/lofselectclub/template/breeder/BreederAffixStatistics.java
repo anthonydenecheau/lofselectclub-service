@@ -10,8 +10,8 @@ public class BreederAffixStatistics {
    @ApiModelProperty(notes = "year", position = 1, allowEmptyValue = true)
    int year;
 
-   @ApiModelProperty(dataType = "com.scc.lofselectclub.template.swaggerType.Affix", notes = "top N affixe", position = 2, allowEmptyValue = true)
-   List<Map<String, Object>> affixes;
+   @ApiModelProperty(notes = "top N affixe", position = 2, allowEmptyValue = true)
+   List<BreederAffixRank> affixes;
 
    @ApiModelProperty(notes = "detail by variety", position = 3, allowEmptyValue = true)
    List<BreederAffixVariety> variety;
@@ -24,11 +24,11 @@ public class BreederAffixStatistics {
       this.year = year;
    }
 
-   public List<Map<String, Object>> getAffixes() {
+   public List<BreederAffixRank> getAffixes() {
       return affixes;
    }
-
-   public void setAffixes(List<Map<String, Object>> affixes) {
+   
+   public void setAffixes(List<BreederAffixRank> affixes) {
       this.affixes = affixes;
    }
 
@@ -45,11 +45,11 @@ public class BreederAffixStatistics {
       return this;
    }
 
-   public BreederAffixStatistics withAffixes(List<Map<String, Object>> affixes) {
+   public BreederAffixStatistics withAffixes(List<BreederAffixRank> affixes) {
       this.setAffixes(affixes);
       return this;
    }
-
+   
    public BreederAffixStatistics withVariety(List<BreederAffixVariety> variety) {
       this.setVariety(variety);
       return this;

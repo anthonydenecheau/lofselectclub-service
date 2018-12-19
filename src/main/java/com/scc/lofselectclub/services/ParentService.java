@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -617,6 +618,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private List<ParentFather> extractTopNOverYear(int _year, List<BreederStatistics> _list) {
 
       List<ParentFather> _topNFathers = new ArrayList<ParentFather>();
+      int position = 0;
       
       try {
 
@@ -647,7 +649,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                      .withId(_fatherTopN.getId())
                      .withName(_fatherTopN.getName())
                      .withQtity(0)
-                     .withPercentage(format.format(0));
+                     .withPercentage(format.format(0))
+                     .withPosition(0);
                _topNFathers.add(_currentEtalon);
             }
          }
@@ -659,15 +662,23 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .collect(Collectors.counting())
          ;
          
+         //Sort a map and add to finalMap
+         Map<Integer, Long> result = _fathers.entrySet().stream()
+               .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                       (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+         
          // 2. On alimente notre Map
-         for (Entry<Integer, Long> _father : _fathers.entrySet()) {
+         for (Entry<Integer, Long> _father : result.entrySet()) {
             
             _percent = Precision.round((double) _father.getValue() / (double) _qtity, 4);
             ParentFather _currentFather = new ParentFather()
                   .withId(_father.getKey())
                   .withName(getNameFather(_father.getKey()))
                   .withQtity((int) (long) _father.getValue())
-                  .withPercentage(format.format(_percent));
+                  .withPercentage(format.format(_percent))
+                  .withPosition(++position);
             _topNFathers.add(_currentFather);
          }
 
@@ -854,7 +865,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       
       return this.allTopN.stream()
-            .map (s -> new ParentFather(s.getId(), s.getName(), 0, format.format(0)))
+            .map (s -> new ParentFather(s.getId(), s.getName(), 0, format.format(0), 0))
             .collect(Collectors.toList());
    }   
 
