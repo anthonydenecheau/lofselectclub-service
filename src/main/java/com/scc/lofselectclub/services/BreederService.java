@@ -18,6 +18,7 @@ import com.scc.lofselectclub.repository.BreederRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.breeder.BreederMonthStatistics;
+import com.scc.lofselectclub.template.breeder.BreederAffixRank;
 import com.scc.lofselectclub.template.breeder.BreederAffixStatistics;
 import com.scc.lofselectclub.template.breeder.BreederAffixVariety;
 import com.scc.lofselectclub.template.breeder.BreederBreed;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -183,19 +185,20 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>affixes</code> de l'objet <code>BreederAffixStatistics</code>
     */
-   private List<Map<String, Object>> extractTopNOverYear(int _year, List<BreederStatistics> _list) {
+   private List<BreederAffixRank> extractTopNOverYear(int _year, List<BreederStatistics> _list) {
 
-      List<Map<String, Object>> _topsN = new ArrayList<Map<String, Object>>();
-
+      List<BreederAffixRank> _topsN = new ArrayList<BreederAffixRank>();
+      int position = 0;
+      
       try {
 
-         // 1. On groupe les affixes par qtites pour l'année en cours
+         // On groupe les affixes par qtites pour l'année en cours
          Map<String, Long> _affixes = _list
                .stream()
                .filter(x -> (_year == x.getAnnee()))
                .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
-
-         // 2. On complète par les affixes potentiellement manquants
+         
+         // On complète par les affixes potentiellement manquants
          boolean g = false;
          for (String s : this.allTopN) {
            
@@ -211,28 +214,36 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
 
             // l'affixe n'est pas présent dans la liste
             if (!g) {
-               Map<String, Object> _topN = new HashMap<String, Object>();
-               _topN.put("name", s);
-               _topN.put("qtity", (long) 0);
-               _topsN.add(new HashMap<String, Object>(_topN));
+               _topsN.add(new BreederAffixRank()
+                     .withPosition(0)
+                     .withName(s)
+                     .withQtity(0));
             }
+         }         
+         
+         //Sort a map and add to finalMap
+         Map<String, Long> result = _affixes.entrySet().stream()
+               .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                       (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+         
+         for (Entry<String, Long> _affixe : result.entrySet()) {
+            _topsN.add(new BreederAffixRank()
+                  .withPosition(++position)
+                  .withName(_affixe.getKey())
+                  .withQtity((int) (long)_affixe.getValue())
+            );
+            
          }
 
-         // 3. On alimente notre Map
-         for (Entry<String, Long> _affixe : _affixes.entrySet()) {
-            Map<String, Object> _topN = new HashMap<String, Object>();
-            _topN.put("name", _affixe.getKey());
-            _topN.put("qtity", _affixe.getValue());
-            _topsN.add(new HashMap<String, Object>(_topN));
-         }
-
-         // 4. On trie les résultats par quantites décroissantes
-         _topsN.sort(Collections.reverseOrder(Comparator.comparing(m -> (long) m.get("qtity"))));
 
       } catch (Exception e) {
          logger.error("extractTopNOverYear {}", e.getMessage());
       }
 
+      _topsN.sort(Collections.reverseOrder(Comparator.comparing(BreederAffixRank::getQtity)));
+      
       return _topsN;
 
    }
@@ -286,6 +297,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
       Set<String> _sortedAffixes = new HashSet<String>();
 
       try {
+         
          // Sélection de l'année
          Map<Integer, List<BreederStatistics>> _breedGroupByYear = _list
                .stream()
@@ -329,6 +341,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
       } 
       
       return _topNAffixes;
+      
    }
 
    /**
@@ -536,7 +549,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    @Override
    protected <T> T readTopN(List<T> _stats, int _year) {
       
-      List<Map<String, Object>> _topsN = null; 
+      List<BreederAffixRank> _topsN = null;
       List<BreederAffixVariety> _topNVariety =  null;
       
       try {
@@ -573,17 +586,17 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
     * 
     * @return
     */
-   private List<Map<String, Object>> fullEmptyTopN() {
+   private List<BreederAffixRank> fullEmptyTopN() {
       
       return this.allTopN.stream()
             .map(s -> {
-               Map<String, Object> _topN = new HashMap<String, Object>();
-               _topN.put("name", s);
-               _topN.put("qtity", (long) 0);
+               BreederAffixRank _topN = new BreederAffixRank()
+                        .withPosition(0)
+                        .withName(s)
+                        .withQtity(0);
                 return _topN;
             })
             .collect(ArrayList::new, ArrayList::add,ArrayList::addAll);
-      
    }
 
    @SuppressWarnings("unchecked")
