@@ -189,6 +189,8 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
 
       List<BreederAffixRank> _topsN = new ArrayList<BreederAffixRank>();
       int position = 0;
+      int qtityExaequo = 0;
+      int currentPosition = 0;
       
       try {
 
@@ -226,13 +228,20 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-
          
          for (Entry<String, Long> _affixe : result.entrySet()) {
-            _topsN.add(new BreederAffixRank()
-                  .withPosition(++position)
+            
+            if (qtityExaequo == (int) (long)_affixe.getValue() ) {
+               position++;
+            } else
+               currentPosition = ++position;
+            
+            qtityExaequo = (int) (long)_affixe.getValue();
+            _topsN.add(
+               new BreederAffixRank()
+                  .withPosition(currentPosition)
                   .withName(_affixe.getKey())
-                  .withQtity((int) (long)_affixe.getValue())
+                  .withQtity(qtityExaequo)
             );
             
          }
@@ -306,21 +315,43 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
          for (Map.Entry<Integer, List<BreederStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
    
             // 1. On groupe les affixes par qtites (ne prends pas en compte les affixes vides)
-            Map<String, Long> _bestOfAffixesOverYear = _breedOverYear.getValue()
+            Map<String, Long> _bestOfAffixesBreedOverYear = _breedOverYear.getValue()
                   .stream()
                   .filter(x -> (!"".equals(x.getAffixeEleveur()) && x.getAffixeEleveur() != null))
                   .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
    
             // 2. On ne conserve que les 20 meilleurs que l'on ajouté à notre liste existante (l'objet Set nous prémunit des doublons)
             _sortedAffixes.addAll(
-                  _bestOfAffixesOverYear.entrySet()
+                  _bestOfAffixesBreedOverYear.entrySet()
                      .stream()
+                     .filter(x -> x.getValue() > 0 )
                      .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
                      .limit(this.limitTopN)
                      .map(Entry::getKey)
                      .collect(Collectors.toSet())
                   );
    
+            // 3. On ajoute les topN pour chacune des variétés
+            Map<TupleVariety, List<BreederStatistics>> _allVariety = getVarietyStatistics(_breedOverYear.getValue());
+            for (Map.Entry<TupleVariety, List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
+
+               Map<String, Long> _bestOfAffixesVarietyOverYear = _currentVariety.getValue()
+                     .stream()
+                     .filter(x -> (!"".equals(x.getAffixeEleveur()) && x.getAffixeEleveur() != null))
+                     .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
+
+               _sortedAffixes.addAll(
+                     _bestOfAffixesVarietyOverYear.entrySet()
+                        .stream()
+                        .filter(x -> x.getValue() > 0 )
+                        .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+                        .limit(this.limitTopN)
+                        .map(Entry::getKey)
+                        .collect(Collectors.toSet())
+                     );
+               
+            }
+            
          }
    
          // On conserve le topN affixe (null-safe way)

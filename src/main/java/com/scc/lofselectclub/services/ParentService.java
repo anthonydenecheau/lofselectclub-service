@@ -619,6 +619,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
       List<ParentFather> _topNFathers = new ArrayList<ParentFather>();
       int position = 0;
+      int qtityExaequo = 0;
+      int currentPosition = 0;
       
       try {
 
@@ -673,13 +675,21 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          for (Entry<Integer, Long> _father : result.entrySet()) {
             
             _percent = Precision.round((double) _father.getValue() / (double) _qtity, 4);
-            ParentFather _currentFather = new ParentFather()
+            if (qtityExaequo == (int) (long)_father.getValue() ) {
+               position++;
+            } else
+               currentPosition = ++position;            
+            
+            qtityExaequo = (int) (long)_father.getValue();
+
+            _topNFathers.add(
+               new ParentFather()
                   .withId(_father.getKey())
                   .withName(getNameFather(_father.getKey()))
-                  .withQtity((int) (long) _father.getValue())
+                  .withQtity(qtityExaequo)
                   .withPercentage(format.format(_percent))
-                  .withPosition(++position);
-            _topNFathers.add(_currentFather);
+                  .withPosition(currentPosition)
+            );
          }
 
          // 4. On trie les résultats par quantites décroissante
@@ -721,18 +731,39 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          for (Map.Entry<Integer, List<BreederStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
    
             // 1. On groupe les étalons par qtites
-            Map<BreederStatistics, Long> _bestOfFathersOverYear = _breedOverYear.getValue().stream().collect(Collectors
+            Map<BreederStatistics, Long> _bestOfFathersBreedOverYear = _breedOverYear.getValue().stream().collect(Collectors
                   .groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()));
             ;
    
             // 2. On ne conserve que les 20 meilleurs que l'on ajouté à notre liste existante (l'objet Set nous prémunit des doublons)
             _sortedFathers.addAll(
-                  _bestOfFathersOverYear.entrySet().stream()
+                  _bestOfFathersBreedOverYear.entrySet().stream()
+                     .filter(x -> x.getValue() > 0 )
                      .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
                      .limit(this.limitTopN)
                      .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon()))
                      .collect(Collectors.toSet())
                      );
+            
+            // 3. On ajoute les topN pour chacune des variétés
+            Map<TupleVariety, List<BreederStatistics>> _allVariety = getVarietyStatistics(_breedOverYear.getValue());
+            for (Map.Entry<TupleVariety, List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
+
+               Map<BreederStatistics, Long> _bestOfFathersVarietyOverYear = _currentVariety.getValue().stream().collect(Collectors
+                     .groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()));
+               ;
+
+               _sortedFathers.addAll(
+                     _bestOfFathersVarietyOverYear.entrySet()
+                        .stream()
+                        .filter(x -> x.getValue() > 0 )
+                        .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+                        .limit(this.limitTopN)
+                        .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon()))
+                        .collect(Collectors.toSet())
+                     );
+               
+            }            
    
          }
    

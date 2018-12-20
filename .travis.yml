@@ -25,7 +25,7 @@ env:
 before_install:
 - ruby -v
 #- gem install travis -v 1.8.9 --no-rdoc --no-ri
-- gem install travis -v 1.8.9
+- gem install travis -v 1.8.9 --no-document
 - travis version
 - export BUILD_NAME=scc-lofselectclub-service-$TRAVIS_BRANCH-$(date -u "+%Y%m%d%H%M%S")-$TRAVIS_BUILD_NUMBER
 script:
