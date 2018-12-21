@@ -17,6 +17,7 @@ import com.scc.lofselectclub.repository.BreederRepository;
 import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
+import com.scc.lofselectclub.template.breeder.BreederAffixRank;
 import com.scc.lofselectclub.template.parent.ParentVariety;
 import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.utils.TypeGender;
@@ -80,7 +81,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    ServiceConfig config;
 
    private int limitTopN = 0;
-   private Set<ParentFather> allTopN = new HashSet<ParentFather>();
+   private Set<ParentFather> allTopNBreed = new HashSet<ParentFather>();
+   private HashMap<TupleVariety,Set<ParentFather>> allTopNVariety = new HashMap<TupleVariety,Set<ParentFather>>();
    
    private final List<BreederStatistics> _emptyParentsStatistics = new ArrayList<BreederStatistics>();
 
@@ -399,7 +401,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return (T) new ParentAffixVariety()
          .withId(this._idVariety)
          .withName(this._nameVariety)
-         .withFathers(extractTopNOverYear(_year, _list));
+         .withFathers(extractTopNVarietyOverYear(_year, _list));
       
    }
    
@@ -411,7 +413,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          return (T) new ParentAffixVariety()
                .withId(_variety.getId())
                .withName(_variety.getName())
-               .withFathers(fullEmptyTopN());
+               .withFathers(fullEmptyTopNVariety(_variety.getId()));
       else
          return (T) new ParentVariety()
                .withId(_variety.getId())
@@ -574,48 +576,14 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return _cotationList;
    }
 
-   // Voir Stackoverflow :
-   // https://stackoverflow.com/questions/52343325/java-8-stream-how-to-get-top-n-count?noredirect=1#comment91673408_52343325
-   // private List<ParentFather> extractTopNOverYear (int _limitTopN,
-   // List<BreederStatistics> _list) {
-   //
-   // List<ParentFather> _topNFathers = new ArrayList<ParentFather>();
-   //
-   // Map<BreederStatistics, Long> counts = _list
-   // .stream()
-   // .collect(Collectors.groupingBy(x -> x, Collectors.counting()));
-   //
-   // Collection<BreederStatistics> _topN = StreamUtils.topN(counts, _limitTopN,
-   // BreederStatistics::getIdEtalon);
-   //
-   // Map<String, Long> _resume = _topN
-   // .stream()
-   // .collect(
-   // Collectors.groupingBy(
-   // BreederStatistics::getNomEtalon, Collectors.counting()
-   // )
-   // );
-   //
-   // for (Map.Entry<String, Long> entry : _resume.entrySet()) {
-   // ParentFather _currentEtalon = new ParentFather()
-   // .withName(entry.getKey())
-   // .withQtity((int) (long)entry.getValue())
-   // ;
-   // _topNFathers.add(_currentEtalon);
-   // }
-   //
-   //
-   // return _topNFathers;
-   // }
-
    /**
-    * Retourne le classement des étalons ayant produit le plus de portées dans l'année
+    * Retourne le classement des étalons s/ la race ayant produit le plus de portées dans l'année
     * 
     * @param _year   Année
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>fathers</code> de l'objet <code>ParentFatherStatistics</code>
     */
-   private List<ParentFather> extractTopNOverYear(int _year, List<BreederStatistics> _list) {
+   private List<ParentFather> extractTopNBreedOverYear(int _year, List<BreederStatistics> _list) {
 
       List<ParentFather> _topNFathers = new ArrayList<ParentFather>();
       int position = 0;
@@ -637,7 +605,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
          // 3. On complète par les étalons potentiellement manquants
          boolean g = false;
-         for (ParentFather _fatherTopN : this.allTopN) {
+         for (ParentFather _fatherTopN : this.allTopNBreed) {
             g = false;
             for (Map.Entry<Integer, Long> entry : _fathers.entrySet()) {
                if (_fatherTopN.getId() == entry.getKey()) {
@@ -685,7 +653,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             _topNFathers.add(
                new ParentFather()
                   .withId(_father.getKey())
-                  .withName(getNameFather(_father.getKey()))
+                  .withName(getNameFatherFromBreed(_father.getKey()))
                   .withQtity(qtityExaequo)
                   .withPercentage(format.format(_percent))
                   .withPosition(currentPosition)
@@ -696,7 +664,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          _topNFathers.sort(Collections.reverseOrder(Comparator.comparing(ParentFather::getQtity)));
          
       } catch (Exception e) {
-         logger.error("extractTopNOverYear : {}",e.getMessage());
+         logger.error("extractTopNBreedOverYear : {}",e.getMessage());
       } finally {
       }
 
@@ -705,13 +673,122 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    }
    
    /**
+    * Retourne le classement des étalons s/ la variete ayant produit le plus de portées dans l'année
+    * 
+    * @param _year   Année
+    * @param _list   Liste des données de production à analyser
+    * @return        Propriété <code>fathers</code> de l'objet <code>BreederAffixStatistics</code>
+    */
+   private List<ParentFather> extractTopNVarietyOverYear(int _year, List<BreederStatistics> _list) {
+      
+      List<ParentFather> _topNFathers = new ArrayList<ParentFather>();
+      int position = 0;
+      int qtityExaequo = 0;
+      int currentPosition = 0;
+      
+      try {
+
+         NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+         format.setMaximumFractionDigits(2);
+         format.setMinimumFractionDigits(2);
+
+         double _percent = 0;
+         
+         // On groupe les étalons par qtites pour l'année en cours
+         Map<Integer, Long> _fathers = _list.stream().filter(x -> (_year == x.getAnnee()))
+               .collect(Collectors.groupingBy(BreederStatistics::getIdEtalon, Collectors.counting()));
+         ;
+
+         // On complète par les étalons potentiellement manquants
+         boolean g = false;
+         List<ParentFather> _listFatherVariety = this.allTopNVariety.entrySet()
+               .stream()
+               .filter(r -> r.getKey().getId() == this._idVariety)
+               .flatMap(e -> e.getValue().stream())
+               .collect(Collectors.toList())
+         ;
+         
+         
+         // On complète par les étalons potentiellement manquants
+         for (ParentFather _fatherTopN : _listFatherVariety) {
+            g = false;
+            for (Map.Entry<Integer, Long> entry : _fathers.entrySet()) {
+               if (_fatherTopN.getId() == entry.getKey()) {
+                  g = true;
+                  break;
+               }
+            }
+
+            if (!g) {
+               ParentFather _currentEtalon = new ParentFather()
+                     .withId(_fatherTopN.getId())
+                     .withName(_fatherTopN.getName())
+                     .withQtity(0)
+                     .withPercentage(format.format(0))
+                     .withPosition(0);
+               _topNFathers.add(_currentEtalon);
+            }
+         }
+
+         int _idBreed = _list.stream().findFirst().get().getIdRace();
+         long _qtity = breederRepository
+               .findByIdRaceAndAnnee(_idBreed, _year)
+               .stream()
+               .collect(Collectors.counting())
+         ;
+         
+         //Sort a map and add to finalMap
+         Map<Integer, Long> result = _fathers.entrySet().stream()
+               .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                       (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+         
+         // 2. On alimente notre Map
+         for (Entry<Integer, Long> _father : result.entrySet()) {
+            
+            _percent = Precision.round((double) _father.getValue() / (double) _qtity, 4);
+            if (qtityExaequo == (int) (long)_father.getValue() ) {
+               position++;
+            } else
+               currentPosition = ++position;            
+            
+            qtityExaequo = (int) (long)_father.getValue();
+
+            _topNFathers.add(
+               new ParentFather()
+                  .withId(_father.getKey())
+                  .withName(getNameFatherFromVariety(_father.getKey()))
+                  .withQtity(qtityExaequo)
+                  .withPercentage(format.format(_percent))
+                  .withPosition(currentPosition)
+            );
+         }
+
+         // 4. On trie les résultats par quantites décroissante
+         _topNFathers.sort(Collections.reverseOrder(Comparator.comparing(ParentFather::getQtity)));
+         
+      } catch (Exception e) {
+         logger.error("extractTopNVarietyOverYear : {}",e.getMessage());
+      } finally {
+      }
+
+      return _topNFathers;
+      
+   }
+   
+   /**
     * Lecture du nom de l'étalon
     * 
     * @param _id  Identifiant de l'etalon
     * @return
     */
-   private String getNameFather(Integer _id) {
-      return this.allTopN.stream().filter(p -> p.getId() == _id).findAny().orElse(null).getName();
+   private String getNameFatherFromBreed(Integer _id) {
+      return this.allTopNBreed.stream().filter(p -> p.getId() == _id).findAny().orElse(null).getName();
+   } 
+
+   private String getNameFatherFromVariety(Integer _id) {
+      return this.allTopNVariety.entrySet().stream().flatMap(e -> e.getValue().stream()).filter(p -> p.getId() == _id).findAny().orElse(null).getName();
    } 
 
    /**
@@ -720,11 +797,14 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @param _list   Liste des données de production à analyser
     * @return        Liste des étalons avec le nombre de portées
     */
-   private List<BreederStatistics> extractTopNFathers(List<BreederStatistics> _list) {
+   private void extractTopNFathers(List<BreederStatistics> _list) {
 
-      List<BreederStatistics> _topNFathers = new ArrayList<BreederStatistics>();
       Set<ParentFather> _sortedFathers = new HashSet<ParentFather>();
+      HashMap<TupleVariety,Set<ParentFather>> _sortedFathersByVariety = new HashMap<TupleVariety,Set<ParentFather>>();
 
+      // TODO : 1 liste topN pour une race
+      //        n liste topN par variete
+      
       try {
          // Sélection de l'année
          Map<Integer, List<BreederStatistics>> _breedGroupByYear = getYearStatistics(_list);
@@ -740,7 +820,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                   _bestOfFathersBreedOverYear.entrySet().stream()
                      .filter(x -> x.getValue() > 0 )
                      .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-                     .limit(this.limitTopN)
                      .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon()))
                      .collect(Collectors.toSet())
                      );
@@ -749,40 +828,41 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             Map<TupleVariety, List<BreederStatistics>> _allVariety = getVarietyStatistics(_breedOverYear.getValue());
             for (Map.Entry<TupleVariety, List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
 
-               Map<BreederStatistics, Long> _bestOfFathersVarietyOverYear = _currentVariety.getValue().stream().collect(Collectors
-                     .groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()));
+               Map<BreederStatistics, Long> _bestOfFathersVarietyOverYear = _currentVariety.getValue()
+                     .stream()
+                     .collect(Collectors.groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()));
                ;
 
-               _sortedFathers.addAll(
-                     _bestOfFathersVarietyOverYear.entrySet()
-                        .stream()
-                        .filter(x -> x.getValue() > 0 )
-                        .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-                        .limit(this.limitTopN)
-                        .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon()))
-                        .collect(Collectors.toSet())
+               for (Map.Entry<BreederStatistics, Long> _result : _bestOfFathersVarietyOverYear.entrySet()) {
+                  
+                  if (_result.getValue() > 0) 
+                     _sortedFathersByVariety.computeIfAbsent(
+                           _currentVariety.getKey()
+                           , k -> new HashSet<>()).add( 
+                                 new ParentFather(_result.getKey().getIdEtalon(), _result.getKey().getNomEtalon())
                      );
+               }
                
             }            
    
          }
    
          // On conserve le topN étalon (null-safe way)
-         this.allTopN = Optional.ofNullable(_sortedFathers)
+         this.allTopNBreed = Optional.ofNullable(_sortedFathers)
                .map(Set::stream)
                .orElseGet(Stream::empty)
                .collect(Collectors.toSet());
    
-         // 3. On (re)construit la liste qui sera utilisée pour la lecture des filtres par année et/ou par mois.
-         // Cette liste ne contient que les données des étalons préselectionnés
-         _topNFathers = StreamUtils.filterTopNFathers(_list, StreamUtils.isTopNFather(_sortedFathers));
-
+         this.allTopNVariety = Optional.ofNullable(_sortedFathersByVariety)
+               .map(x -> x.entrySet().stream())
+               .orElseGet(Stream::empty)
+               .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,(oldValue, newValue) -> oldValue, LinkedHashMap::new));
+           
       } catch (Exception e) {
          logger.error("extractTopNFathers",e.getMessage());
       } finally {
       }
       
-      return _topNFathers;
    }
 
    @SuppressWarnings("unchecked")
@@ -860,7 +940,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
          
          // Recherche TopN Etalon de l'année en cours s/ la race et sur les varietes
-         _topsN = extractTopNOverYear(_year, _list);
+         _topsN = extractTopNBreedOverYear(_year, _list);
          
          // Lecture TopN Affixe par variétés s/ la race en cours (et pour l'année en cours)      
          _topNVariety = populateVarieties(_list, new ParametersVariety(_year,true));
@@ -882,24 +962,42 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    protected <T> T emptyTopN(int _year) {
       return (T) new ParentFatherStatistics()
             .withYear(_year)
-            .withFathers(fullEmptyTopN())
+            .withFathers(fullEmptyTopNBreed())
             .withVariety(populateVarieties(this._emptyParentsStatistics, new ParametersVariety(_year,true)));
    }
    
    /**
-    * Retourne la liste des topN géniteurs pour lesquels aucune production n'a été enregistrée
+    * Retourne la liste des topN géniteurs s/ la race pour lesquels aucune production n'a été enregistrée
     * 
     * @return
     */
-   private List<ParentFather> fullEmptyTopN () {
+   private List<ParentFather> fullEmptyTopNBreed () {
       
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       
-      return this.allTopN.stream()
+      return this.allTopNBreed.stream()
             .map (s -> new ParentFather(s.getId(), s.getName(), 0, format.format(0), 0))
             .collect(Collectors.toList());
    }   
-
+   
+   /**
+    * Retourne la liste des topN géniteurs s/ la variété pour lesquels aucune production n'a été enregistrée
+    * 
+    * @return
+    */   
+   private List<ParentFather> fullEmptyTopNVariety (int idVariety) {
+      
+      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      
+      return this.allTopNVariety.entrySet()
+            .stream()
+            .filter(r -> r.getKey().getId() == idVariety)
+            .flatMap(e -> e.getValue().stream())
+            .map(s -> new ParentFather(s.getId(), s.getName(), 0, format.format(0), 0))
+            .collect(ArrayList::new, ArrayList::add,ArrayList::addAll);            
+            
+   } 
+   
    @SuppressWarnings("unchecked")
    @Override
    protected <T> T readBreed(List<T> _stats) {
@@ -920,8 +1018,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          // On en déduit les 100 meilleurs étalons (les doublons sont supprimés) qui vont
          // nous servir de base pour construire le classement s/ chaque année
          setYearSeries(this._idBreed);
-         _topsNFathers = extractTopNFathers(_list);
-         _fathersStatistics = populateTopN(_topsNFathers);
+         extractTopNFathers(_list);
+         _fathersStatistics = populateTopN(_list);
 
       } catch (Exception e) {
          logger.error("readBreed",e.getMessage());
