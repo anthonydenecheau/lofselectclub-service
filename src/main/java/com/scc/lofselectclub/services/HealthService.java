@@ -142,9 +142,14 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
             // Lecture des maladies et de leurs résultats
             List<HealthFamily> _families = extractHealthFamily(_breedByHealthType.getValue());
    
+            double _total = _breedByHealthType.getValue()
+                  .stream()
+                  .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
+            
             HealthType _type = new HealthType()
                   .withType(TypeHealth.fromId(_breedByHealthType.getKey()))
-                  . withHealthFamily(_families);
+                  .withQtity((int) _total)
+                  .withHealthFamily(_families);
             _resultByType.add(_type);
          }
       

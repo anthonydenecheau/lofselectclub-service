@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -17,6 +16,7 @@ import java.util.stream.IntStream;
 
 import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.template.TupleVariety;
+import com.scc.lofselectclub.template.breeder.BreederAffixRank;
 import com.scc.lofselectclub.template.parent.ParentFather;
 
 public class StreamUtils {
@@ -93,11 +93,31 @@ public class StreamUtils {
       return (("".equals(name) || name == null) ? true : false);
    }
   
-   public static Predicate<BreederStatistics> isTopNFather(Set<ParentFather> fathers) {
+   public static Predicate<ParentFather> isTopNFather(List<ParentFather> fathers) {
+      return p -> fathers.contains(new ParentFather(p.getId()));  
+   }
+
+   public static Predicate<BreederStatistics> onlyTopNFather(List<ParentFather> fathers) {
       return p -> fathers.contains(new ParentFather(p.getIdEtalon(), p.getNomEtalon()));  
    }
-   
+
    public static List<BreederStatistics> filterTopNFathers (List<BreederStatistics> list,
+         Predicate<BreederStatistics> predicate)
+   {  
+         return list.stream()
+                  .filter( predicate )
+                  .collect(Collectors.<BreederStatistics>toList());
+   }
+   
+   public static Predicate<BreederAffixRank> isTopNAffixe(List<BreederAffixRank> affixes) {
+      return p -> affixes.contains(new BreederAffixRank(p.getName()));  
+   }
+
+   public static Predicate<BreederStatistics> onlyTopNAffixe(List<BreederAffixRank> affixes) {
+      return p -> affixes.contains(new BreederAffixRank(p.getAffixeEleveur()));  
+   }
+
+   public static List<BreederStatistics> filterTopNAffixes(List<BreederStatistics> list,
          Predicate<BreederStatistics> predicate)
    {  
          return list.stream()

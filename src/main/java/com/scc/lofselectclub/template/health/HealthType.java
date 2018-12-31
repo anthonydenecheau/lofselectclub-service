@@ -11,7 +11,10 @@ public class HealthType {
    @ApiModelProperty(notes = "type", dataType = "com.scc.lofselectclub.utils.TypeHealth", position = 1, allowEmptyValue = true)
    TypeHealth type;
 
-   @ApiModelProperty(notes = "health family", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "quantity", position = 2, allowEmptyValue = true)
+   int qtity;
+   
+   @ApiModelProperty(notes = "health family", position = 3, allowEmptyValue = true)
    List<HealthFamily> healthFamily;
 
    public TypeHealth getType() {
@@ -22,6 +25,14 @@ public class HealthType {
       this.type = type;
    }
 
+   public int getQtity() {
+      return qtity;
+   }
+
+   public void setQtity(int qtity) {
+      this.qtity = qtity;
+   }
+   
    public List<HealthFamily> getHealthFamily() {
       return healthFamily;
    }
@@ -32,6 +43,11 @@ public class HealthType {
 
    public HealthType withType(TypeHealth type) {
       this.setType(type);
+      return this;
+   }
+   
+   public HealthType withQtity(int qtity) {
+      this.setQtity(qtity);
       return this;
    }
 
