@@ -1,5 +1,8 @@
 package com.scc.lofselectclub.utils;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Classification des inscriptions par type
  *
@@ -10,25 +13,25 @@ package com.scc.lofselectclub.utils;
  */
 public enum TypeRegistration {
 
-   FRANCAIS(537), IMPORTES(538), ETRANGERS(540), AUTRES(-1);
+   FRANCAIS(537,539,761,541), IMPORTES(538), ETRANGERS(540), AUTRES(-1);
 
-   private int value;
-
-   public int getValue() {
-      return value;
+   private final List<Integer> values;
+   
+   TypeRegistration(Integer ...values) {
+       this.values = Arrays.asList(values);
    }
 
-   private TypeRegistration(int value) {
-      this.value = value;
+   public List<Integer> getValues() {
+       return values;
    }
-
+   
    public static TypeRegistration fromId(int id) {
-      for (TypeRegistration type : values()) {
-         if (type.getValue() == id) {
-            return type;
-         }
+      for (TypeRegistration register : TypeRegistration.values()) {
+          if (register.getValues().contains(id)) {
+              return register;
+          }
       }
       return AUTRES;
-   }
+  }
 
 }

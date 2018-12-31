@@ -1,18 +1,54 @@
 package com.scc.lofselectclub.template.parent;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class ParentFather {
 
+   @Override
+   public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + id;
+      return result;
+   }
+
+   @Override
+   public boolean equals(Object obj) {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      ParentFather other = (ParentFather) obj;
+      if (id != other.id)
+         return false;
+      return true;
+   }
+
    public ParentFather() {
       super();
+   }
+
+   public ParentFather(int id) {
+      super();
+      this.id = id;
    }
 
    public ParentFather(int id, String name) {
       super();
       this.id = id;
       this.name = name;
+   }
+   
+   public ParentFather(int id, String name, int year) {
+      super();
+      this.id = id;
+      this.name = name;
+      this.year = year;
    }
    
    public ParentFather(int id, String name, int qtity, String percentage, int position) {
@@ -39,6 +75,9 @@ public class ParentFather {
    @ApiModelProperty(notes = "part of the genitor in the total litters", position = 5, allowEmptyValue = true)
    private String percentage;
 
+   @JsonIgnore
+   private int year;
+   
    public int getPosition() {
       return position;
    }
@@ -78,6 +117,14 @@ public class ParentFather {
    public void setPercentage(String percentage) {
       this.percentage = percentage;
    }
+
+   public int getYear() {
+      return year;
+   }
+
+   public void setYear(int year) {
+      this.year = year;
+   }
    
    public ParentFather withPosition(int position) {
       this.setPosition(position);
@@ -102,34 +149,6 @@ public class ParentFather {
    public ParentFather withPercentage(String percentage) {
       this.setPercentage(percentage);
       return this;
-   }
-   
-   @Override
-   public int hashCode() {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + id;
-      result = prime * result + ((name == null) ? 0 : name.hashCode());
-      return result;
-   }
-
-   @Override
-   public boolean equals(Object obj) {
-      if (this == obj)
-         return true;
-      if (obj == null)
-         return false;
-      if (getClass() != obj.getClass())
-         return false;
-      ParentFather other = (ParentFather) obj;
-      if (id != other.id)
-         return false;
-      if (name == null) {
-         if (other.name != null)
-            return false;
-      } else if (!name.equals(other.name))
-         return false;
-      return true;
    }
    
 }
