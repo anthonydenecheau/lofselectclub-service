@@ -18,6 +18,9 @@ public class HealthTest {
    @ApiModelProperty(notes = "health results", position = 4, allowEmptyValue = true)
    List<HealthResult> healthResults;
 
+   @ApiModelProperty(notes = "detail by variety", position = 5, allowEmptyValue = true)
+   List<HealthVariety> variety;
+   
    public String getCode() {
       return code;
    }
@@ -50,6 +53,14 @@ public class HealthTest {
       this.healthResults = healthResults;
    }
 
+   public List<HealthVariety> getVariety() {
+      return variety;
+   }
+
+   public void setVariety(List<HealthVariety> variety) {
+      this.variety = variety;
+   }
+
    public HealthTest withCode(String code) {
       this.setCode(code);
       return this;
@@ -67,6 +78,11 @@ public class HealthTest {
 
    public HealthTest withHealthResults(List<HealthResult> healthResults) {
       this.setHealthResults(healthResults);
+      return this;
+   }
+
+   public HealthTest withHealthVariety(List<HealthVariety> variety) {
+      this.setVariety(variety);
       return this;
    }
 

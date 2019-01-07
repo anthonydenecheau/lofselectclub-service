@@ -1,5 +1,7 @@
 package com.scc.lofselectclub.template.health;
 
+import java.util.List;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class HealthVariety {
@@ -10,8 +12,11 @@ public class HealthVariety {
    @ApiModelProperty(notes = "variety name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(notes = "variety statistics", position = 3, allowEmptyValue = true)
-   HealthVarietyStatistics statistics;
+   @ApiModelProperty(notes = "quantity", position = 3, allowEmptyValue = true)
+   int qtity;
+   
+   @ApiModelProperty(notes = "health results", position = 4, allowEmptyValue = true)
+   List<HealthResult> healthResults;
 
    public int getId() {
       return id;
@@ -29,14 +34,22 @@ public class HealthVariety {
       this.name = name;
    }
 
-   public HealthVarietyStatistics getStatistics() {
-      return statistics;
+   public int getQtity() {
+      return qtity;
    }
 
-   public void setStatistics(HealthVarietyStatistics statistics) {
-      this.statistics = statistics;
+   public void setQtity(int qtity) {
+      this.qtity = qtity;
    }
 
+   public List<HealthResult> getHealthResults() {
+      return healthResults;
+   }
+
+   public void setHealthResults(List<HealthResult> healthResults) {
+      this.healthResults = healthResults;
+   }
+   
    public HealthVariety withId(int id) {
       this.setId(id);
       return this;
@@ -46,10 +59,14 @@ public class HealthVariety {
       this.setName(name);
       return this;
    }
-
-   public HealthVariety withStatistics(HealthVarietyStatistics statistics) {
-      this.setStatistics(statistics);
+   
+   public HealthVariety withQtity(int qtity) {
+      this.setQtity(qtity);
       return this;
    }
 
+   public HealthVariety withHealthResults(List<HealthResult> healthResults) {
+      this.setHealthResults(healthResults);
+      return this;
+   }
 }

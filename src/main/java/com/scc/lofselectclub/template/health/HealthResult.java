@@ -1,7 +1,5 @@
 package com.scc.lofselectclub.template.health;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -19,9 +17,6 @@ public class HealthResult {
 
    @ApiModelProperty(notes = "percentage", position = 4, allowEmptyValue = true)
    String percentage;
-
-   @ApiModelProperty(notes = "detail by variety", position = 4, allowEmptyValue = true)
-   List<HealthVariety> variety;
 
    @JsonIgnore
    private int sort;
@@ -58,15 +53,6 @@ public class HealthResult {
       this.percentage = percentage;
    }
 
-   public List<HealthVariety> getVariety() {
-      return variety;
-   }
-
-   public void setVariety(List<HealthVariety> variety) {
-      this.variety = variety;
-   }
-
-   
    public int getSort() {
       return sort;
    }
@@ -95,14 +81,8 @@ public class HealthResult {
       return this;
    }
 
-   public HealthResult withVariety(List<HealthVariety> variety) {
-      this.setVariety(variety);
-      return this;
-   }
-
    public HealthResult withSort(int sort) {
       this.setSort(sort);
       return this;
    }
-
 }
