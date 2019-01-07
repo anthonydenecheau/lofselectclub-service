@@ -25,7 +25,6 @@ import com.scc.lofselectclub.template.health.HealthResult;
 import com.scc.lofselectclub.template.health.HealthTest;
 import com.scc.lofselectclub.template.health.HealthType;
 import com.scc.lofselectclub.template.health.HealthVariety;
-import com.scc.lofselectclub.template.health.HealthVarietyStatistics;
 import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.utils.TypeHealth;
 
@@ -228,11 +227,16 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
             String _code = _breedByHealthTest.getKey().getCode();
             String _name = _breedByHealthTest.getKey().getName();
    
+            
+            // Lecture des maladies pour les varietes
+            List<HealthVariety> _healthVariety = populateVarieties(_breedByHealthTest.getValue(), new ParametersVariety((int)_total));
+            
             HealthTest _i = new HealthTest()
                   .withCode(_code)
                   .withName(_name)
                   .withQtity((int) _total)
-                  .withHealthResults(_healthResults);
+                  .withHealthResults(_healthResults)
+                  .withHealthVariety(_healthVariety);
    
             _resultByType.add(_i);
    
@@ -283,14 +287,11 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
             if (_total > 0)
                _percent = Precision.round((double) _qtity / _total, 2);
    
-            List<HealthVariety> _variety = populateVarieties(_breedByResult.getValue(), new ParametersVariety(_qtity));
-   
             HealthResult _t = new HealthResult()
                   .withCode(_code)
                   .withName(_name)
                   .withQtity(_qtity)
                   .withPercentage(format.format(_percent))
-                  .withVariety(_variety)
                   .withSort(_sort);
          
          _resultByType.add(_t);
@@ -312,23 +313,18 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
 
-      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-      double _percent = 0;
-      HealthVarietyStatistics _varietyStatistics = null;
+      List<HealthResult> _healthResults = null;
+      double _total = 0d;
       
       try {
          // Caste la liste
          List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-         int _qtity = _list.stream()
+
+         _total = _list
+               .stream()
                .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
          
-         if (_parameters.getTotal() > 0 )
-            _percent = Precision.round((double) _qtity / _parameters.getTotal(), 2);
-   
-         // Création de l'objet VarietyStatistics
-         _varietyStatistics = new HealthVarietyStatistics()
-               .withQtity(_qtity)
-               .withPercentage(format.format(_percent));
+         _healthResults =  extractHealthResult(_list, _total);
 
       } catch (Exception e) {
          logger.error("readVariety : {}",e.getMessage());
@@ -339,7 +335,8 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       return (T) new HealthVariety()
             .withId(this._idVariety)
             .withName(this._nameVariety)
-            .withStatistics(_varietyStatistics);
+            .withQtity((int)_total)
+            .withHealthResults(_healthResults);
       
    }
 
@@ -350,10 +347,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       return (T) new HealthVariety()
             .withId(_variety.getId())
             .withName(_variety.getName())
-            .withStatistics(new HealthVarietyStatistics()
-                  .withQtity(0)
-                  .withPercentage(format.format(0))
-                  );
+            .withHealthResults(null);
    }
 
    @SuppressWarnings("unchecked")
@@ -376,7 +370,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
          
          // Lecture des maladies et de leurs résultats
          _test = extractHealthTest(_list);
-      
+         
       } catch (Exception e) {
          logger.error("readYear : {}",e.getMessage());
       } finally {
@@ -415,7 +409,6 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       try { 
          List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
          
-         //List<HealthFamily> _families = extractHealthFamily(_list);
          _types = extractHealthTestType(_list);
 
       } catch (Exception e) {
