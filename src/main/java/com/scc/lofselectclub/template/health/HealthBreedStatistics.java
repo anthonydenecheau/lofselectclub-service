@@ -12,9 +12,12 @@ public class HealthBreedStatistics {
    @ApiModelProperty(notes = "quantity", position = 2, allowEmptyValue = true)
    int qtity;
    
-   @ApiModelProperty(notes = "health tests by test", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "health tests", position = 3, allowEmptyValue = true)
    List<HealthTest> healthTest;
 
+   @ApiModelProperty(notes = "detail by variety", position = 4, allowEmptyValue = true)
+   List<HealthVariety> variety;
+   
    public int getYear() {
       return year;
    }
@@ -31,12 +34,20 @@ public class HealthBreedStatistics {
       this.qtity = qtity;
    }
 
-   public List<HealthTest> getHealthType() {
+   public List<HealthTest> getHealthTest() {
       return healthTest;
    }
 
    public void setHealthTest(List<HealthTest> healthTest) {
       this.healthTest = healthTest;
+   }
+   
+   public List<HealthVariety> getVariety() {
+      return variety;
+   }
+
+   public void setVariety(List<HealthVariety> variety) {
+      this.variety = variety;
    }
 
    public HealthBreedStatistics withYear(int year) {
@@ -51,6 +62,12 @@ public class HealthBreedStatistics {
    
    public HealthBreedStatistics withHealthTest(List<HealthTest> healthTest) {
       this.setHealthTest(healthTest);
+      return this;
+   }
+   
+
+   public HealthBreedStatistics withHealthVariety(List<HealthVariety> variety) {
+      this.setVariety(variety);
       return this;
    }
 }
