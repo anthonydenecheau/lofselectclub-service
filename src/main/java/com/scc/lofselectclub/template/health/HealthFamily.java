@@ -12,10 +12,7 @@ public class HealthFamily {
    @ApiModelProperty(notes = "family name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(notes = "quantity", position = 3, allowEmptyValue = true)
-   int qtity;
-   
-   @ApiModelProperty(notes = "Breed statistics", position = 4, allowEmptyValue = true)
+   @ApiModelProperty(notes = "Breed statistics", position = 3, allowEmptyValue = true)
    List<HealthBreedStatistics> statistics;
    
    public String getCode() {
@@ -34,13 +31,6 @@ public class HealthFamily {
       this.name = name;
    }
 
-   public int getQtity() {
-      return qtity;
-   }
-
-   public void setQtity(int qtity) {
-      this.qtity = qtity;
-   }
    
    public List<HealthBreedStatistics> getStatistics() {
       return statistics;
@@ -57,11 +47,6 @@ public class HealthFamily {
 
    public HealthFamily withName(String name) {
       this.setName(name);
-      return this;
-   }
-   
-   public HealthFamily withQtity(int qtity) {
-      this.setQtity(qtity);
       return this;
    }
    

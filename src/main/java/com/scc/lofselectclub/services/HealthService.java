@@ -141,13 +141,8 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
             // Lecture des maladies et de leurs résultats
             List<HealthFamily> _families = extractHealthFamily(_breedByHealthType.getValue());
    
-            double _total = _breedByHealthType.getValue()
-                  .stream()
-                  .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
-            
             HealthType _type = new HealthType()
                   .withType(TypeHealth.fromId(_breedByHealthType.getKey()))
-                  .withQtity((int) _total)
                   .withHealthFamily(_families);
             _resultByType.add(_type);
          }
@@ -177,17 +172,12 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
                .collect(Collectors.groupingBy(r -> new TupleSupraMaladie(r.getCodeSupraMaladie(), r.getLibelleSupraMaladie())));
          for (Map.Entry<TupleSupraMaladie, List<HealthStatistics>> _breedByHealthFamily : _breedGroupByHealthFamily.entrySet()) {
    
-            double _total = _breedByHealthFamily.getValue()
-                  .stream()
-                  .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
-            
             // On parcourt les années (on ajoute un tri)
             List<HealthBreedStatistics> _breedStatistics = populateYears(_breedByHealthFamily.getValue());
    
             HealthFamily _type = new HealthFamily()
                   .withCode(_breedByHealthFamily.getKey().getCode())
                   .withName(_breedByHealthFamily.getKey().getName())
-                  .withQtity((int) _total)
                   .withStatistics(_breedStatistics);
             _resultByFamily.add(_type);
          }
@@ -364,9 +354,16 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    protected <T> T readYear(List<T> _stats, int _year) {
      
       List<HealthTest> _test = null;
+      double _total = 0d;
       
       try { 
+         
          List<HealthStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+
+         // Calcul du nb de résultat s/ l'année en cours
+         _total = _list
+               .stream()
+               .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
          
          // Lecture des maladies et de leurs résultats
          _test = extractHealthTest(_list);
@@ -378,6 +375,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       
       return (T) new HealthBreedStatistics()
             .withYear(_year)
+            .withQtity((int) _total)
             .withHealthTest(_test);
       
    }
