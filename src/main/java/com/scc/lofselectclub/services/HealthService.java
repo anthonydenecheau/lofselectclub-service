@@ -217,15 +217,11 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
             String _name = _breedByHealthTest.getKey().getName();
    
             
-            // Lecture des maladies pour les varietes
-            List<HealthVariety> _healthVariety = populateVarieties(_breedByHealthTest.getValue(), new ParametersVariety((int)_total));
-            
             HealthTest _i = new HealthTest()
                   .withCode(_code)
                   .withName(_name)
                   .withQtity((int) _total)
-                  .withHealthResults(_healthResults)
-                  .withHealthVariety(_healthVariety);
+                  .withHealthResults(_healthResults);
    
             _resultByType.add(_i);
    
@@ -302,7 +298,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
 
-      List<HealthResult> _healthResults = null;
+      List<HealthTest> _healtTests = null;
       double _total = 0d;
       
       try {
@@ -313,7 +309,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
                .stream()
                .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
          
-         _healthResults =  extractHealthResult(_list, _total);
+         _healtTests =  extractHealthTest(_list);
 
       } catch (Exception e) {
          logger.error("readVariety : {}",e.getMessage());
@@ -325,7 +321,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withQtity((int)_total)
-            .withHealthResults(_healthResults);
+            .withHealthTest(_healtTests);
       
    }
 
@@ -336,7 +332,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       return (T) new HealthVariety()
             .withId(_variety.getId())
             .withName(_variety.getName())
-            .withHealthResults(null);
+            .withHealthTest(null);
    }
 
    @SuppressWarnings("unchecked")
@@ -352,7 +348,8 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    @Override
    protected <T> T readYear(List<T> _stats, int _year) {
      
-      List<HealthTest> _test = null;
+      List<HealthTest> _healthBreedOverYear = null;
+      List<HealthVariety> _healthVarietyOverYear = null;
       double _total = 0d;
       
       try { 
@@ -365,7 +362,10 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
                .map(e -> e.getNbResultat()).reduce(0, (x, y) -> x + y);
          
          // Lecture des maladies et de leurs résultats
-         _test = extractHealthTest(_list);
+         _healthBreedOverYear = extractHealthTest(_list);
+         
+         // Lecture des maladies pour les varietes
+         _healthVarietyOverYear = populateVarieties(_list, new ParametersVariety((int)_total));
          
       } catch (Exception e) {
          logger.error("readYear : {}",e.getMessage());
@@ -375,8 +375,8 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       return (T) new HealthBreedStatistics()
             .withYear(_year)
             .withQtity((int) _total)
-            .withHealthTest(_test);
-      
+            .withHealthTest(_healthBreedOverYear)
+            .withHealthVariety(_healthVarietyOverYear);
    }
 
    @SuppressWarnings("unchecked")
