@@ -190,7 +190,6 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
       return _resultByFamily;
    }
 
-   
    /**
     * Retourne la liste des maladies pour un type de maladie
     * 
