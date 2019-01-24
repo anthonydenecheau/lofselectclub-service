@@ -4,16 +4,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.IntSummaryStatistics;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import javax.transaction.Transactional;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
 import com.scc.lofselectclub.model.GenericStatistics;
@@ -64,7 +69,7 @@ public abstract class AbstractGenericService<T, U> {
    }
 
    protected List<SerieDefinition> _serieQtity = new ArrayList<SerieDefinition>(); 
-   protected Map<TupleBreed, Set<TupleVariety>> _varietyByBreed = new HashMap<TupleBreed, Set<TupleVariety>>();
+   protected Map<TupleBreed, LinkedHashSet<TupleVariety>> _varietyByBreed = new LinkedHashMap<TupleBreed, LinkedHashSet<TupleVariety>>();
    protected List<TupleVariety> _referencedVarieties = new ArrayList<TupleVariety>();
    protected int[] _serieYear;
    protected String _period = "";
@@ -86,8 +91,13 @@ public abstract class AbstractGenericService<T, U> {
       List<ConfigurationClub> _breedsManagedByClub = new ArrayList<ConfigurationClub>();
 
       try { 
+         
          // Initialisation des données races / varietes associées au club
-         _breedsManagedByClub = configurationClubRepository.findByIdClub(idClub);
+         try {
+            _breedsManagedByClub = configurationClubRepository.findByIdClub(idClub, orderByTri());
+         } catch (Exception e) {
+            logger.error("setClubBreedData {}", e.getMessage());
+         }
    
          // Exception si le club n'a pas de races connues == l'id club n'existe pas
          if (_breedsManagedByClub.size() == 0)
@@ -96,13 +106,24 @@ public abstract class AbstractGenericService<T, U> {
          // Intialisation des races du club
          this._varietyByBreed = _breedsManagedByClub.stream()
                .collect(Collectors.groupingBy(
-                     r -> new TupleBreed(r.getIdRace(), r.getLibelleRace())
-                     , Collectors.mapping(e -> new TupleVariety(e.getIdVariete(), e.getLibelleVariete()), Collectors.toSet())));
+                     r -> new TupleBreed(r.getIdRace(), r.getNomRace())
+                     , LinkedHashMap::new
+                     , Collectors.mapping(e -> new TupleVariety(e.getIdVariete(), e.getNomVariete()),Collectors.toCollection(LinkedHashSet::new))));
       
       } finally {
       }
       
    }
+   
+   /**
+    * Création d'un objet Sort
+    *    Le tri se fait par le n° d'ordre d'édition de la variété
+    * 
+    */
+   protected Sort orderByTri() {
+      return new Sort(Sort.Direction.ASC, "tri");
+   }
+   
 
    /**
     * Construit la liste exhaustive des variétés pour la race lue
@@ -167,17 +188,29 @@ public abstract class AbstractGenericService<T, U> {
    }
    
    /**
-    * Lecture des données statistiques regroupées par variétés
+    * Lecture des données statistiques regroupées par variétés (on doit préserver le tri s/ les variétés)
     * 
     * @param _list   Liste des données statistiques
-    * @return        Map<TupleVariety, List<?>>
+    * @return        LinkedHashMap<TupleVariety, List<?>>
     */
    @SuppressWarnings("unchecked")
    protected <K, V, C extends Collection<V>, M extends Map<K, C>> M  getVarietyStatistics (List<? extends GenericStatistics> _list) {
       return
             (M) _list.stream()
-               .collect(Collectors.groupingBy(r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())));
+               .collect(Collectors.groupingBy(
+                     r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())
+                     , LinkedHashMap::new
+                     , Collectors.toList())
+                     );
+      
    }
+   
+//   @SuppressWarnings("unchecked")
+//   protected <K, V, C extends Collection<V>, M extends Map<K, C>> M  getVarietyStatistics (List<? extends GenericStatistics> _list) {
+//      return
+//            (M) _list.stream()
+//               .collect(Collectors.groupingBy(r -> new TupleVariety(r.getIdVariete(), r.getNomVariete())));
+//   }
 
    /**
     * Lecture des données statistiques regroupées par races qui s'appuie s/ la table ls_stats_eleveur

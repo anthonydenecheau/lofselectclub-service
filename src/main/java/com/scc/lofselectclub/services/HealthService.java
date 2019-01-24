@@ -339,7 +339,7 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
    @Override
    protected <K, V, C extends Collection<V>, M extends Map<K, C>> M getDataStatistics(int idClub) {
       return 
-            (M) healthRepository.findByIdClub(idClub)
+            (M) healthRepository.findByIdClub(idClub, orderByTri())
             .stream()
             .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
    }

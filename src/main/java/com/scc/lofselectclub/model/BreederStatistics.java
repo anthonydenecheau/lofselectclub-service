@@ -1,10 +1,13 @@
 package com.scc.lofselectclub.model;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "ls_stats_eleveur")
-public class BreederStatistics  extends GenericStatistics {
+public class BreederStatistics extends GenericStatistics{
 
    // NOTE : Pky ! idSaillie
 
@@ -67,17 +70,21 @@ public class BreederStatistics  extends GenericStatistics {
    Integer annee;
    @Column(name = "mois")
    Integer mois;
+   @Column(name = "tri")
+   Integer tri;
 
    public BreederStatistics() {
       super();
    }
 
    public BreederStatistics(Integer idEtalon, String nomEtalon) {
+      super();
       this.idEtalon = idEtalon;
       this.nomEtalon = nomEtalon;
    }
 
    public BreederStatistics(Integer nbMale, Integer nbFemelle) {
+      super();
       this.nbMale = nbMale;
       this.nbFemelle = nbFemelle;
    }
@@ -85,7 +92,7 @@ public class BreederStatistics  extends GenericStatistics {
    public BreederStatistics(Integer idClub, String nomClub, Integer numClub, Integer idRace, String nomRace,
          String codeFci, Integer idVariete, String nomVariete, Integer idEleveur, String affixeEleveur,
          Integer idSaillie, Integer cotationPortee, Integer nbMale, Integer nbFemelle, Double prolificiteRace,
-         Double prolificiteVariete, Integer annee, Integer mois) {
+         Double prolificiteVariete, Integer annee, Integer mois, Integer tri) {
       super();
       this.idClub = idClub;
       this.nomClub = nomClub;
@@ -105,6 +112,7 @@ public class BreederStatistics  extends GenericStatistics {
       this.prolificiteVariete = prolificiteVariete;
       this.annee = annee;
       this.mois = mois;
+      this.tri = tri;
    }
 
    public Integer getIdClub() {
@@ -337,6 +345,14 @@ public class BreederStatistics  extends GenericStatistics {
 
    public void setMois(Integer mois) {
       this.mois = mois;
+   }
+
+   public Integer getTri() {
+      return tri;
+   }
+
+   public void setTri(Integer tri) {
+      this.tri = tri;
    }
 
    @Override

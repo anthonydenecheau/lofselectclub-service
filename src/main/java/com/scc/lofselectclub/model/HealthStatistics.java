@@ -1,6 +1,10 @@
 package com.scc.lofselectclub.model;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "ls_stats_sante")
@@ -56,7 +60,9 @@ public class HealthStatistics extends GenericStatistics {
    @Id
    @Column(name = "mois")
    Integer mois;
-
+   @Column(name = "tri")
+   Integer tri;
+   
    public HealthStatistics() {
 
    }
@@ -252,6 +258,14 @@ public class HealthStatistics extends GenericStatistics {
       this.mois = mois;
    }
 
+   public Integer getTri() {
+      return tri;
+   }
+
+   public void setTri(Integer tri) {
+      this.tri = tri;
+   }
+   
    @Override
    public String toString() {
       return "HealthStatistics [idClub=" + idClub + ", nomClub=" + nomClub + ", numClub=" + numClub + ", idRace="

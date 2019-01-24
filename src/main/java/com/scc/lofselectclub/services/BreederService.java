@@ -639,7 +639,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    @Override
    protected <K, V, C extends Collection<V>, M extends Map<K, C>> M getDataStatistics(int idClub) {
       return 
-            (M) breederRepository.findByIdClub(idClub)
+            (M) breederRepository.findByIdClub(idClub, orderByTri())
             .stream()
             .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
    }

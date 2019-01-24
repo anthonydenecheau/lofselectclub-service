@@ -20,7 +20,10 @@ import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreedStatistics;
 import com.scc.lofselectclub.template.confirmation.ConfirmationHeight;
 import com.scc.lofselectclub.template.confirmation.ConfirmationHeightDetail;
+import com.scc.lofselectclub.template.confirmation.ConfirmationRegisterType;
 import com.scc.lofselectclub.template.confirmation.ConfirmationVariety;
+import com.scc.lofselectclub.utils.TypeRegistration;
+import com.scc.lofselectclub.utils.TypeRegistrationConfirmation;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreed;
 import com.scc.lofselectclub.template.confirmation.ConfirmationResponseObject;
 
@@ -125,6 +128,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    
       long _qtity = 0;
       ConfirmationHeight _height = null;
+      List<ConfirmationRegisterType> _registerType = null;
       
       try {
          List<ConfirmationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
@@ -132,6 +136,9 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
          // Somme des chiots males, femelles, portée
          _qtity = _list.stream()
                .collect(Collectors.counting());
+         
+         // lecture du détail par type d'inscription
+         _registerType = extractRegisterType(_list);
          
          // lecture du détail par taille
          if (this._mandatoryHeight) 
@@ -147,10 +154,94 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             .withId(this._idVariety)
             .withName(this._nameVariety)
             .withQtity((int) (long) _qtity)
-            .withHeight(_height);
+            .withHeight(_height)
+            .withRegisterType(_registerType);
             
    }
 
+   /**
+    * Retourne la répartition des confirmation par type d'inscription
+    * 
+    * @param _list   Liste des données de production à analyser
+    * @return        Propriété <code>registerType</code> de l'objet <code>ConfirmationVariety</code>
+    * @see TypeRegistrationConfirmation
+    */
+   private List<ConfirmationRegisterType> extractRegisterType(List<ConfirmationStatistics> _list) {
+      
+      List<ConfirmationRegisterType> _registerType = new ArrayList<ConfirmationRegisterType>();
+
+      int _qtityTypeDescendance = 0;
+      int _qtityTypeImport = 0;
+      int _qtityTypeTitreInitial = 0;
+      int _qtityTypeLivreAttente = 0;
+      int _qtityTypeAutre = 0;
+      
+      try {
+         
+         Map<Integer, Long> _map = _list
+               .stream()
+               // TODO En Attente de validation (remontée AUTRES) .filter(p -> (p.getTypeInscription() != null && TypeRegistrationConfirmation.fromId(p.getTypeInscription()) != TypeRegistrationConfirmation.AUTRES))
+               .collect(Collectors.groupingBy(ConfirmationStatistics::getTypeInscription, Collectors.counting()));
+
+         for (Integer key : _map.keySet()) {
+            Integer value = (int) (long) _map.get(key);
+
+            switch (TypeRegistrationConfirmation.fromId(key)) {
+            case DESCENDANCE:
+               _qtityTypeDescendance += value;
+               break;
+            case IMPORT:
+               _qtityTypeImport += value;
+               break;
+            case TI:
+               _qtityTypeTitreInitial += value;
+               break;
+            case LA:
+               _qtityTypeLivreAttente += value;
+               break;
+            default:
+               _qtityTypeAutre += value;
+               break;
+            }
+
+         }
+         
+         for (TypeRegistrationConfirmation s : TypeRegistrationConfirmation.values()) {
+            int _qtityType = 0;
+            switch (s) {
+               case DESCENDANCE:
+                  _qtityType = _qtityTypeDescendance;
+                  break;
+               case IMPORT:
+                  _qtityType = _qtityTypeImport;
+                  break;
+               case TI:
+                  _qtityType = _qtityTypeTitreInitial;
+                  break;
+               case LA:
+                  _qtityType = _qtityTypeLivreAttente;
+                  break;
+               default:
+                  _qtityType = _qtityTypeAutre;
+                  break;
+            }            
+            
+            ConfirmationRegisterType _type = new ConfirmationRegisterType()
+                  .withRegistration(s)
+                  .withQtity(_qtityType);
+            _registerType.add(_type);
+            
+         }        
+         
+      } catch (Exception e) {
+         logger.error("extractRegisterType : {}",e.getMessage());
+      } finally {
+      }
+      
+      return _registerType;
+      
+   }
+   
    @SuppressWarnings("unchecked")
    @Override
    protected <T> T emptyVariety(TupleVariety _variety, ParametersVariety _parameters) {
@@ -158,14 +249,15 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             .withId(_variety.getId())
             .withName(_variety.getName())
             .withQtity(0)
-            .withHeight(emptyHeight(false, _variety.getId()));
+            .withHeight(emptyHeight(false, _variety.getId()))
+            .withRegisterType(emptyRegisterType());
    }
 
    @SuppressWarnings("unchecked")
    @Override
    protected <K, V, C extends Collection<V>, M extends Map<K, C>> M getDataStatistics(int idClub) {
       return 
-            (M) confirmationRepository.findByIdClub(idClub)
+            (M) confirmationRepository.findByIdClub(idClub, orderByTri())
             .stream()
             .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
    }
@@ -271,10 +363,28 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             .withDetails(emptyHeightDetail(_overBreed, idVariety));
    }
 
+   private List<ConfirmationRegisterType> emptyRegisterType() {
+      
+      List<ConfirmationRegisterType> _types = new ArrayList<ConfirmationRegisterType>();
+      int _qtityType = 0;
+      
+      for (TypeRegistrationConfirmation s : TypeRegistrationConfirmation.values()) {
+         ConfirmationRegisterType _type = new ConfirmationRegisterType()
+               .withRegistration(s)
+               .withQtity(_qtityType);
+         _types.add(_type);
+      }
+      
+      return _types;
+   }
+
    private List<ConfirmationHeightDetail> emptyHeightDetail(boolean _overBreed, int idVariety) {
 
       IntSummaryStatistics _summaryHeights = null;
       List<ConfirmationHeightDetail> _details = new ArrayList<ConfirmationHeightDetail>();
+      
+      if (this._serieHeight == null)
+         return _details;
       
       if (_overBreed) { 
          _summaryHeights = this._serieHeight.stream()
@@ -285,8 +395,6 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
                .filter(x -> x.getIdVariety() == idVariety)
                .collect(Collectors.summarizingInt(SerieHeight::getHeight))
                ;
-         logger.error("emptyHeightDetail {}: {} {}",this._idVariety,_summaryHeights.getMin(), _summaryHeights.getMax());
-         
       }
 
       int[] _serieHeight = IntStream.rangeClosed(_summaryHeights.getMin(), _summaryHeights.getMax()).toArray();
