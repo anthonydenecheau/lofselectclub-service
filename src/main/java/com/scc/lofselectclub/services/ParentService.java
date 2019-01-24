@@ -14,7 +14,6 @@ import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
 import com.scc.lofselectclub.repository.BreederRepository;
-import com.scc.lofselectclub.repository.ConfirmationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.parent.ParentVariety;
@@ -69,9 +68,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
    @Autowired
    protected BreederRepository breederRepository;
-
-   @Autowired
-   private ConfirmationRepository confirmationRepository;
 
    @Autowired
    private Tracer tracer;
@@ -192,6 +188,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
             // total tous types confondus
             _qtity += value;
+            
          }
 
          List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
@@ -201,18 +198,18 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             int _qtityType = 0;
             double _percent = 0;
             switch (s) {
-            case FRANCAIS:
-               _qtityType = _qtityTypeFrancais;
-               break;
-            case IMPORTES:
-               _qtityType = _qtityTypeImport;
-               break;
-            case ETRANGERS:
-               _qtityType = _qtityTypeEtranger;
-               break;
-            default:
-               _qtityType = _qtityTypeAutre;
-               break;
+               case FRANCAIS:
+                  _qtityType = _qtityTypeFrancais;
+                  break;
+               case IMPORTES:
+                  _qtityType = _qtityTypeImport;
+                  break;
+               case ETRANGERS:
+                  _qtityType = _qtityTypeEtranger;
+                  break;
+               default:
+                  _qtityType = _qtityTypeAutre;
+                  break;
             }
 
             _percent = Precision.round((double) _qtityType / (double) _qtity, 2);
@@ -291,15 +288,15 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             int _qtityType = 0;
             double _percent = 0;
             switch (s) {
-            case FRANCAIS:
-               _qtityType = _qtityTypeFrancais;
-               break;
-            case IMPORTES:
-               _qtityType = _qtityTypeImport;
-               break;
-            default:
-               _qtityType = _qtityTypeAutre;
-               break;
+               case FRANCAIS:
+                  _qtityType = _qtityTypeFrancais;
+                  break;
+               case IMPORTES:
+                  _qtityType = _qtityTypeImport;
+                  break;
+               default:
+                  _qtityType = _qtityTypeAutre;
+                  break;
             }
 
             _percent = Precision.round((double) _qtityType / (double) _qtity, 2);
@@ -358,17 +355,19 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          ParentGender _statsMother = extractMother(_list);
          _origins.put(TypeGender.MOTHER, _statsMother);
    
-         // lecture du nombre de confirmation
-         int year = _list.stream().findFirst().get().getAnnee();
-         long _totalConfirmatonM = confirmationRepository.findByIdVarieteAndAnneeAndSexe(this._idVariety, year, "M")
+         // lecture du nombre distinct de géniteurs
+         long _totalFathers = _list
             .stream()
-            .collect(Collectors.counting());
-         long _totalConfirmatonF = confirmationRepository.findByIdVarieteAndAnneeAndSexe(this._idVariety, year, "F")
+            .filter(StreamUtils.distinctByKey(BreederStatistics::getIdEtalon))
+            .count();
+         
+         long _totalMothers = _list
                .stream()
-               .collect(Collectors.counting());
+               .filter(StreamUtils.distinctByKey(BreederStatistics::getIdLice))
+               .count();
          
          // Lecture de la fréquence d'utilisation des géniteurs
-         _firstUse = extractFrequency(_totalConfirmatonM, _totalConfirmatonF, _list);
+         _firstUse = extractFrequency(_totalFathers, _totalMothers, _list);
 
       } catch (Exception e) {
          logger.error("readVariety",e.getMessage());
@@ -427,7 +426,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>frequencies</code> de l'objet <code>ParentBreedStatistics</code>
     */
-   private ParentFrequency extractFrequency(long _totalConfirmationM, long _totalConfirmationF, List<BreederStatistics> _list) {
+   private ParentFrequency extractFrequency(long _totalFathers, long _totalMothers, List<BreederStatistics> _list) {
 
       Map<TypeGender, ParentFrequencyDetail> _details = new HashMap<TypeGender, ParentFrequencyDetail>();
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
@@ -436,18 +435,18 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       
       try {
          
-         ParentFrequencyDetail _statsFather = extractFrequencyFather(_totalConfirmationM, _list);
+         ParentFrequencyDetail _statsFather = extractFrequencyFather(_totalFathers, _list);
          _details.put(TypeGender.FATHER, _statsFather);
    
-         ParentFrequencyDetail _statsMother = extractFrequencyMother(_totalConfirmationF, _list);
+         ParentFrequencyDetail _statsMother = extractFrequencyMother(_totalMothers, _list);
          _details.put(TypeGender.MOTHER, _statsMother);
    
          // Nb de geniteurs utilisés pour la première fois dans une saillie
          _qtity =_statsFather.getQtity() + _statsMother.getQtity();
          
-         long _totalConfirmation = _totalConfirmationM + _totalConfirmationF;
-         if (_totalConfirmation != 0) 
-            _percent = Precision.round((double) _qtity / _totalConfirmation, 2);
+         long _totalParents = _totalFathers + _totalMothers;
+         if (_totalParents != 0) 
+            _percent = Precision.round((double) _qtity / _totalParents, 2);
 
       } catch (Exception e) {
          logger.error("extractFrequency",e.getMessage());
@@ -461,7 +460,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          
    }
 
-   private ParentFrequencyDetail extractFrequencyFather(long _totalConfirmation, List<BreederStatistics> _list) {
+   private ParentFrequencyDetail extractFrequencyFather(long _totalFathers, List<BreederStatistics> _list) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       double _percent = 0;
@@ -473,8 +472,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .filter(x -> "O".equals(x.getPremiereSaillieEtalon()))
                .collect(Collectors.counting());
          
-         if (_totalConfirmation != 0) 
-            _percent = Precision.round((double) _qtity / _totalConfirmation, 2);
+         if (_totalFathers != 0) 
+            _percent = Precision.round((double) _qtity / _totalFathers, 2);
 
       } catch (Exception e) {
          logger.error("extractFrequencyFather",e.getMessage());
@@ -487,7 +486,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    
    }
 
-   private ParentFrequencyDetail extractFrequencyMother(long _totalConfirmation, List<BreederStatistics> _list) {
+   private ParentFrequencyDetail extractFrequencyMother(long _totalMothers, List<BreederStatistics> _list) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       double _percent = 0;
@@ -499,8 +498,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .filter(x -> "O".equals(x.getPremiereSaillieLice()))
                .collect(Collectors.counting());
          
-         if (_totalConfirmation != 0) 
-            _percent = Precision.round((double) _qtity / _totalConfirmation, 2);
+         if (_totalMothers != 0) 
+            _percent = Precision.round((double) _qtity / _totalMothers, 2);
       
       } catch (Exception e) {
          logger.error("extractFrequencyMother",e.getMessage());
@@ -973,7 +972,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    @Override
    protected <K, V, C extends Collection<V>, M extends Map<K, C>> M getDataStatistics(int idClub) {
       return 
-            (M) breederRepository.findByIdClub(idClub)
+            (M) breederRepository.findByIdClub(idClub, orderByTri())
             .stream()
             .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
    }
@@ -998,17 +997,19 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          // Lecture des variétés s/ la race en cours (et pour l'année en cours)
          _variety = populateVarieties(_list, new ParametersVariety(_year,false));
    
-         // lecture du nombre de confirmation
-         long _totalConfirmatonM = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "M")
+         // lecture du nombre distinct de géniteurs
+         long _totalFathers = _list
             .stream()
-            .collect(Collectors.counting());
+            .filter(StreamUtils.distinctByKey(BreederStatistics::getIdEtalon))
+            .count();
    
-         long _totalConfirmatonF = confirmationRepository.findByIdRaceAndAnneeAndSexe(this._idBreed, _year, "F")
+         long _totalMothers = _list
                .stream()
-               .collect(Collectors.counting());
+               .filter(StreamUtils.distinctByKey(BreederStatistics::getIdLice))
+               .count();
    
          // Lecture de la fréquence d'utilisation des géniteurs
-         _firstUse = extractFrequency(_totalConfirmatonM, _totalConfirmatonF, _list);
+         _firstUse = extractFrequency(_totalFathers, _totalMothers, _list);
 
       } catch (Exception e) {
          logger.error("readYear",e.getMessage());

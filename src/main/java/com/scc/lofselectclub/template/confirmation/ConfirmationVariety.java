@@ -1,5 +1,7 @@
 package com.scc.lofselectclub.template.confirmation;
 
+import java.util.List;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class ConfirmationVariety {
@@ -13,8 +15,11 @@ public class ConfirmationVariety {
    @ApiModelProperty(notes = "number of confirmation", position = 3, allowEmptyValue = true)
    int qtity;
 
-   @ApiModelProperty(notes = "detail by Height", position = 3, allowEmptyValue = true)
+   @ApiModelProperty(notes = "detail by Height", position = 4, allowEmptyValue = true)
    ConfirmationHeight height;
+
+   @ApiModelProperty(notes = "detail by register", position = 5, allowEmptyValue = true)
+   List<ConfirmationRegisterType> registerType;
 
    public int getId() {
       return id;
@@ -48,6 +53,15 @@ public class ConfirmationVariety {
       this.height = height;
    }
 
+   public List<ConfirmationRegisterType> getRegisterType() {
+      return registerType;
+   }
+
+   public void setRegisterType(List<ConfirmationRegisterType> registerType) {
+      this.registerType = registerType;
+   }
+
+
    public ConfirmationVariety withId(int id) {
       this.setId(id);
       return this;
@@ -63,14 +77,20 @@ public class ConfirmationVariety {
       return this;
    }
 
+
    public ConfirmationVariety withHeight(ConfirmationHeight height) {
       this.setHeight(height);
       return this;
    }
 
+   public ConfirmationVariety withRegisterType(List<ConfirmationRegisterType> registerType) {
+      this.setRegisterType(registerType);
+      return this;
+   }
+   
    @Override
    public String toString() {
-      return "Variety [id=" + id + ", name=" + name + ", qtity=" + qtity + ", height=" + height + "]";
+      return "Variety [id=" + id + ", name=" + name + ", qtity=" + qtity + ", height=" + height + ", registerType=" + registerType + "]";
    }
 
 }

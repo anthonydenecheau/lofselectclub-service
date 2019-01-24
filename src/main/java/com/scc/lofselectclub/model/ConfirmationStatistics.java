@@ -1,6 +1,10 @@
 package com.scc.lofselectclub.model;
 
-import javax.persistence.*;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "ls_stats_confirmation")
@@ -25,6 +29,8 @@ public class ConfirmationStatistics extends GenericStatistics {
    @Id
    @Column(name = "id_chien")
    Integer idChien;
+   @Column(name = "typ_inscription")
+   Integer typeInscription;   
    @Column(name = "sexe")
    String sexe;
    @Column(name = "on_taille_obligatoire")
@@ -35,13 +41,15 @@ public class ConfirmationStatistics extends GenericStatistics {
    Integer annee;
    @Column(name = "mois")
    Integer mois;
+   @Column(name = "tri")
+   Integer tri;
 
    public ConfirmationStatistics() {
 
    }
 
    public ConfirmationStatistics(Integer idClub, String nomClub, Integer numClub, Integer idRace, String nomRace,
-         String codeFci, Integer idVariete, String nomVariete, Integer idChien, String sexe, String onTailleObligatoire,
+         String codeFci, Integer idVariete, String nomVariete, Integer idChien, Integer typeInscription, String sexe, String onTailleObligatoire,
          Integer taille, Integer annee, Integer mois) {
       super();
       this.idClub = idClub;
@@ -53,6 +61,7 @@ public class ConfirmationStatistics extends GenericStatistics {
       this.idVariete = idVariete;
       this.nomVariete = nomVariete;
       this.idChien = idChien;
+      this.typeInscription = typeInscription;
       this.sexe = sexe;
       this.onTailleObligatoire = onTailleObligatoire;
       this.taille = taille;
@@ -131,6 +140,14 @@ public class ConfirmationStatistics extends GenericStatistics {
    public void setIdChien(Integer idChien) {
       this.idChien = idChien;
    }
+   
+   public Integer getTypeInscription() {
+      return typeInscription;
+   }
+
+   public void setTypeInscription(Integer typeInscription) {
+      this.typeInscription = typeInscription;
+   }
 
    public String getSexe() {
       return sexe;
@@ -172,11 +189,19 @@ public class ConfirmationStatistics extends GenericStatistics {
       this.mois = mois;
    }
 
+   public Integer getTri() {
+      return tri;
+   }
+
+   public void setTri(Integer tri) {
+      this.tri = tri;
+   }
+
    @Override
    public String toString() {
       return "BreederStatistics [idClub=" + idClub + ", nomClub=" + nomClub + ", numClub=" + numClub + ", idRace="
             + idRace + ", nomRace=" + nomRace + ", codeFci=" + codeFci + ", idVariete=" + idVariete + ", nomVariete="
-            + nomVariete + ", idChien=" + idChien+ ", sexe=" + sexe + ", onTailleObligatoire=" + onTailleObligatoire + ", taille="
+            + nomVariete + ", idChien=" + idChien+ ", typeInscription = " + typeInscription + ", sexe=" + sexe + ", onTailleObligatoire=" + onTailleObligatoire + ", taille="
             + taille + ", annee=" + annee + ", mois=" + mois + "]";
    }
 

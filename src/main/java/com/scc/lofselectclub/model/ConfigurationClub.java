@@ -1,6 +1,9 @@
 package com.scc.lofselectclub.model;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "ls_race")
@@ -8,22 +11,19 @@ public class ConfigurationClub {
 
    @Column(name = "id_club")
    Integer idClub;
-
    @Column(name = "num_club")
    Integer numClub;
-
    @Column(name = "id_race")
    Integer idRace;
-
    @Column(name = "nom_race")
-   String libelleRace;
-
+   String nomRace;
    @Id
    @Column(name = "id_variete")
    Integer idVariete;
-
    @Column(name = "nom_variete")
-   String libelleVariete;
+   String nomVariete;
+   @Column(name = "tri")
+   Integer tri;
 
    public Integer getIdClub() {
       return idClub;
@@ -49,12 +49,12 @@ public class ConfigurationClub {
       this.idRace = idRace;
    }
 
-   public String getLibelleRace() {
-      return libelleRace;
+   public String getNomRace() {
+      return nomRace;
    }
 
-   public void setLibelleRace(String libelleRace) {
-      this.libelleRace = libelleRace;
+   public void setNomRace(String nomRace) {
+      this.nomRace = nomRace;
    }
 
    public Integer getIdVariete() {
@@ -65,12 +65,20 @@ public class ConfigurationClub {
       this.idVariete = idVariete;
    }
 
-   public String getLibelleVariete() {
-      return libelleVariete;
+   public String getNomVariete() {
+      return nomVariete;
    }
 
-   public void setLibelleVariete(String libelleVariete) {
-      this.libelleVariete = libelleVariete;
+   public void setNomVariete(String nomVariete) {
+      this.nomVariete = nomVariete;
+   }
+
+   public Integer getTri() {
+      return tri;
+   }
+
+   public void setTri(Integer tri) {
+      this.tri = tri;
    }
 
 }
