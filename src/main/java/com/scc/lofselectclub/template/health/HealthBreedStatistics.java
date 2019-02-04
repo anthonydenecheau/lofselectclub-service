@@ -65,7 +65,6 @@ public class HealthBreedStatistics {
       return this;
    }
    
-
    public HealthBreedStatistics withHealthVariety(List<HealthVariety> variety) {
       this.setVariety(variety);
       return this;

@@ -22,7 +22,6 @@ import com.scc.lofselectclub.template.confirmation.ConfirmationHeight;
 import com.scc.lofselectclub.template.confirmation.ConfirmationHeightDetail;
 import com.scc.lofselectclub.template.confirmation.ConfirmationRegisterType;
 import com.scc.lofselectclub.template.confirmation.ConfirmationVariety;
-import com.scc.lofselectclub.utils.TypeRegistration;
 import com.scc.lofselectclub.utils.TypeRegistrationConfirmation;
 import com.scc.lofselectclub.template.confirmation.ConfirmationBreed;
 import com.scc.lofselectclub.template.confirmation.ConfirmationResponseObject;
