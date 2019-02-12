@@ -211,6 +211,8 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
 
       PerformanceTypeDetail _detail = null;
       PerformanceStatistics sumPerformance = null;
+      Map<TypeGender, Integer> gender = new HashMap<TypeGender, Integer>();
+      
       int _qtity = 0; 
       
       try {
@@ -224,10 +226,23 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
          
          _qtity = sumPerformance.getQtity();
          
+         double _totalMale = _list
+               .stream()
+               .filter(e -> e.getSexe().equals("M"))
+               .map(e -> e.getQtity()).reduce(0, (x, y) -> x + y);
+         gender.put(TypeGender.FATHER, (int)_totalMale);
+         
+         double _totalFemale = _list
+               .stream()
+               .filter(e -> e.getSexe().equals("F"))
+               .map(e -> e.getQtity()).reduce(0, (x, y) -> x + y);
+         gender.put(TypeGender.MOTHER, (int)_totalFemale);
+         
          List<PerformanceResult> results = extractResultPerformance(_list);
          
          _detail = new PerformanceTypeDetail()
                .withQtity(_qtity)
+               .withGender(gender)
                .withResults(results)
          ;
          
