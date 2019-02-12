@@ -283,7 +283,7 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
          
          if (enumType.size()>0) 
             for (String s : enumType)
-               _performances.put(TypePerformance.valueOf(s), new PerformanceTypeDetail());
+               _performances.put(TypePerformance.valueOf(s), emptyPerformanceTypeDetail());
                   
       } catch (Exception e) {
          logger.error("extractTypePerformance : {}",e.getMessage());
@@ -291,6 +291,19 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
       }
       
       return _performances;
+   }
+   
+   private PerformanceTypeDetail emptyPerformanceTypeDetail() {
+      
+      Map<TypeGender, Integer> gender = new HashMap<TypeGender, Integer>();
+      gender.put(TypeGender.FATHER, 0);
+      gender.put(TypeGender.MOTHER, 0);
+      
+      return new PerformanceTypeDetail()
+            .withQtity(0)
+            .withGender(gender)
+            .withResults(null)
+      ;
    }
    
    @SuppressWarnings("unchecked")
