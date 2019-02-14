@@ -61,7 +61,6 @@ public class ConfirmationVariety {
       this.registerType = registerType;
    }
 
-
    public ConfirmationVariety withId(int id) {
       this.setId(id);
       return this;
