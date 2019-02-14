@@ -17,7 +17,10 @@ public class ConfirmationBreedStatistics {
    @ApiModelProperty(notes = "detail by Height (if mandatory for the breed)", position = 3, allowEmptyValue = true)
    ConfirmationHeight height;
 
-   @ApiModelProperty(notes = "detail by variety", position = 4, allowEmptyValue = true)
+   @ApiModelProperty(notes = "detail by register", position = 4, allowEmptyValue = true)
+   List<ConfirmationRegisterType> registerType;
+   
+   @ApiModelProperty(notes = "detail by variety", position = 5, allowEmptyValue = true)
    List<ConfirmationVariety> variety;
 
    public int getYear() {
@@ -44,6 +47,14 @@ public class ConfirmationBreedStatistics {
       this.height = height;
    }
 
+   public List<ConfirmationRegisterType> getRegisterType() {
+      return registerType;
+   }
+
+   public void setRegisterType(List<ConfirmationRegisterType> registerType) {
+      this.registerType = registerType;
+   }
+   
    public List<ConfirmationVariety> getVariety() {
       return variety;
    }
@@ -67,6 +78,11 @@ public class ConfirmationBreedStatistics {
       return this;
    }
 
+   public ConfirmationBreedStatistics withRegisterType(List<ConfirmationRegisterType> registerType) {
+      this.setRegisterType(registerType);
+      return this;
+   }
+   
    public ConfirmationBreedStatistics withVariety(List<ConfirmationVariety> variety) {
       this.setVariety(variety);
       return this;
@@ -74,7 +90,7 @@ public class ConfirmationBreedStatistics {
 
    @Override
    public String toString() {
-      return "BreedStatistics [year=" + year + ", qtity=" + qtity + ", height=" + height + ", variety=" + variety + "]";
+      return "BreedStatistics [year=" + year + ", qtity=" + qtity + ", height=" + height + ", registerType=" + registerType + ", variety=" + variety + "]";
    }
 
 }

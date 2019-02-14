@@ -267,6 +267,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       
       long _qtity = 0;
       ConfirmationHeight _height = null;
+      List<ConfirmationRegisterType> _registerType = null;
       List<ConfirmationVariety> _variety = null;
       
       try {
@@ -279,6 +280,9 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
          if (this._mandatoryHeight) 
             _height = extractHeight(_list, true);
                
+         // lecture du détail par type d'inscription
+         _registerType = extractRegisterType(_list);
+         
          // Lecture des variétés s/ la race en cours (et pour l'année en cours)
          _variety = populateVarieties(_list, null);
       
@@ -291,6 +295,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             .withYear(_year)
             .withQtity((int) (long) _qtity)
             .withHeight(_height)
+            .withRegisterType(_registerType)
             .withVariety(_variety);
       
    }
@@ -302,6 +307,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             .withYear(_year)
             .withQtity(0)
             .withHeight(emptyHeight(true,-1))
+            .withRegisterType(emptyRegisterType())
             .withVariety(populateVarieties(new ArrayList<ConfirmationStatistics>(), null));
    }
 
