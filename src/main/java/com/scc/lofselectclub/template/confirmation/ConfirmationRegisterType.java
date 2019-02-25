@@ -12,8 +12,8 @@ public class ConfirmationRegisterType {
    @ApiModelProperty(notes = "number ", position = 2, allowEmptyValue = true)
    int qtity;
    
-   public TypeRegistrationConfirmation getRegistration() {
-      return registration;
+   public String getRegistration() {
+      return registration.getLabel();
    }
 
    public void setRegistration(TypeRegistrationConfirmation registration) {

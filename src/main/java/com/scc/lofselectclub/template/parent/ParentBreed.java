@@ -2,7 +2,6 @@ package com.scc.lofselectclub.template.parent;
 
 import java.util.List;
 
-import com.scc.lofselectclub.template.breeder.BreederAffixStatistics;
 
 import io.swagger.annotations.ApiModelProperty;
 

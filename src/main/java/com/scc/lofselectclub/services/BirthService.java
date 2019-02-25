@@ -126,7 +126,9 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
       List<BirthCotation> _cotationList = new ArrayList<BirthCotation>();
       int[] _cotReferences = new int[] { 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
+      
       try {
          Map<Integer, Long> _cotations = _list
                .stream()
@@ -140,7 +142,7 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
    
          for (Map.Entry<Integer, Long> _cot : _cotations.entrySet()) {
    
-            _percent = Precision.round((double) _cot.getValue() / _total, 2);
+            _percent = Precision.round((double) _cot.getValue() / _total, 4);
             // Suppression de la cotation traitée
             _cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
             BirthCotation c = new BirthCotation()

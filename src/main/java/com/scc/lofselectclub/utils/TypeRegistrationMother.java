@@ -8,16 +8,14 @@ import java.util.List;
  *
  * <li>{@link #FRANCAIS}</li>
  * <li>{@link #IMPORTES}</li>
- * <li>{@link #ETRANGERS}</li>
- * <li>{@link #AUTRES}</li>
  */
-public enum TypeRegistration {
+public enum TypeRegistrationMother {
 
-   FRANCAIS(537,539,761,541), IMPORTES(538), ETRANGERS(540), AUTRES(-1);
+   FRANCAIS(537,539,761,541), IMPORTES(538);
 
    private final List<Integer> values;
    
-   TypeRegistration(Integer ...values) {
+   TypeRegistrationMother(Integer ...values) {
        this.values = Arrays.asList(values);
    }
 
@@ -25,13 +23,13 @@ public enum TypeRegistration {
        return values;
    }
    
-   public static TypeRegistration fromId(int id) {
-      for (TypeRegistration register : TypeRegistration.values()) {
+   public static TypeRegistrationMother fromId(int id) {
+      for (TypeRegistrationMother register : TypeRegistrationMother.values()) {
           if (register.getValues().contains(id)) {
               return register;
           }
       }
-      return AUTRES;
+      return FRANCAIS;
   }
 
 }
