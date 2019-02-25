@@ -186,21 +186,21 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
             Integer value = (int) (long) _map.get(key);
 
             switch (TypeRegistrationConfirmation.fromId(key)) {
-            case DESCENDANCE:
-               _qtityTypeDescendance += value;
-               break;
-            case IMPORT:
-               _qtityTypeImport += value;
-               break;
-            case TI:
-               _qtityTypeTitreInitial += value;
-               break;
-            case LA:
-               _qtityTypeLivreAttente += value;
-               break;
-            default:
-               _qtityTypeAutre += value;
-               break;
+               case DESCENDANCE:
+                  _qtityTypeDescendance += value;
+                  break;
+               case IMPORT:
+                  _qtityTypeImport += value;
+                  break;
+               case TI:
+                  _qtityTypeTitreInitial += value;
+                  break;
+               case LA:
+                  _qtityTypeLivreAttente += value;
+                  break;
+               default:
+                  _qtityTypeAutre += value;
+                  break;
             }
 
          }

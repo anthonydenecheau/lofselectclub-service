@@ -19,7 +19,8 @@ import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.parent.ParentVariety;
 import com.scc.lofselectclub.utils.StreamUtils;
 import com.scc.lofselectclub.utils.TypeGender;
-import com.scc.lofselectclub.utils.TypeRegistration;
+import com.scc.lofselectclub.utils.TypeRegistrationMother;
+import com.scc.lofselectclub.utils.TypeRegistrationFather;
 import com.scc.lofselectclub.template.parent.ParentFather;
 import com.scc.lofselectclub.template.parent.ParentAffixVariety;
 import com.scc.lofselectclub.template.parent.ParentBreed;
@@ -31,6 +32,8 @@ import com.scc.lofselectclub.template.parent.ParentFrequency;
 import com.scc.lofselectclub.template.parent.ParentFrequencyDetail;
 import com.scc.lofselectclub.template.parent.ParentGender;
 import com.scc.lofselectclub.template.parent.ParentRegisterType;
+import com.scc.lofselectclub.template.parent.ParentRegisterTypeFather;
+import com.scc.lofselectclub.template.parent.ParentRegisterTypeMother;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -148,7 +151,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * 
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>origins</code> de l'objet <code>ParentBreedStatistics</code>
-    * @see TypeRegistration
+    * @see TypeRegistrationMother
     */
    private ParentGender extractFather(List<BreederStatistics> _list) {
 
@@ -158,7 +161,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       int _qtityTypeFrancais = 0;
       int _qtityTypeImport = 0;
       int _qtityTypeEtranger = 0;
-      int _qtityTypeAutre = 0;
 
       try {
 
@@ -171,7 +173,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          for (Integer key : _map.keySet()) {
             Integer value = _map.get(key);
 
-            switch (TypeRegistration.fromId(key)) {
+            switch (TypeRegistrationFather.fromId(key)) {
             case FRANCAIS:
                _qtityTypeFrancais += value;
                break;
@@ -182,7 +184,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                _qtityTypeEtranger += value;
                break;
             default:
-               _qtityTypeAutre += value;
                break;
             }
 
@@ -194,7 +195,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
          NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
 
-         for (TypeRegistration s : TypeRegistration.values()) {
+         for (TypeRegistrationFather s : TypeRegistrationFather.values()) {
             int _qtityType = 0;
             double _percent = 0;
             switch (s) {
@@ -208,13 +209,12 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                   _qtityType = _qtityTypeEtranger;
                   break;
                default:
-                  _qtityType = _qtityTypeAutre;
                   break;
             }
 
             _percent = Precision.round((double) _qtityType / (double) _qtity, 2);
             
-            ParentRegisterType _type = new ParentRegisterType()
+            ParentRegisterType _type = new ParentRegisterTypeFather()
                   .withRegistration(s)
                   .withQtity(_qtityType)
                   .withPercentage(format.format(_percent));
@@ -243,7 +243,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * 
     * @param _list   Liste des données de production à analyser
     * @return        Propriété <code>origins</code> de l'objet <code>ParentBreedStatistics</code>
-    * @see TypeRegistration
+    * @see TypeRegistrationMother
     */
    private ParentGender extractMother(List<BreederStatistics> _list) {
 
@@ -265,7 +265,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          for (Integer key : _map.keySet()) {
             Integer value = _map.get(key);
 
-            switch (TypeRegistration.fromId(key)) {
+            switch (TypeRegistrationMother.fromId(key)) {
             case FRANCAIS:
                _qtityTypeFrancais += value;
                break;
@@ -273,7 +273,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                _qtityTypeImport += value;
                break;
             default:
-               _qtityTypeAutre += value;
                break;
             }
 
@@ -284,7 +283,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
          NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
 
-         for (TypeRegistration s : TypeRegistration.values()) {
+         for (TypeRegistrationMother s : TypeRegistrationMother.values()) {
             int _qtityType = 0;
             double _percent = 0;
             switch (s) {
@@ -295,13 +294,12 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                   _qtityType = _qtityTypeImport;
                   break;
                default:
-                  _qtityType = _qtityTypeAutre;
-                  break;
+                 break;
             }
 
             _percent = Precision.round((double) _qtityType / (double) _qtity, 2);
             
-            ParentRegisterType _type = new ParentRegisterType()
+            ParentRegisterType _type = new ParentRegisterTypeMother()
                   .withRegistration(s)
                   .withQtity(_qtityType)
                   .withPercentage(format.format(_percent));
@@ -1192,8 +1190,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private Map<TypeGender, ParentGender> emptyParentOrigin() {
 
       Map<TypeGender, ParentGender> _origins = new HashMap<TypeGender, ParentGender>();
-      _origins.put(TypeGender.FATHER, emptyParentGender());
-      _origins.put(TypeGender.MOTHER, emptyParentGender());
+      _origins.put(TypeGender.FATHER, emptyParentGender(TypeGender.FATHER));
+      _origins.put(TypeGender.MOTHER, emptyParentGender(TypeGender.MOTHER));
 
       return _origins;
    }
@@ -1204,21 +1202,34 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
     * @param 
     * @return
     */
-   private ParentGender emptyParentGender() {
+   private ParentGender emptyParentGender(TypeGender gender) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
       int _qtity = 0;
       int _qtityType = 0;
       double _percent = 0;
-      
       List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
-      for (TypeRegistration s : TypeRegistration.values()) {
-         
-         ParentRegisterType _type = new ParentRegisterType()
-               .withRegistration(s)
-               .withQtity(_qtityType)
-               .withPercentage(format.format(_percent));
-         _types.add(_type);
+      
+      if (gender.equals(TypeGender.MOTHER)) {
+         for (TypeRegistrationMother s : TypeRegistrationMother.values()) {
+            
+            ParentRegisterType _type = new ParentRegisterTypeMother()
+                  .withRegistration(s)
+                  .withQtity(_qtityType)
+                  .withPercentage(format.format(_percent));
+            _types.add(_type);
+         }
+      }
+      
+      if (gender.equals(TypeGender.FATHER)) {
+         for (TypeRegistrationFather s : TypeRegistrationFather.values()) {
+            
+            ParentRegisterType _type = new ParentRegisterTypeFather()
+                  .withRegistration(s)
+                  .withQtity(_qtityType)
+                  .withPercentage(format.format(_percent));
+            _types.add(_type);
+         }
       }
       
       return new ParentGender()

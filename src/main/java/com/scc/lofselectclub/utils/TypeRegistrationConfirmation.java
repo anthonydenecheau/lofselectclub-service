@@ -15,12 +15,22 @@ import java.util.List;
  */
 public enum TypeRegistrationConfirmation {
 
-   DESCENDANCE(537,541), IMPORT(538), TI(539), LA(761), AUTRES(-1);
-
+   DESCENDANCE("LA DESCENDANCE", new ArrayList<Integer>(Arrays.asList(537,541)))
+      , IMPORT("L'IMPORTATION",new ArrayList<Integer>(Arrays.asList(538)))
+      , TI("TITRE INITIAL",new ArrayList<Integer>(Arrays.asList(539)))
+      , LA("LIVRE D'ATTENTE",new ArrayList<Integer>(Arrays.asList(761)))
+      , AUTRES("AUTRES",new ArrayList<Integer>(Arrays.asList(-1)));
+   
+   private final String label;
    private final List<Integer> values;
    
-   TypeRegistrationConfirmation(Integer ...values) {
-       this.values = Arrays.asList(values);
+   TypeRegistrationConfirmation(String label, List<Integer> values) {
+      this.label = label;
+      this.values = values;
+   }
+
+   public String getLabel() {
+      return label;
    }
 
    public List<Integer> getValues() {
