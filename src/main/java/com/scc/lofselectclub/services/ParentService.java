@@ -194,7 +194,9 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
          List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
          NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-
+         format.setMaximumFractionDigits(2);
+         format.setMinimumFractionDigits(2);
+         
          for (TypeRegistrationFather s : TypeRegistrationFather.values()) {
             int _qtityType = 0;
             double _percent = 0;
@@ -212,7 +214,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                   break;
             }
 
-            _percent = Precision.round((double) _qtityType / (double) _qtity, 2);
+            _percent = Precision.round((double) _qtityType / (double) _qtity, 4);
             
             ParentRegisterType _type = new ParentRegisterTypeFather()
                   .withRegistration(s)
@@ -266,14 +268,14 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             Integer value = _map.get(key);
 
             switch (TypeRegistrationMother.fromId(key)) {
-            case FRANCAIS:
-               _qtityTypeFrancais += value;
-               break;
-            case IMPORTES:
-               _qtityTypeImport += value;
-               break;
-            default:
-               break;
+               case FRANCAIS:
+                  _qtityTypeFrancais += value;
+                  break;
+               case IMPORTES:
+                  _qtityTypeImport += value;
+                  break;
+               default:
+                  break;
             }
 
             // total tous types confondus
@@ -282,7 +284,9 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
          List<ParentRegisterType> _types = new ArrayList<ParentRegisterType>();
          NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-
+         format.setMaximumFractionDigits(2);
+         format.setMinimumFractionDigits(2);
+         
          for (TypeRegistrationMother s : TypeRegistrationMother.values()) {
             int _qtityType = 0;
             double _percent = 0;
@@ -297,7 +301,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                  break;
             }
 
-            _percent = Precision.round((double) _qtityType / (double) _qtity, 2);
+            _percent = Precision.round((double) _qtityType / (double) _qtity, 4);
             
             ParentRegisterType _type = new ParentRegisterTypeMother()
                   .withRegistration(s)
@@ -428,6 +432,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
       Map<TypeGender, ParentFrequencyDetail> _details = new HashMap<TypeGender, ParentFrequencyDetail>();
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
       double _percent = 0;
       long _qtity = 0;
       
@@ -444,7 +450,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          
          long _totalParents = _totalFathers + _totalMothers;
          if (_totalParents != 0) 
-            _percent = Precision.round((double) _qtity / _totalParents, 2);
+            _percent = Precision.round((double) _qtity / _totalParents, 4);
 
       } catch (Exception e) {
          logger.error("extractFrequency",e.getMessage());
@@ -461,6 +467,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private ParentFrequencyDetail extractFrequencyFather(long _totalFathers, List<BreederStatistics> _list) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
       double _percent = 0;
       long _qtity = 0;
 
@@ -471,7 +479,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .collect(Collectors.counting());
          
          if (_totalFathers != 0) 
-            _percent = Precision.round((double) _qtity / _totalFathers, 2);
+            _percent = Precision.round((double) _qtity / _totalFathers, 4);
 
       } catch (Exception e) {
          logger.error("extractFrequencyFather",e.getMessage());
@@ -487,6 +495,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private ParentFrequencyDetail extractFrequencyMother(long _totalMothers, List<BreederStatistics> _list) {
 
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
       double _percent = 0;
       long _qtity = 0;
       
@@ -497,7 +507,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .collect(Collectors.counting());
          
          if (_totalMothers != 0) 
-            _percent = Precision.round((double) _qtity / _totalMothers, 2);
+            _percent = Precision.round((double) _qtity / _totalMothers, 4);
       
       } catch (Exception e) {
          logger.error("extractFrequencyMother",e.getMessage());
@@ -521,6 +531,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       List<ParentCotation> _cotationList = new ArrayList<ParentCotation>();
       int[] _cotReferences = new int[] { 1, 2, 3, 4, 5, 6 };
       NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
+      format.setMaximumFractionDigits(2);
+      format.setMinimumFractionDigits(2);
       Map<Integer, Integer> _cotationsGeniteur = null;
 
       try {
@@ -544,7 +556,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          // Suppression de la cotation traitée
          for (Map.Entry<Integer, Integer> _cot : _cotationsGeniteur.entrySet()) {
    
-            _percent = Precision.round((double) _cot.getValue() / _total, 2);
+            _percent = Precision.round((double) _cot.getValue() / _total, 4);
             _cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
             
             ParentCotation c = new ParentCotation()
