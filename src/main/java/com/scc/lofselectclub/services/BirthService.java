@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.util.Precision;
@@ -138,11 +139,15 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
                .stream()
                .mapToInt(Number::intValue)
                .sum();
+         
          double _percent = 0;
-   
+         double _arrondi = 0;
+         
          for (Map.Entry<Integer, Long> _cot : _cotations.entrySet()) {
    
             _percent = Precision.round((double) _cot.getValue() / _total, 4);
+            _arrondi += _percent; 
+            
             // Suppression de la cotation traitée
             _cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
             BirthCotation c = new BirthCotation()
@@ -150,6 +155,16 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
                   .withQtity((int) (long) _cot.getValue())
                   .withPercentage(format.format(_percent));
             _cotationList.add(c);
+         }
+         
+         // Gestion des arrondis
+         if (_cotationList.size() > 1) {
+            if (_arrondi != (double)1) {
+               Stream<BirthCotation> stream = _cotationList.stream();
+               stream.reduce((first, second) -> second)
+                  .orElse(null)
+                  .setPercentage(format.format(Precision.round(_percent,4)+Precision.round((1-_arrondi),4)));
+            }
          }
    
          for (int i : _cotReferences) {
