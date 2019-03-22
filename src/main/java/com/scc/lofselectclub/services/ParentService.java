@@ -197,9 +197,11 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          format.setMaximumFractionDigits(2);
          format.setMinimumFractionDigits(2);
          
+         double _percent = 0;
+         double _arrondi = 0;
+         
          for (TypeRegistrationFather s : TypeRegistrationFather.values()) {
             int _qtityType = 0;
-            double _percent = 0;
             switch (s) {
                case FRANCAIS:
                   _qtityType = _qtityTypeFrancais;
@@ -215,6 +217,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             }
 
             _percent = Precision.round((double) _qtityType / (double) _qtity, 4);
+            _arrondi += _percent;
             
             ParentRegisterType _type = new ParentRegisterTypeFather()
                   .withRegistration(s)
@@ -223,6 +226,15 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             _types.add(_type);
          }
 
+         // Gestion des arrondis
+         if (_types.size() > 1) {
+            if (_arrondi != (double)1) {
+               Stream<ParentRegisterType> stream = _types.stream();
+               ((ParentRegisterTypeFather) stream.reduce((first, second) -> second)
+                  .orElse(null))
+                  .setPercentage(format.format(Precision.round(_percent,4)+Precision.round((1-_arrondi),4)));
+            }
+         }
 
          // Lecture du nb de géniteur par cotations
          List<ParentCotation> _cotations = extractCotation("M", _list);
@@ -254,7 +266,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       int _qtity = 0;
       int _qtityTypeFrancais = 0;
       int _qtityTypeImport = 0;
-      int _qtityTypeAutre = 0;
 
       try {
 
@@ -287,9 +298,11 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          format.setMaximumFractionDigits(2);
          format.setMinimumFractionDigits(2);
          
+         double _percent = 0;
+         double _arrondi = 0;
+         
          for (TypeRegistrationMother s : TypeRegistrationMother.values()) {
             int _qtityType = 0;
-            double _percent = 0;
             switch (s) {
                case FRANCAIS:
                   _qtityType = _qtityTypeFrancais;
@@ -302,6 +315,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             }
 
             _percent = Precision.round((double) _qtityType / (double) _qtity, 4);
+            _arrondi += _percent;
             
             ParentRegisterType _type = new ParentRegisterTypeMother()
                   .withRegistration(s)
@@ -310,6 +324,16 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             _types.add(_type);
          }
 
+         // Gestion des arrondis
+         if (_types.size() > 1) {
+            if (_arrondi != (double)1) {
+               Stream<ParentRegisterType> stream = _types.stream();
+               ((ParentRegisterTypeMother) stream.reduce((first, second) -> second)
+                  .orElse(null))
+                  .setPercentage(format.format(Precision.round(_percent,4)+Precision.round((1-_arrondi),4)));
+            }
+         }
+         
          // Lecture du nb de géniteur par cotations
          List<ParentCotation> _cotations = extractCotation("F", _list);
          
@@ -552,11 +576,13 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    
          double _total = _cotationsGeniteur.values().stream().mapToInt(Number::intValue).sum();
          double _percent = 0;
-   
+         double _arrondi = 0;
+         
          // Suppression de la cotation traitée
          for (Map.Entry<Integer, Integer> _cot : _cotationsGeniteur.entrySet()) {
    
             _percent = Precision.round((double) _cot.getValue() / _total, 4);
+            _arrondi += _percent;
             _cotReferences = ArrayUtils.removeElement(_cotReferences, _cot.getKey());
             
             ParentCotation c = new ParentCotation()
@@ -566,6 +592,16 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             _cotationList.add(c);
          }
    
+         // Gestion des arrondis
+         if (_cotationList.size() > 1) {
+            if (_arrondi != (double)1) {
+               Stream<ParentCotation> stream = _cotationList.stream();
+               stream.reduce((first, second) -> second)
+                  .orElse(null)
+                  .setPercentage(format.format(Precision.round(_percent,4)+Precision.round((1-_arrondi),4)));
+            }
+         }
+
          for (int i : _cotReferences) {
             ParentCotation c = new ParentCotation()
                   .withGrade(i)
@@ -724,6 +760,20 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          return true;
 
    }
+   
+   private boolean isTopNVariety(Integer _id, List<ParentFather> _listFatherVarietyTopN) {
+      
+      List<ParentFather> _fathers = Collections.singletonList(new ParentFather().withId(_id));
+      ParentFather y = _listFatherVarietyTopN.stream()
+            .filter(StreamUtils.isTopNFather(_fathers))
+            .findAny()
+            .orElse(null);
+      if (y == null)
+         return false;
+      else
+         return true;
+
+   }
 
    private boolean isPresent(Integer _id, List<ParentFather> _topN) {
       
@@ -806,7 +856,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             // si oui, il est sorti du classement pour l'année en cours; si non il n'est pas pris en compte
             // on conserve l'information qtités
             if (!isTop20(_father.getKey(), _top20Fathers)) {
-               if (isTopN(_father.getKey())) {
+               if (isTopNVariety(_father.getKey(),_listFatherVarietyTopN)) {
                   _topNFathers.add(
                         new ParentFather()
                         .withId(_father.getKey())
