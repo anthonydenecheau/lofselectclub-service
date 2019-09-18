@@ -31,3 +31,4 @@ script:
 - sh scripts/travis/tag_build.sh
 - sh scripts/travis/build_services.sh
 - sh scripts/travis/deploy_to_docker_hub.sh
+- sh scripts/travis/deploy_to_gcp.sh
