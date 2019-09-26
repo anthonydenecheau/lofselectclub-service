@@ -27,8 +27,29 @@ before_install:
 - gem install travis -v 1.8.9 --no-document
 - travis version
 - export BUILD_NAME=scc-lofselectclub-service-$TRAVIS_BRANCH-$(date -u "+%Y%m%d%H%M%S")-$TRAVIS_BUILD_NUMBER
-script:
-- sh scripts/travis/tag_build.sh
-- sh scripts/travis/build_services.sh
-- sh scripts/travis/deploy_to_docker_hub.sh
-- sh scripts/travis/deploy_to_gcp.sh
+
+jobs:
+  include:
+  - stage: build and deploy
+    if: branch = master
+    script:
+    - sh scripts/travis/tag_build.sh
+    - sh scripts/travis/build_services.sh
+    - sh scripts/travis/deploy_to_docker_hub.sh
+  - stage: deploy GCP re7
+    if: branch = re7
+    env: GITHUB_BRANCH=re7
+    script:
+    - sh scripts/travis/deploy_to_gcp.sh
+  - stage: deploy GCP PROD
+    if: branch = prod
+    env: GITHUB_BRANCH=prod
+    script:
+    - sh scripts/travis/deploy_to_gcp.sh
+stages:
+  - name: build and deploy
+    if: branch = master
+  - name: deploy GCP re7
+    if: branch = re7
+  - name: deploy GCP PROD
+    if: branch = prod
