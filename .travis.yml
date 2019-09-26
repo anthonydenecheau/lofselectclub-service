@@ -28,8 +28,6 @@ before_install:
 jobs:
   include:
   - stage: build and deploy to re7
-    if: branch = master
-    env: GITHUB_BRANCH=re7
     script:
     - sh scripts/travis/tag_build.sh
     - sh scripts/travis/build_services.sh
