@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-GITHUB_USER=anthonydenecheau
-GITHUB_REPO=github.com/centrale-canine/gcp-migration.git
+export GITHUB_USER=anthonydenecheau
+export GITHUB_REPO=github.com/centrale-canine/gcp-migration.git
 
 echo "clone gcp project..."
 
