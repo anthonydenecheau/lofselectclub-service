@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 export GITHUB_USER=anthonydenecheau
 export GITHUB_REPO=github.com/centrale-canine/gcp-migration.git
