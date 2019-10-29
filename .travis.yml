@@ -35,5 +35,5 @@ jobs:
     - /bin/bash scripts/travis/deploy_to_gcp.sh
 stages:
   - name: build and deploy to re7
-    if: branch = master
+    if: branch = featGcp
 
