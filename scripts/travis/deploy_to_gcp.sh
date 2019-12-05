@@ -5,6 +5,7 @@ echo "checking secret env. variables..."
 if [ "q${GITHUB_TOKEN}" == "q" ]
 then
   echo "toto"
+  exit 204
 fi
 
 export GITHUB_USER=gcloud-repo
