@@ -2,7 +2,7 @@
 
 echo "checking secret env. variables..."
 
-if [ "q${GITHUB_TOKEN}" == "q"]
+if [ "q${GITHUB_TOKEN}" == "q" ]
 then
   echo "toto"
 fi
