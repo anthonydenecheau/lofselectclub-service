@@ -28,9 +28,9 @@ git add .
 git commit -m":rocket: :wrench: :arrow_up: changed application version" .
 git push
 
-echo "push to branch re7..."
-git checkout --track origin/re7
+echo "push to branch ${GCP_ENV}..."
+git checkout --track origin/${GCP_ENV}
 git merge master
 
-git push -u origin re7
+git push -u origin ${GCP_ENV}
 
