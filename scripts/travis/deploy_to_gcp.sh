@@ -1,15 +1,15 @@
 #!/bin/bash
 
+export GITHUB_USER=gcloud-repo
+export GITHUB_REPO=github.com/centrale-canine/gcp-migration.git
+
 echo "checking secret env. variables..."
 
 if [ "q${GITHUB_TOKEN}" == "q" ]
 then
-  echo "toto"
+  echo "ERROR! Secret variable GITHUB_TOKEN is empty!"
   exit 204
 fi
-
-export GITHUB_USER=gcloud-repo
-export GITHUB_REPO=github.com/centrale-canine/gcp-migration.git
 
 echo "clone git project: ${GITHUB_REPO}..."
 
