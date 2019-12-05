@@ -24,7 +24,7 @@ git config user.email "anthony.denecheau@centrale-canine.fr"
 git config user.name "${GITHUB_USER}"
 git add .
 git commit -m":rocket: :wrench: :arrow_up: changed application version" .
-#git push
+git push
 
 echo "push to branch re7..."
 git checkout --track origin/re7
