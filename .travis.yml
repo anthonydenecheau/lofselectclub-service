@@ -34,9 +34,6 @@ jobs:
   include:
   - stage: build and deploy to re7
     script:
-    - sh scripts/travis/tag_build.sh
-    - sh scripts/travis/build_services.sh
-    - sh scripts/travis/deploy_to_docker_hub.sh
     - /bin/bash scripts/travis/deploy_to_gcp.sh
 stages:
   - name: build and deploy to re7
