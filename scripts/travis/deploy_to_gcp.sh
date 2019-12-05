@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "checking secret env. variables..."
-if [ "q${github_user}" -eq "q" ] || [ "q${github_token} -eq "q" ]
+if [ "q${github_user}" == "q" ] || [ "q${github_token}" == "q" ]
 then
   echo "ERROR! Variables github_user or github_token are empty!"
   exit 204
