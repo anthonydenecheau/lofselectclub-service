@@ -2,6 +2,8 @@
 
 echo ${github_user}
 echo ${github_token}
+echo ${GITHUB_TOKEN}
+
 echo "checking secret env. variables..."
 if [ "q${github_user}" == "q" ] || [ "q${github_token}" == "q" ]
 then
