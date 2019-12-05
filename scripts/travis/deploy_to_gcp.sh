@@ -1,11 +1,17 @@
 #!/bin/bash
 
-export GITHUB_USER=anthonydenecheau
+echo "checking secret env. variables..."
+if [ "q${github_user}" -eq "q" ] || [ "q${github_token} -eq "q" ]
+then
+  echo "ERROR! Variables github_user or github_token are empty!"
+  exit 204
+fi 
+
 export GITHUB_REPO=github.com/centrale-canine/gcp-migration.git
 
-echo "clone gcp project..."
+echo "clone git project: ${GITHUB_REPO}..."
 
-git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@${GITHUB_REPO} 2>&1
+git clone https://${github_user}:${github_token}@${GITHUB_REPO} 2>&1
 
 cd terraform/code
 
@@ -14,7 +20,7 @@ sed -i "s/export TAG_SCC_LOFSELECTCLUB_SERVICE=.*/export TAG_SCC_LOFSELECTCLUB_S
 
 echo "push .env file ..."
 git config user.email "anthony.denecheau@centrale-canine.fr"
-git config user.name "${GITHUB_USER}"
+git config user.name "${github_user}"
 git add .
 git commit -m":rocket: :wrench: :arrow_up: changed application version" .
 git push
