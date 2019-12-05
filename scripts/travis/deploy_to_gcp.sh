@@ -6,7 +6,7 @@ if [ "q${GITHUB_TOKEN}" == "q" ]
 then 
   echo "ERROR! Variables github_user or github_token are empty!"
   exit 204
-fi 
+fi
 
 export GITHUB_REPO=github.com/centrale-canine/gcp-migration.git
 
