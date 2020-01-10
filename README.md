@@ -26,11 +26,13 @@ Pour une livraison dans l'environnement de production, il conviendra d'effectuer
 
 ### Modification de la base de données
 Une *Cloud Function* a été mise en place pour la détection et 'intégration automatique d'un *dump*.
+
 Selon la nature de l'évolution ou de la correction et si cela impacte la donnée, 2 scenario sont possibles :
 Soit :
-. Embarquer dans le service, les scripts SQL de création/ mise à jour des objets de la base de données (penser à intialiser les nouvelles colonnes par une default value si une valeur nulle peut impacter le code)
-. Livrer le dump, une fois le container démarré (les objets du dump doivent être l'image de ce qui a été livré par le service)
+- Embarquer dans le service, les scripts SQL de création/ mise à jour des objets de la base de données (penser à intialiser les nouvelles colonnes par une default value si une valeur nulle peut impacter le code)
+- Livrer le dump, une fois le container démarré (les objets du dump doivent être l'image de ce qui a été livré par le service)
+
 Ou
 *Si l'évolution n'impacte pas l'existant *
-. Livrer le dump
-. Livrer le service, une fois le dump effectué.
+- Livrer le dump
+- Livrer le service, une fois le dump effectué.
