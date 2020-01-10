@@ -30,20 +30,12 @@ before_install:
 jobs:
   include:
   - stage: build and publish to Docker Hub
+    env: GCP_ENV=re7
     script:
     - sh scripts/travis/tag_build.sh
     - sh scripts/travis/build_services.sh
     - sh scripts/travis/deploy_to_docker_hub.sh
-  - stage: deploy to GCP
-    script:
     - /bin/bash scripts/travis/deploy_to_gcp.sh
 stages:
   - name: build and publish to Docker Hub
     if: branch = master
-  - name: deploy to GCP
-    if: branch = featGcp
-    env: GCP_ENV=re7
-  - name: deploy to GCP
-    if: branch = gcp-prod
-    env: GCP_ENV=prod
-
