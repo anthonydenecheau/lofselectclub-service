@@ -15,6 +15,16 @@ public class RegistrationBreed {
    @ApiModelProperty(notes = "Breed statistics", position = 3, allowEmptyValue = true)
    List<RegistrationBreedStatistics> statistics;
 
+   String test;
+
+   public String getTest() {
+      return test;
+   }
+
+   public void setTest(String test) {
+      this.test = test;
+   }
+
    public int getId() {
       return id;
    }
