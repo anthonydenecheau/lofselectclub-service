@@ -1,8 +1,6 @@
 package com.scc.lofselectclub.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.sleuth.Span;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,9 +44,6 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
    private DnaRepository dnaRepository;
 
    @Autowired
-   private Tracer tracer;
-
-   @Autowired
    ServiceConfig config;
 
    /**
@@ -72,8 +67,7 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
                      EntityNotFoundException.class })
    public DnaResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
-      Span newSpan = tracer.createSpan("getStatistics");
-      logger.debug("In the DnaService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
+      logger.debug("In the DnaService.getStatistics() call, trace id: {}","[TODO]");
 
       try {
 
@@ -89,9 +83,6 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
                .withSize(_breeds.size());
 
       } finally {
-         newSpan.tag("peer.service", "postgres");
-         newSpan.logEvent(org.springframework.cloud.sleuth.Span.CLIENT_RECV);
-         tracer.close(newSpan);
       }
    }
 

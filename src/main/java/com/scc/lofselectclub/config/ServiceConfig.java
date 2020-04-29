@@ -6,21 +6,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class ServiceConfig {
 
-   @Value("${example.property}")
-   private String exampleProperty;
-
-   public String getExampleProperty() {
-      return exampleProperty;
-   }
-
-   @Value("${breeder.limitTopNAffix}")
+   @Value("${lofselectclubservice.breeder.limitTopNAffix}")
    private int limitTopNAffix;
 
    public int getLimitTopNAffix() {
       return limitTopNAffix;
    }
 
-   @Value("${parent.limitTopNFathers}")
+   @Value("${lofselectclubservice.parent.limitTopNFathers}")
    private int limitTopNFathers;
 
    public int getLimitTopNFathers() {

@@ -1,23 +1,21 @@
 package com.scc.lofselectclub.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+//@ConfigurationProperties("lofselectclubservice")
 @Component
-@ConfigurationProperties(prefix = "authentification")
 public class AuthenticateConfig {
 
-   @Value("${authentification.value}")
+   @Value("${lofselectclubservice.authenticationKey}")
+   private String key;
+
+   @Value("${lofselectclubservice.authenticationValue}")
    private String value;
 
-   private List<String> keys = new ArrayList<String>();
-
-   public List<String> getKeys() {
-      return this.keys;
+   public String getKey() {
+      return this.key;
    }
 
    public String getValue() {
