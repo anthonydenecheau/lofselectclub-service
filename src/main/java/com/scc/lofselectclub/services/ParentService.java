@@ -1,8 +1,6 @@
 package com.scc.lofselectclub.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.sleuth.Span;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,9 +71,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    protected BreederRepository breederRepository;
 
    @Autowired
-   private Tracer tracer;
-
-   @Autowired
    ServiceConfig config;
 
    private int limitTopN = 0;
@@ -106,8 +101,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                      EntityNotFoundException.class })
    public ParentResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
-      Span newSpan = tracer.createSpan("getStatistics");
-      logger.debug("In the parentService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
+      logger.debug("In the parentService.getStatistics() call, trace id: {}", "[TODO]");
 
       // topN etalon
       this.limitTopN = config.getLimitTopNFathers();
@@ -126,9 +120,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .withSize(_breeds.size());
 
       } finally {
-         newSpan.tag("peer.service", "postgres");
-         newSpan.logEvent(org.springframework.cloud.sleuth.Span.CLIENT_RECV);
-         tracer.close(newSpan);
       }
    }
 

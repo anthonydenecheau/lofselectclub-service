@@ -1,8 +1,6 @@
 package com.scc.lofselectclub.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.sleuth.Span;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,9 +52,6 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
    private static final Logger logger = LoggerFactory.getLogger(ConfirmationService.class);
 
    @Autowired
-   private Tracer tracer;
-
-   @Autowired
    private ConfirmationRepository confirmationRepository;
 
    @Autowired
@@ -83,9 +78,7 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
                      EntityNotFoundException.class })
    public ConfirmationResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
-      Span newSpan = tracer.createSpan("getStatistics");
-      logger.debug("In the ConfirmationService.getStatistics() call, trace id: {}",
-            tracer.getCurrentSpan().traceIdString());
+      logger.debug("In the ConfirmationService.getStatistics() call, trace id: {}","[TODO]");
 
       try {
          
@@ -101,9 +94,6 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
                .withSize(_breeds.size());
 
       } finally {
-         newSpan.tag("peer.service", "postgres");
-         newSpan.logEvent(org.springframework.cloud.sleuth.Span.CLIENT_RECV);
-         tracer.close(newSpan);
       }
    }
 

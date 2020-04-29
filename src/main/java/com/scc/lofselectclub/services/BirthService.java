@@ -1,8 +1,6 @@
 package com.scc.lofselectclub.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.sleuth.Span;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,9 +51,6 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
    protected BreederRepository breederRepository;
 
    @Autowired
-   private Tracer tracer;
-
-   @Autowired
    ServiceConfig config;
 
    /**
@@ -79,8 +74,7 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
                      EntityNotFoundException.class })
    public BirthResponseObject getStatistics(int idClub) throws EntityNotFoundException {
 
-      Span newSpan = tracer.createSpan("getStatistics");
-      logger.debug("In the birthService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
+      logger.debug("In the birthService.getStatistics() call, trace id: {}", "[TODO]");
 
       try {
 
@@ -96,9 +90,6 @@ public class BirthService extends AbstractGenericService<BirthResponseObject,Bre
                .withSize(_breeds.size());
 
       } finally {
-         newSpan.tag("peer.service", "postgres");
-         newSpan.logEvent(org.springframework.cloud.sleuth.Span.CLIENT_RECV);
-         tracer.close(newSpan);
       }
    }
 
