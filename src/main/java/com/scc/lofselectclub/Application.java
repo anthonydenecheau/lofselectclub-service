@@ -12,7 +12,7 @@ import com.scc.lofselectclub.config.AuthenticateConfig;
 @SpringBootApplication
 @EnableEurekaClient
 @EnableCircuitBreaker
-@EnableConfigurationProperties(AuthenticateConfig.class)
+//@EnableConfigurationProperties(AuthenticateConfig.class)
 @RefreshScope
 public class Application {
 

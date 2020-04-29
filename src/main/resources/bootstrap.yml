@@ -34,11 +34,12 @@ spring:
 lofselectclubservice:
   ribbon:
     ReadTimeout: 7000
-    
-breeder:
-  limitTopNAffix: 20
-parent:
-  limitTopNFathers: 20   
+  authenticationKey: 6HaxBV1kqtm4gkBUDTNz
+  authenticationValue: 31/12/2057
+  breeder:
+    limitTopNAffix: 20
+  parent:
+    limitTopNFathers: 20   
 
 
 ---
