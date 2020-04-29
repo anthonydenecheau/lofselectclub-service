@@ -35,7 +35,7 @@ jobs:
     - sh scripts/travis/tag_build.sh
     - sh scripts/travis/build_services.sh
     - sh scripts/travis/deploy_to_docker_hub.sh
-    - /bin/bash scripts/travis/deploy_to_gcp.sh
+    #- /bin/bash scripts/travis/deploy_to_gcp.sh
 stages:
   - name: build and publish to Docker Hub
     if: branch = master
