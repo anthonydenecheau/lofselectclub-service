@@ -17,12 +17,12 @@ spring:
 #        credentials:
 #          location: file:${GOOGLE_APPLICATION_CREDENTIALS}      
       sql:
-        databaseName: lofselectclub_g
-        instance-connection-name: lof-ws-test:europe-west1:lof-ws-test-20190906-01
+        databaseName: DBNAME
+        instance-connection-name: DBINSTANCE
   datasource:
     url: jdbc:postgresql://google/${spring.cloud.gcp.sql.databaseName}?socketFactory=com.google.cloud.sql.postgres.SocketFactory&cloudSqlInstance=${spring.cloud.gcp.sql.instance-connection-name}&useSSL=false
-    username: lofselectclub_g
-    password: 39704ff43857acafb6db290d1b5901a0349555a1
+    username: DBUSER
+    password: DBPWD
   hystrix:
     command:
       lofselectclubservice:
@@ -34,8 +34,8 @@ spring:
 lofselectclubservice:
   ribbon:
     ReadTimeout: 7000
-  authenticationKey: 6HaxBV1kqtm4gkBUDTNz
-  authenticationValue: 31/12/2057
+  authenticationKey: SECURE_KEY 
+  authenticationValue: SECURE_NAME
   breeder:
     limitTopNAffix: 20
   parent:

@@ -11,15 +11,4 @@ Greenwich.RC2
 **Objet**
 Construction des éléments statistiques pour les clubs de race
 
-**GCP**
-Définir les variables dans le Cloud Runtime Config. 
-
-DBINSTANCE
-DBNAME
-DBUSER 
-DBPASSWORD 
-
-authenticationKey
-authenticationValue
-
 Voir Wiki
