@@ -8,14 +8,11 @@ spring:
   resources:
     add-mappings: false
 
-example:
-  property: "I AM IN THE DEFAULT"
-  
-authentification:
-  keys[0]: "myPersonalKey"
-  value: "01/01/2057"
-breeder:  
-  limitTopNAffix: 0
-parent:
-  limitTopNFathers: 0
+lofselectclubservice:  
+  authenticationKey: "myPersonalKey"
+  authenticationValue: "01/01/2057"
+  breeder:  
+    limitTopNAffix: 0
+  parent:
+    limitTopNFathers: 0
   
