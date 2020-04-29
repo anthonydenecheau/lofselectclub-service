@@ -2,7 +2,6 @@ package com.scc.lofselectclub.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.scc.lofselectclub.config.AuthenticateConfig;
@@ -25,8 +24,12 @@ import java.util.Date;
 public class UserContextFilter implements Filter {
    private static final Logger logger = LoggerFactory.getLogger(UserContextFilter.class);
 
-   @Autowired
-   AuthenticateConfig authenticate;
+   final AuthenticateConfig authenticate;
+
+   public UserContextFilter(AuthenticateConfig authenticate) {
+      super();
+      this.authenticate = authenticate;
+   }
 
    @Override
    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
@@ -72,10 +75,8 @@ public class UserContextFilter implements Filter {
          return ok;
 
       // la clé transmise est-elle reconnue ?
-      for (String _key : authenticate.getKeys()) {
-         if (_key.equals(authCredentials))
-            ok = true;
-      }
+      if (authenticate.getKey().equals(authCredentials))
+         ok = true;
 
       if (!ok) {
          return false;

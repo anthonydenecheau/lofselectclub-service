@@ -14,23 +14,17 @@ fi
 
 echo "clone git project: ${GITHUB_REPO}..."
 
-git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@${GITHUB_REPO} ${LOCAL_REPO} 2>&1
+git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@${GITHUB_REPO} ${LOCAL_REPO} --branch ${GCP_ENV} --single-branch 2>&1
 
 cd ${LOCAL_REPO}/terraform/code
 
 echo "update .env file ..."
 sed -i "s/export TAG_SCC_LOFSELECTCLUB_SERVICE=.*/export TAG_SCC_LOFSELECTCLUB_SERVICE=${BUILD_NAME}/" .env 2>&1
 
-echo "push .env file ..."
+echo "push .env file to branch ${GCP_ENV}..."
 git config user.email "anthony.denecheau@centrale-canine.fr"
 git config user.name "${GITHUB_USER}"
 git add .
 git commit -m":rocket: :wrench: :arrow_up: changed application version" .
 git push
-
-echo "push to branch ${GCP_ENV}..."
-git checkout --track origin/${GCP_ENV}
-git merge master
-
-git push -u origin ${GCP_ENV}
 

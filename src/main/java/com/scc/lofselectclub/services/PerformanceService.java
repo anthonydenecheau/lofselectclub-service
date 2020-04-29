@@ -11,8 +11,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.sleuth.Span;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,9 +50,6 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
    private PerformanceRepository performanceRepository;
 
    @Autowired
-   private Tracer tracer;
-
-   @Autowired
    ServiceConfig config;
    
    /**
@@ -78,8 +73,7 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
                      EntityNotFoundException.class })
    public PerformanceResponseObject getStatistics(int idClub) throws EntityNotFoundException {
       
-      Span newSpan = tracer.createSpan("getStatistics");
-      logger.debug("In the PerformanceService.getStatistics() call, trace id: {}", tracer.getCurrentSpan().traceIdString());
+      logger.debug("In the PerformanceService.getStatistics() call, trace id: {}", "[TODO]");
 
       try {
 
@@ -95,9 +89,6 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
                .withSize(_breeds.size());
 
       } finally {
-         newSpan.tag("peer.service", "postgres");
-         newSpan.logEvent(org.springframework.cloud.sleuth.Span.CLIENT_RECV);
-         tracer.close(newSpan);
       }
    }
    

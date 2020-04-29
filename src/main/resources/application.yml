@@ -1,14 +1,21 @@
 #Default port is 8095
 server:
   port: 8095
-  
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+          
 spring:
   mvc:
     throw-exception-if-no-handler-found: true
   resources:
     add-mappings: false
-  zipkin:
-    baseUrl:  http://localhost:9411
 
 eureka:
   instance:
