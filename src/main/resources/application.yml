@@ -8,6 +8,9 @@ management:
       show-details: always
   endpoints:
     web:
+      base-path: /
+      path-mapping:
+        health: health
       exposure:
         include: "*"
           

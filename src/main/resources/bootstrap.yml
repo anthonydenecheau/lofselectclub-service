@@ -6,16 +6,6 @@ spring:
       default
   cloud:
     gcp:
-#      config:
-#        enabled: true
-        #name: lofselectclubservice
-        #profile: default
-        # Config server API timeout in milliseconds, default : 60000 (1 minute)
-#        timeout-millis : 120000
-        # Provide project id, credentials to override default
-#        project-id: lof-ws-test
-#        credentials:
-#          location: file:${GOOGLE_APPLICATION_CREDENTIALS}      
       sql:
         databaseName: DBNAME
         instance-connection-name: DBINSTANCE
@@ -45,11 +35,3 @@ lofselectclubservice:
 ---
 spring:
   profiles: gcptest
-  cloud:
-#    gcp:
-#      config:
-#        enabled: false
-#  datasource:
-#    url: ${SPRING_DATASOURCE_URL}
-#    username: ${SPRING_DATASOURCE_USERNAME}
-#    password: ${SPRING_DATASOURCE_PASSWORD}
