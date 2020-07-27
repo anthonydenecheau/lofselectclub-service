@@ -76,6 +76,8 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    
    private List<BreederAffixRank> allTopNBreed = new ArrayList<BreederAffixRank>();
    private HashMap<TupleVariety,List<BreederAffixRank>> allTopNVariety = new HashMap<TupleVariety,List<BreederAffixRank>>();
+   private List<BreederAffixRank> allTopOfTheYearBreed = new ArrayList<BreederAffixRank>();
+   private HashMap<TupleVariety,List<BreederAffixRank>> allTopOfTheYearVariety = new HashMap<TupleVariety,List<BreederAffixRank>>();
    
    /**
     * Retourne les données statistiques liées à l'élevage pour l'ensemble des races affiliées au club
@@ -420,9 +422,9 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
 
    }
    
-   private boolean isPresent(String _affixe, List<BreederAffixRank> _topN) {
+   private boolean isPresent(String _affixe, List<BreederAffixRank> _top) {
       
-      BreederAffixRank x = _topN.stream()
+      BreederAffixRank x = _top.stream()
             .filter(p -> p.getName().equals(_affixe))
             .findAny()
             .orElse(null);
@@ -476,12 +478,16 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
     * @param _list      Liste des données de production à analyser
     * @return           Liste des affixes avec le nombre de portées
     */
-   private void extractTopNAffixes(int _minYear, List<BreederStatistics> _list) {
+   private void extractTopAffixes(int _minYear, List<BreederStatistics> _list) {
 
-      List<BreederAffixRank> _sortedAffixes = new ArrayList<BreederAffixRank>();
-      HashMap<TupleVariety,List<BreederAffixRank>> _sortedAffixesByVariety = new HashMap<TupleVariety,List<BreederAffixRank>>();
-      Set<BreederAffixRank> _tmpAffixesVariety = new HashSet<BreederAffixRank>();
-      
+      List<BreederAffixRank> _sortedAffixesTopN = new ArrayList<BreederAffixRank>();
+      HashMap<TupleVariety,List<BreederAffixRank>> _sortedAffixesTopNByVariety = new HashMap<TupleVariety,List<BreederAffixRank>>();
+      Set<BreederAffixRank> _tmpAffixesTopNVariety = new HashSet<BreederAffixRank>();
+
+      List<BreederAffixRank> _sortedAffixesTopOfTheYear = new ArrayList<BreederAffixRank>();
+      HashMap<TupleVariety,List<BreederAffixRank>> _sortedAffixesTopOfTheYearByVariety = new HashMap<TupleVariety,List<BreederAffixRank>>();
+      Set<BreederAffixRank> _tmpAffixesTopOfTheYearVariety = new HashSet<BreederAffixRank>();
+
       // 1 liste topN pour une race
       // n liste topN par variete
       try {
@@ -496,8 +502,17 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                   .filter(x -> (!"".equals(x.getAffixeEleveur()) && x.getAffixeEleveur() != null))
                   .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
    
-            // 2. On ne conserve que les n meilleurs que l'on ajouté à notre liste existante (l'objet Set nous prémunit des doublons)
-            _sortedAffixes.addAll(
+            // 2.1 Classement général : on enregistre pour chaque année
+            _sortedAffixesTopOfTheYear.addAll(
+                  _bestOfAffixesBreedOverYear.entrySet()
+                     .stream()
+                     .filter(x -> x.getValue() > 0 )
+                     .map(a -> new BreederAffixRank(a.getKey(), _breedOverYear.getKey(), (int) (long) a.getValue()))
+                     .collect(Collectors.toList())
+                  );
+            
+            // 2.2 On ne conserve que les n meilleurs que l'on ajouté à notre liste existante (l'objet Set nous prémunit des doublons)
+            _sortedAffixesTopN.addAll(
                   _bestOfAffixesBreedOverYear.entrySet()
                      .stream()
                      .filter(x -> x.getValue() > 0 )
@@ -511,14 +526,30 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
             Map<TupleVariety, List<BreederStatistics>> _allVariety = getVarietyStatistics(_breedOverYear.getValue());
             for (Map.Entry<TupleVariety, List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
 
-               _tmpAffixesVariety.clear();
+               _tmpAffixesTopNVariety.clear();
+               _tmpAffixesTopOfTheYearVariety.clear();
 
                Map<String, Long> _bestOfAffixesVarietyOverYear = _currentVariety.getValue()
                      .stream()
                      .filter(x -> (!"".equals(x.getAffixeEleveur()) && x.getAffixeEleveur() != null))
                      .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
 
-               _tmpAffixesVariety.addAll(
+               _tmpAffixesTopOfTheYearVariety.addAll(
+                     _bestOfAffixesVarietyOverYear.entrySet().stream()
+                     .filter(x -> x.getValue() > 0 )
+                     .map(a -> new BreederAffixRank(a.getKey(), _breedOverYear.getKey(), (int) (long)a.getValue()))
+                     .collect(Collectors.toSet())
+                     );
+
+               for (BreederAffixRank p : _tmpAffixesTopOfTheYearVariety) {
+                  _sortedAffixesTopOfTheYearByVariety.computeIfAbsent(
+                        _currentVariety.getKey()
+                        , k -> new ArrayList<>()).add( 
+                              new BreederAffixRank(p.getName(), p.getYear(), (int) (long)p.getQtity())
+                  );
+               }
+               
+               _tmpAffixesTopNVariety.addAll(
                      _bestOfAffixesVarietyOverYear.entrySet().stream()
                      .filter(x -> x.getValue() > 0 )
                      .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
@@ -527,8 +558,8 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                      .collect(Collectors.toSet())
                      );
                
-               for (BreederAffixRank p : _tmpAffixesVariety) {
-                  _sortedAffixesByVariety.computeIfAbsent(
+               for (BreederAffixRank p : _tmpAffixesTopNVariety) {
+                  _sortedAffixesTopNByVariety.computeIfAbsent(
                         _currentVariety.getKey()
                         , k -> new ArrayList<>()).add( 
                               new BreederAffixRank(p.getName(), p.getYear(), (int) (long)p.getQtity())
@@ -540,18 +571,29 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
          }
    
          // On conserve le topN affixe (null-safe way)
-         this.allTopNBreed = Optional.ofNullable(_sortedAffixes)
+         this.allTopNBreed = Optional.ofNullable(_sortedAffixesTopN)
                .map(List::stream)
                .orElseGet(Stream::empty)
                .collect(Collectors.toList());
    
-         this.allTopNVariety = Optional.ofNullable(_sortedAffixesByVariety)
+         this.allTopNVariety = Optional.ofNullable(_sortedAffixesTopNByVariety)
+               .map(x -> x.entrySet().stream())
+               .orElseGet(Stream::empty)
+               .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,(oldValue, newValue) -> oldValue, LinkedHashMap::new));
+         
+         // Classement général
+         this.allTopOfTheYearBreed = Optional.ofNullable(_sortedAffixesTopOfTheYear)
+               .map(List::stream)
+               .orElseGet(Stream::empty)
+               .collect(Collectors.toList());
+               
+         this.allTopOfTheYearVariety = Optional.ofNullable(_sortedAffixesTopOfTheYearByVariety)
                .map(x -> x.entrySet().stream())
                .orElseGet(Stream::empty)
                .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,(oldValue, newValue) -> oldValue, LinkedHashMap::new));
          
       } catch (Exception e) {
-         logger.error("extractTopNAffixes : {}",e.getMessage());
+         logger.error("extractTopAffixes : {}",e.getMessage());
       } finally {
       } 
       
@@ -843,14 +885,25 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
       
       try {
 
+         // On extrait les affixes par varietes
+         List<BreederAffixRank> _listAffixVarietyTopOfTheYear = this.allTopOfTheYearVariety.entrySet()
+               .stream()
+               .filter(r -> r.getKey().getId() == this._idVariety)
+               .flatMap(e -> e.getValue().stream())
+               .collect(Collectors.toList())
+         ;
+        
          // On groupe les affixes par qtites pour la variété et l'année en cours
          Map<String, Long> _affixes = _list
                .stream()
+               .filter(StreamUtils.onlyTopNAffixe(_listAffixVarietyTopOfTheYear))
                .filter(x -> (_year == x.getAnnee()))
                .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
 
          // On trie la liste des affixes pour la variété et l'année en cours
-         Map<String, Long> result = _affixes.entrySet().stream()
+         Map<String, Long> result = _affixes.entrySet()
+               .stream()
+               .filter(x -> x.getValue() > 0 )
                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
@@ -872,6 +925,23 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
             );
             
          }
+         
+         // On complète la liste des affixes  manquants (attention, _topsOfTheYear contient des doublons (prend en charge les années)
+         Set<String> _affixesTopOfTheYear = _listAffixVarietyTopOfTheYear
+               .stream()
+               .map(p -> p.getName())
+               .distinct()
+               .collect(Collectors.toSet());
+         
+         for (String _affix : _affixesTopOfTheYear) {
+            if (!isPresent(_affix, _topsOfTheYear))
+               _topsOfTheYear.add(
+                     new BreederAffixRank()
+                        .withPosition(0)
+                        .withName(_affix)
+                        .withQtity(0)
+                  );
+         }      
 
 
       } catch (Exception e) {
@@ -907,7 +977,9 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
          
          // On trie la liste des affixes  pour l'année en cours
-         Map<String, Long> result = _affixes.entrySet().stream()
+         Map<String, Long> result = _affixes.entrySet()
+               .stream()
+               .filter(x -> x.getValue() > 0 )
                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
@@ -929,6 +1001,18 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
             );
             
          }
+         
+         // On complète la liste des affixes manquants (attention, _topOfTheYear contient des doublons (prend en charge les années)
+         Set<String> _affixesTopOfTheYear = this.allTopOfTheYearBreed.stream().map(p -> p.getName()).distinct().collect(Collectors.toSet());
+         for (String _affix : _affixesTopOfTheYear) {
+            if (!isPresent(_affix, _topOfTheYear))
+               _topOfTheYear.add(
+                     new BreederAffixRank()
+                        .withPosition(0)
+                        .withName(_affix)
+                        .withQtity(0)
+                  );
+         }
                   
       } catch (Exception e) {
          logger.error("extractTopNBreedOverYear {}", e.getMessage());
@@ -945,14 +1029,14 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
    @Override
    protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
       
-      List<BreederAffixRank> _topsOfTheYear = null;
+      List<BreederAffixRank> _topOfTheYear = null;
       List<BreederAffixVariety> _topOfTheYearVariety =  null;
       
       try {
          List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
          
          // Recherche Classement Affixe de l'année en cours s/ la race et sur les varietes
-         _topsOfTheYear = extractTopOfTheYearBreedOverYear(_year, _list);
+         _topOfTheYear = extractTopOfTheYearBreedOverYear(_year, _list);
    
          // Lecture Classement Affixe par variétés s/ la race en cours (et pour l'année en cours)      
          _topOfTheYearVariety = populateVarieties(_list, new ParametersVariety(_year,false,true));
@@ -964,7 +1048,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
       
       return (T) new BreederAffixStatistics()
             .withYear(_year)
-            .withAffixes(_topsOfTheYear)
+            .withAffixes(_topOfTheYear)
             .withVariety(_topOfTheYearVariety);
    }
 
@@ -1015,7 +1099,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
     */
    private List<BreederAffixRank> fullEmptyTopOfTheYearBreed() {
       
-      return this.allTopNBreed.stream()
+      return this.allTopOfTheYearBreed.stream()
             .map(p -> p.getName())
             .distinct()
             .map (s -> new BreederAffixRank(0, s, 0))
@@ -1029,7 +1113,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
     */
    private List<BreederAffixRank> fullEmptyTopOfTheYearVariety(int idVariety) {
 
-      return this.allTopNVariety.entrySet()
+      return this.allTopOfTheYearVariety.entrySet()
             .stream()
             .filter(r -> r.getKey().getId() == idVariety)
             .flatMap(e -> e.getValue().stream())
@@ -1061,7 +1145,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
          // Pour chaque année, on sélectionne le top N de la race et pour chacune des varietes.
          // Ces listes vont nous servir de base pour construire le classement s/ chaque année
          setYearSeries(this._idBreed);
-         extractTopNAffixes(this._serieYear[0], _list);
+         extractTopAffixes(this._serieYear[0], _list);
          _affixesStatistics = populateTopN(_list);
          
          // Classement par année des affixes (pas de règle de sélection)

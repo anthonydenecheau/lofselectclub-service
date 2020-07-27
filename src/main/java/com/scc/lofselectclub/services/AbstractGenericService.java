@@ -468,7 +468,7 @@ public abstract class AbstractGenericService<T, U> {
          // On finalise en initialisant les années pour lesquelles on a constaté une rupture
          for (int i = 0; i < this._serieYear.length; i++) {
             _topOfTheYearStatistics.add(
-                  emptyTopN(this._serieYear[i])
+                  emptyTopOfTheYear(this._serieYear[i])
              );
          }
 
