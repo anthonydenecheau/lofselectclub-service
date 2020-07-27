@@ -12,7 +12,7 @@ public class BreederAffixVariety {
    @ApiModelProperty(notes = "variety name", position = 2, allowEmptyValue = true)
    String name;
 
-   @ApiModelProperty(notes = "top N affixe", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "Rank affixe", position = 3, allowEmptyValue = true)
    List<BreederAffixRank> affixes;
 
    public int getId() {

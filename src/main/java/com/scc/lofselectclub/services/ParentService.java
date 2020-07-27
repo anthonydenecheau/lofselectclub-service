@@ -1055,7 +1055,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          _origins.put(TypeGender.MOTHER, _statsMother);
    
          // Lecture des variétés s/ la race en cours (et pour l'année en cours)
-         _variety = populateVarieties(_list, new ParametersVariety(_year,false));
+         _variety = populateVarieties(_list, new ParametersVariety(_year,false, false));
    
          // lecture du nombre distinct de géniteurs
          long _totalFathers = _list
@@ -1091,7 +1091,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             .withYear(_year)
             .withOrigins(emptyParentOrigin())
             .withFirstUse(emptyParentFrequency())
-            .withVariety(populateVarieties(new ArrayList<BreederStatistics>(), new ParametersVariety(_year,false)));
+            .withVariety(populateVarieties(new ArrayList<BreederStatistics>(), new ParametersVariety(_year,false,false)));
    }
 
    @SuppressWarnings("unchecked")
@@ -1108,7 +1108,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          _topsN = extractTopNBreedOverYear(_year, _list);
          
          // Lecture TopN Affixe par variétés s/ la race en cours (et pour l'année en cours)      
-         _topNVariety = populateVarieties(_list, new ParametersVariety(_year,true));
+         _topNVariety = populateVarieties(_list, new ParametersVariety(_year,true, false));
       
       } catch (Exception e) {
          logger.error("readTopN",e.getMessage());
@@ -1128,7 +1128,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return (T) new ParentFatherStatistics()
             .withYear(_year)
             .withFathers(fullEmptyTopNBreed())
-            .withVariety(populateVarieties(this._emptyParentsStatistics, new ParametersVariety(_year,true)));
+            .withVariety(populateVarieties(this._emptyParentsStatistics, new ParametersVariety(_year,true,false)));
    }
    
    /**
@@ -1322,4 +1322,13 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return _cotationList;
    }
 
+   @Override
+   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
+      return null;
+   }
+
+   @Override
+   protected <T> T emptyTopOfTheYear(int _year) {
+      return null;
+   }
 }

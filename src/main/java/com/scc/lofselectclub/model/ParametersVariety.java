@@ -7,6 +7,7 @@ public class ParametersVariety {
    List<SerieDefinition> series;
    int total;
    boolean topN = false;
+   boolean topOfTheYear = false;
    int year;
    
    public ParametersVariety(List<SerieDefinition> series) {
@@ -17,10 +18,11 @@ public class ParametersVariety {
       super();
       this.total = total;
    }
-   public ParametersVariety(int year, boolean topN) {
+   public ParametersVariety(int year, boolean topN, boolean topOfTheYear) {
       super();
       this.year = year;
       this.topN = topN;
+      this.topOfTheYear = topOfTheYear;
    }
    public ParametersVariety() {
    }
@@ -42,6 +44,12 @@ public class ParametersVariety {
    }
    public void setTopN(boolean topN) {
       this.topN = topN;
+   }   
+   public boolean isTopOfTheYear() {
+      return topOfTheYear;
+   }
+   public void setTopOfTheYear(boolean topOfTheYear) {
+      this.topOfTheYear = topOfTheYear;
    }   
    public int getYear() {
       return year;

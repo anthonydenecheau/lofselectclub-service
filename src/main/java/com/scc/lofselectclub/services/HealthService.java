@@ -421,4 +421,13 @@ public class HealthService extends AbstractGenericService<HealthResponseObject,H
 
    }
 
+   @Override
+   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
+      return null;
+   }
+
+   @Override
+   protected <T> T emptyTopOfTheYear(int _year) {
+      return null;
+   }
 }
