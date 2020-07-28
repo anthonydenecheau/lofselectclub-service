@@ -58,7 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class ParentService extends AbstractGenericService<ParentResponseObject,BreederStatistics> {
 
    public ParentService() {
@@ -656,11 +656,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          format.setMinimumFractionDigits(2);
          
          int _idBreed = _list.stream().findFirst().get().getIdRace();
-         long _qtity = breederRepository
-               .findByIdRaceAndAnnee(_idBreed, _year)
-               .stream()
-               .collect(Collectors.counting())
-         ;
+         long _qtity = breederRepository.countByIdRaceAndAnnee(_idBreed, _year);
          
          // On ne sélectionne que les étalons contenus dans allTopNBreed
          // On groupe les étalons par qtites pour l'année en cours
@@ -825,11 +821,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          double _percent = 0;
 
          int _idBreed = _list.stream().findFirst().get().getIdRace();
-         long _qtity = breederRepository
-               .findByIdRaceAndAnnee(_idBreed, _year)
-               .stream()
-               .collect(Collectors.counting())
-         ;
+         long _qtity = breederRepository.countByIdRaceAndAnnee(_idBreed, _year);
          
          // On extrait les étalons du topN varietes
          List<ParentFather> _listFatherVarietyTopN = this.allTopNVariety.entrySet()
@@ -1403,12 +1395,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          double _percent = 0;
 
          int _idBreed = _list.stream().findFirst().get().getIdRace();
-         long _qtity = breederRepository
-               .findByIdRaceAndAnnee(_idBreed, _year)
-               .stream()
-               .collect(Collectors.counting())
-         ;
-         
+         long _qtity = breederRepository.countByIdRaceAndAnnee(_idBreed, _year);
+
          // On extrait les étalons par varietes
          List<ParentFather> _listFatherVarietyTopOfTheYear = this.allTopOfTheYearVariety.entrySet()
                .stream()
@@ -1527,11 +1515,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          format.setMinimumFractionDigits(2);
          
          int _idBreed = _list.stream().findFirst().get().getIdRace();
-         long _qtity = breederRepository
-               .findByIdRaceAndAnnee(_idBreed, _year)
-               .stream()
-               .collect(Collectors.counting())
-         ;
+         long _qtity = breederRepository.countByIdRaceAndAnnee(_idBreed, _year);
          
          // On groupe les étalons par qtites pour l'année en cours
          Map<Integer, Long> _fathers = _list

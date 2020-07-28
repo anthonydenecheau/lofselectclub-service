@@ -37,7 +37,7 @@ import com.scc.lofselectclub.utils.TypeGender;
 import com.scc.lofselectclub.utils.TypePerformance;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class PerformanceService extends AbstractGenericService<PerformanceResponseObject,PerformanceStatistics> {
 
    public PerformanceService() {

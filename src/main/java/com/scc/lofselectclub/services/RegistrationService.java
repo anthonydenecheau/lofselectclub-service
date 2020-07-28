@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class RegistrationService extends AbstractGenericService<RegistrationResponseObject,BreederStatistics> {
 
    public RegistrationService() {

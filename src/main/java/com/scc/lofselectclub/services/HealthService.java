@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class HealthService extends AbstractGenericService<HealthResponseObject,HealthStatistics> {
 
    public HealthService() {

@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class BreederService extends AbstractGenericService<BreederResponseObject,BreederStatistics> {
 
    public BreederService() {

@@ -200,6 +200,13 @@ public abstract class AbstractGenericService<T, U> {
       
    }
    
+   @SuppressWarnings("unchecked")
+   protected <K, V, C extends Collection<V>, M extends Map<K, C>> M  getVarietyFatherStatistics (List<? extends GenericStatistics> _list) {
+      // Ajout IdVariete et NomVariete de l'étalon au mdd
+      return null;
+   }
+   
+   
 //   @SuppressWarnings("unchecked")
 //   protected <K, V, C extends Collection<V>, M extends Map<K, C>> M  getVarietyStatistics (List<? extends GenericStatistics> _list) {
 //      return
@@ -251,7 +258,16 @@ public abstract class AbstractGenericService<T, U> {
          
          // On stocke la liste des variétés pour la race
          List<TupleVariety> _varieties = new ArrayList<TupleVariety>(this._referencedVarieties);
-   
+            
+         // [TODO] : implémenter une règle spécifique pour les geniteurs !!! 
+         // la variété lue doit être celle du géniteur (etalon) et non celle de la portée.
+         if ( _parameters!=null && (_parameters.isTopN() || _parameters.isTopOfTheYear())) {
+            // [TODO] Map<TupleVariety, List<T>> _allVariety = getVarietyFatherStatistics(_list);
+         } else {
+            // reprendre l'existant!
+            // Map<TupleVariety, List<T>> _allVariety = getVarietyStatistics(_list);
+         }
+         
          // Lecture des variétés associées à la race pour lesquelles des données ont été calculées
          Map<TupleVariety, List<T>> _allVariety = getVarietyStatistics(_list);
          for (Map.Entry<TupleVariety, List<T>> _currentVariety : _allVariety.entrySet()) {

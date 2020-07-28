@@ -12,8 +12,4 @@ public interface ConfirmationRepository extends CrudRepository<ConfirmationStati
 
    List<ConfirmationStatistics> findByIdClub(Integer idClub, Sort sort);
 
-   List<ConfirmationStatistics> findByIdRaceAndAnneeAndSexe(Integer idRace, Integer annee, String sexe);
-
-   List<ConfirmationStatistics> findByIdVarieteAndAnneeAndSexe(Integer idVariete, Integer annee, String sexe);
-
 }

@@ -14,12 +14,10 @@ import java.util.stream.Stream;
 @Repository
 public interface BreederRepository extends CrudRepository<BreederStatistics, Long> {
 
-   //List<BreederStatistics> findByIdClub(Integer idClub);
    List<BreederStatistics> findByIdClub(Integer idClub, Sort sort);
    
-   List<BreederStatistics> findByIdRaceAndAnnee(Integer idRace, Integer annee);
-   List<BreederStatistics> findByIdRaceAndAnnee(Integer idRace, Integer annee, Sort sort);
-
+   Long countByIdRaceAndAnnee(Integer idRace, Integer annee);
+   
    @Query("select c from BreederStatistics c where c.idClub = :idClub")
    Stream<BreederStatistics> findByIdClubReturnStream(@Param("idClub") Integer idClub);
 
