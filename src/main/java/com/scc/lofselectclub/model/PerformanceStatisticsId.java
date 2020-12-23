@@ -13,7 +13,6 @@ public class PerformanceStatisticsId implements Serializable {
    Integer idRace;
    Integer idVariete;
    Integer annee;
-   Integer mois;
    String sexe;
    Integer idKey;
    Integer typeKey;
@@ -48,14 +47,6 @@ public class PerformanceStatisticsId implements Serializable {
 
    public void setAnnee(Integer annee) {
       this.annee = annee;
-   }
-
-   public Integer getMois() {
-      return mois;
-   }
-
-   public void setMois(Integer mois) {
-      this.mois = mois;
    }
 
    public String getSexe() {

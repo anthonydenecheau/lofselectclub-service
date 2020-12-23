@@ -9,7 +9,7 @@ public class BreederAffixStatistics {
    @ApiModelProperty(notes = "year", position = 1, allowEmptyValue = true)
    int year;
 
-   @ApiModelProperty(notes = "top N affixe", position = 2, allowEmptyValue = true)
+   @ApiModelProperty(notes = "Rank affixe", position = 2, allowEmptyValue = true)
    List<BreederAffixRank> affixes;
 
    @ApiModelProperty(notes = "detail by variety", position = 3, allowEmptyValue = true)

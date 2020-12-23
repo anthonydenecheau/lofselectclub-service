@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class RegistrationService extends AbstractGenericService<RegistrationResponseObject,BreederStatistics> {
 
    public RegistrationService() {
@@ -259,4 +259,13 @@ public class RegistrationService extends AbstractGenericService<RegistrationResp
 
    }
 
+   @Override
+   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
+      return null;
+   }
+
+   @Override
+   protected <T> T emptyTopOfTheYear(int _year) {
+      return null;
+   }
 }

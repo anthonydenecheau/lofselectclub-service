@@ -36,6 +36,14 @@ public class BreederStatistics extends GenericStatistics{
    Integer idSaillie;
    @Column(name = "cotation_portee")
    Integer cotationPortee;
+   @Column(name = "id_race_etalon")
+   Integer idRaceEtalon;
+   @Column(name = "nom_race_etalon")
+   String nomRaceEtalon;
+   @Column(name = "id_variete_etalon")
+   Integer idVarieteEtalon;
+   @Column(name = "nom_variete_etalon")
+   String nomVarieteEtalon;
    @Column(name = "id_etalon")
    Integer idEtalon;
    @Column(name = "nom_etalon")
@@ -211,6 +219,38 @@ public class BreederStatistics extends GenericStatistics{
       this.cotationPortee = cotationPortee;
    }
 
+   public Integer getIdRaceEtalon() {
+      return idRaceEtalon;
+   }
+
+   public void setIdRaceEtalon(Integer idRaceEtalon) {
+      this.idRaceEtalon = idRaceEtalon;
+   }
+
+   public String getNomRaceEtalon() {
+      return nomRaceEtalon;
+   }
+
+   public void setNomRaceEtalon(String nomRaceEtalon) {
+      this.nomRaceEtalon = nomRaceEtalon;
+   }
+   
+   public Integer getIdVarieteEtalon() {
+      return idVarieteEtalon;
+   }
+
+   public void setIdVarieteEtalon(Integer idVarieteEtalon) {
+      this.idVarieteEtalon = idVarieteEtalon;
+   }
+
+   public String getNomVarieteEtalon() {
+      return nomVarieteEtalon;
+   }
+
+   public void setNomVarieteEtalon(String nomVarieteEtalon) {
+      this.nomVarieteEtalon = nomVarieteEtalon;
+   }
+
    public Integer getIdEtalon() {
       return idEtalon;
    }
@@ -368,6 +408,8 @@ public class BreederStatistics extends GenericStatistics{
       result = prime * result + ((cotationPortee == null) ? 0 : cotationPortee.hashCode());
       result = prime * result + ((idClub == null) ? 0 : idClub.hashCode());
       result = prime * result + ((idEleveur == null) ? 0 : idEleveur.hashCode());
+      result = prime * result + ((idRaceEtalon == null) ? 0 : idRaceEtalon.hashCode());
+      result = prime * result + ((idVarieteEtalon == null) ? 0 : idVarieteEtalon.hashCode());
       result = prime * result + ((idEtalon == null) ? 0 : idEtalon.hashCode());
       result = prime * result + ((idLice == null) ? 0 : idLice.hashCode());
       result = prime * result + ((idRace == null) ? 0 : idRace.hashCode());
@@ -381,6 +423,8 @@ public class BreederStatistics extends GenericStatistics{
       result = prime * result + ((nomEtalon == null) ? 0 : nomEtalon.hashCode());
       result = prime * result + ((nomRace == null) ? 0 : nomRace.hashCode());
       result = prime * result + ((nomVariete == null) ? 0 : nomVariete.hashCode());
+      result = prime * result + ((nomRaceEtalon == null) ? 0 : nomRaceEtalon.hashCode());
+      result = prime * result + ((nomVarieteEtalon == null) ? 0 : nomVarieteEtalon.hashCode());
       result = prime * result + ((numClub == null) ? 0 : numClub.hashCode());
       result = prime * result + ((prolificiteRace == null) ? 0 : prolificiteRace.hashCode());
       result = prime * result + ((prolificiteVariete == null) ? 0 : prolificiteVariete.hashCode());
@@ -443,6 +487,16 @@ public class BreederStatistics extends GenericStatistics{
             return false;
       } else if (!idEleveur.equals(other.idEleveur))
          return false;
+      if (idRaceEtalon == null) {
+         if (other.idRaceEtalon != null)
+            return false;
+      } else if (!idRaceEtalon.equals(other.idRaceEtalon))
+         return false;
+      if (idVarieteEtalon == null) {
+         if (other.idVarieteEtalon != null)
+            return false;
+      } else if (!idVarieteEtalon.equals(other.idVarieteEtalon))
+         return false;
       if (idEtalon == null) {
          if (other.idEtalon != null)
             return false;
@@ -503,10 +557,20 @@ public class BreederStatistics extends GenericStatistics{
             return false;
       } else if (!nomRace.equals(other.nomRace))
          return false;
+      if (nomRaceEtalon == null) {
+         if (other.nomRaceEtalon != null)
+            return false;
+      } else if (!nomRaceEtalon.equals(other.nomRaceEtalon))
+         return false;
       if (nomVariete == null) {
          if (other.nomVariete != null)
             return false;
       } else if (!nomVariete.equals(other.nomVariete))
+         return false;
+      if (nomVarieteEtalon == null) {
+         if (other.nomVarieteEtalon != null)
+            return false;
+      } else if (!nomVarieteEtalon.equals(other.nomVarieteEtalon))
          return false;
       if (numClub == null) {
          if (other.numClub != null)
@@ -541,7 +605,7 @@ public class BreederStatistics extends GenericStatistics{
       return "BreederStatistics [idClub=" + idClub + ", nomClub=" + nomClub + ", numClub=" + numClub + ", idRace="
             + idRace + ", nomRace=" + nomRace + ", codeFci=" + codeFci + ", idVariete=" + idVariete + ", nomVariete="
             + nomVariete + ", idEleveur=" + idEleveur + ", affixeEleveur=" + affixeEleveur + ", idSaillie=" + idSaillie
-            + ", cotationPortee=" + cotationPortee + ", idEtalon=" + idEtalon + ", nomEtalon=" + nomEtalon
+            + ", cotationPortee=" + cotationPortee + ", idRaceEtalon=" + idRaceEtalon + ", nomRaceEtalon=" + nomRaceEtalon + ", idVarieteEtalon=" + idVarieteEtalon + ", nomVarieteEtalon=" + nomVarieteEtalon + ", idEtalon=" + idEtalon + ", nomEtalon=" + nomEtalon
             + ", cotationEtalon=" + cotationEtalon + ", typeEtalon=" + typeEtalon  + ", premiereSaillieEtalon=" + premiereSaillieEtalon  
             + ", idLice=" + idLice + ", cotationLice=" + cotationLice + ", typeLice=" + typeLice + ", premiereSaillieLice=" + premiereSaillieLice + ", nbMale=" + nbMale + ", nbFemelle="
             + nbFemelle + ", prolificiteRace=" + prolificiteRace + ", prolificiteVariete=" + prolificiteVariete

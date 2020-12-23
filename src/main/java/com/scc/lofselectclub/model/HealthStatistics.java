@@ -11,7 +11,7 @@ import javax.persistence.Table;
 @IdClass(HealthStatisticsId.class)
 public class HealthStatistics extends GenericStatistics {
 
-   // NOTE : Pky ! IdClub, IdRace, IdVariete, Annee, Mois, IdMaladie, CodeResultat
+   // NOTE : Pky ! IdClub, IdRace, IdVariete, Annee, IdMaladie, CodeResultat
 
    @Id
    @Column(name = "id_club")
@@ -57,7 +57,6 @@ public class HealthStatistics extends GenericStatistics {
    @Id
    @Column(name = "annee")
    Integer annee;
-   @Id
    @Column(name = "mois")
    Integer mois;
    @Column(name = "tri")

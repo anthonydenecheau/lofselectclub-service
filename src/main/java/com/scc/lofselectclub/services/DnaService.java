@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStatistics> {
 
    public DnaService() {
@@ -260,4 +260,13 @@ public class DnaService extends AbstractGenericService<DnaResponseObject,DnaStat
 
    }
 
+   @Override
+   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
+      return null;
+   }
+
+   @Override
+   protected <T> T emptyTopOfTheYear(int _year) {
+      return null;
+   }
 }

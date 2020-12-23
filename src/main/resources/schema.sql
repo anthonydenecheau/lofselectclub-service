@@ -10,6 +10,11 @@ ALTER TABLE IF EXISTS ls_stats_confirmation ADD COLUMN IF NOT EXISTS typ_inscrip
 ALTER TABLE IF EXISTS ls_race ADD COLUMN IF NOT EXISTS tri numeric(28,0);
 -- Table LS_STATS_ELEVEUR
 ALTER TABLE IF EXISTS ls_stats_eleveur ADD COLUMN IF NOT EXISTS tri numeric(28,0);
+ALTER TABLE IF EXISTS ls_stats_eleveur ADD COLUMN IF NOT EXISTS id_race_etalon numeric(28,0);
+ALTER TABLE IF EXISTS ls_stats_eleveur ADD COLUMN IF NOT EXISTS id_variete_etalon numeric(28,0);
+ALTER TABLE IF EXISTS ls_stats_eleveur ADD COLUMN IF NOT EXISTS nom_race_etalon character varying(80) COLLATE pg_catalog."default";
+ALTER TABLE IF EXISTS ls_stats_eleveur ADD COLUMN IF NOT EXISTS nom_variete_etalon character varying(80) COLLATE pg_catalog."default";
+
 -- Table LS_STATS_ADN
 ALTER TABLE IF EXISTS ls_stats_adn ADD COLUMN IF NOT EXISTS tri numeric(28,0);
 -- Table LS_STATS_CONFIRMATION

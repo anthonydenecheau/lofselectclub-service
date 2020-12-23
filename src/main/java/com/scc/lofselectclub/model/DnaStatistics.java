@@ -41,7 +41,6 @@ public class DnaStatistics extends GenericStatistics {
    @Id
    @Column(name = "annee")
    Integer annee;
-   @Id
    @Column(name = "mois")
    Integer mois;
    @Column(name = "tri")

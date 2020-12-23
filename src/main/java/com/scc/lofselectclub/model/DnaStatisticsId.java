@@ -13,7 +13,6 @@ public class DnaStatisticsId implements Serializable {
    Integer idRace;
    Integer idVariete;
    Integer annee;
-   Integer mois;
 
    public Integer getIdClub() {
       return idClub;
@@ -45,14 +44,6 @@ public class DnaStatisticsId implements Serializable {
 
    public void setAnnee(Integer annee) {
       this.annee = annee;
-   }
-
-   public Integer getMois() {
-      return mois;
-   }
-
-   public void setMois(Integer mois) {
-      this.mois = mois;
    }
 
 }

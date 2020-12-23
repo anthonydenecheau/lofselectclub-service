@@ -37,7 +37,7 @@ import com.scc.lofselectclub.utils.TypeGender;
 import com.scc.lofselectclub.utils.TypePerformance;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class PerformanceService extends AbstractGenericService<PerformanceResponseObject,PerformanceStatistics> {
 
    public PerformanceService() {
@@ -376,5 +376,15 @@ public class PerformanceService extends AbstractGenericService<PerformanceRespon
             .withName(_nameBreed)
             .withStatistics(_breedStatistics);
 
+   }
+   
+   @Override
+   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
+      return null;
+   }
+
+   @Override
+   protected <T> T emptyTopOfTheYear(int _year) {
+      return null;
    }
 }

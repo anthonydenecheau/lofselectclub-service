@@ -200,6 +200,19 @@ public abstract class AbstractGenericService<T, U> {
       
    }
    
+   @SuppressWarnings("unchecked")
+   protected <K, V, C extends Collection<V>, M extends Map<K, C>> M  getVarietyFatherStatistics (List<? extends GenericStatistics> _list) {
+      return
+            (M) _list.stream()
+               .collect(Collectors.groupingBy(
+                     r -> new TupleVariety(r.getIdVarieteEtalon(), r.getNomVarieteEtalon())
+                     , LinkedHashMap::new
+                     , Collectors.toList())
+                     );
+      
+   }
+   
+   
 //   @SuppressWarnings("unchecked")
 //   protected <K, V, C extends Collection<V>, M extends Map<K, C>> M  getVarietyStatistics (List<? extends GenericStatistics> _list) {
 //      return
@@ -239,6 +252,7 @@ public abstract class AbstractGenericService<T, U> {
    @SuppressWarnings("hiding")
    protected <T> List<T> populateVarieties(List<? extends GenericStatistics> _list, ParametersVariety _parameters) {
 
+      Map<TupleVariety, List<T>> _allVariety = null;
       this._idVariety = 0;
       this._nameVariety = "";
       List<T> _varietyList = new ArrayList<T>();
@@ -251,9 +265,15 @@ public abstract class AbstractGenericService<T, U> {
          
          // On stocke la liste des variétés pour la race
          List<TupleVariety> _varieties = new ArrayList<TupleVariety>(this._referencedVarieties);
-   
-         // Lecture des variétés associées à la race pour lesquelles des données ont été calculées
-         Map<TupleVariety, List<T>> _allVariety = getVarietyStatistics(_list);
+            
+         // Règle spécifique pour les geniteurs !!! 
+         if ( _parameters!=null && (_parameters.isTopN() || _parameters.isTopOfTheYear())) {
+            // la variété lue doit être celle du géniteur (etalon) et non celle de la portée.
+            _allVariety = getVarietyFatherStatistics(_list);
+         } else {
+            // Lecture des variétés associées à la race pour lesquelles des données ont été calculées
+            _allVariety = getVarietyStatistics(_list);
+         }         
          for (Map.Entry<TupleVariety, List<T>> _currentVariety : _allVariety.entrySet()) {
    
             this._idVariety = _currentVariety.getKey().getId();
@@ -429,6 +449,63 @@ public abstract class AbstractGenericService<T, U> {
    @SuppressWarnings("hiding")
    protected abstract <T> T emptyTopN(int _year);
 
+   /**
+    * Retourne le classement pour une race et une année donnée
+    * 
+    * @param _list   Données de production générique pour une liste d'affixe/d'étalon
+    * @return
+    */
+   @SuppressWarnings("hiding")
+   protected <T> List<T> populateTopOfTheYear(List<? extends GenericStatistics> _list) {
+
+      int _year = 0;
+      List<T> _topOfTheYearStatistics = new ArrayList<T>();
+
+      try {
+         // Lecture de la dernière date de calcul pour définir la période (rupture dans les années)
+         // A voir si les années précédentes ne feront pas l'objet d'une suppression côté
+         // data (BdD); auquel cas, ce code sera obsolète
+         setYearSeries(this._idBreed);
+   
+         // Lecture des variétés référencées
+         // si une variété n'est pas représentée pour l'année, il faut l'ajouter avec qtity = 0
+         setVarietiesByIdBreed(this._idBreed);
+         
+         Map<Integer, List<T>> _breedGroupByYear = getYearStatistics(_list);
+         for (Map.Entry<Integer, List<T>> _breedOverYear : _breedGroupByYear.entrySet()) {
+            
+            _year = _breedOverYear.getKey();
+   
+            // Suppression de l'année traitée
+            this._serieYear = ArrayUtils.removeElement(this._serieYear, _year);
+            
+            _topOfTheYearStatistics.add(
+                  readTopOfTheYear(_breedOverYear.getValue(), _year)
+            );
+            
+         }
+         
+         // On finalise en initialisant les années pour lesquelles on a constaté une rupture
+         for (int i = 0; i < this._serieYear.length; i++) {
+            _topOfTheYearStatistics.add(
+                  emptyTopOfTheYear(this._serieYear[i])
+             );
+         }
+
+      } catch (Exception e) {
+         logger.error("populateTopOfTheYear : {}",e.getMessage());
+      } finally {
+      } 
+      
+      return _topOfTheYearStatistics;      
+   }
+   
+   
+   @SuppressWarnings("hiding")
+   protected abstract <T> T readTopOfTheYear(List<T> _stats, int _year);
+
+   @SuppressWarnings("hiding")
+   protected abstract <T> T emptyTopOfTheYear(int _year);
 
    /**
     * Retourne les données statistiques pour l'ensemble des races du club

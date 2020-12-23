@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class ConfirmationService extends AbstractGenericService<ConfirmationResponseObject,ConfirmationStatistics> {
 
    public ConfirmationService() {
@@ -501,4 +501,13 @@ public class ConfirmationService extends AbstractGenericService<ConfirmationResp
       
    }
    
+   @Override
+   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
+      return null;
+   }
+
+   @Override
+   protected <T> T emptyTopOfTheYear(int _year) {
+      return null;
+   }
 }
