@@ -202,8 +202,14 @@ public abstract class AbstractGenericService<T, U> {
    
    @SuppressWarnings("unchecked")
    protected <K, V, C extends Collection<V>, M extends Map<K, C>> M  getVarietyFatherStatistics (List<? extends GenericStatistics> _list) {
-      // Ajout IdVariete et NomVariete de l'étalon au mdd
-      return null;
+      return
+            (M) _list.stream()
+               .collect(Collectors.groupingBy(
+                     r -> new TupleVariety(r.getIdVarieteEtalon(), r.getNomVarieteEtalon())
+                     , LinkedHashMap::new
+                     , Collectors.toList())
+                     );
+      
    }
    
    
@@ -246,6 +252,7 @@ public abstract class AbstractGenericService<T, U> {
    @SuppressWarnings("hiding")
    protected <T> List<T> populateVarieties(List<? extends GenericStatistics> _list, ParametersVariety _parameters) {
 
+      Map<TupleVariety, List<T>> _allVariety = null;
       this._idVariety = 0;
       this._nameVariety = "";
       List<T> _varietyList = new ArrayList<T>();
@@ -259,17 +266,14 @@ public abstract class AbstractGenericService<T, U> {
          // On stocke la liste des variétés pour la race
          List<TupleVariety> _varieties = new ArrayList<TupleVariety>(this._referencedVarieties);
             
-         // [TODO] : implémenter une règle spécifique pour les geniteurs !!! 
-         // la variété lue doit être celle du géniteur (etalon) et non celle de la portée.
+         // Règle spécifique pour les geniteurs !!! 
          if ( _parameters!=null && (_parameters.isTopN() || _parameters.isTopOfTheYear())) {
-            // [TODO] Map<TupleVariety, List<T>> _allVariety = getVarietyFatherStatistics(_list);
+            // la variété lue doit être celle du géniteur (etalon) et non celle de la portée.
+            _allVariety = getVarietyFatherStatistics(_list);
          } else {
-            // reprendre l'existant!
-            // Map<TupleVariety, List<T>> _allVariety = getVarietyStatistics(_list);
-         }
-         
-         // Lecture des variétés associées à la race pour lesquelles des données ont été calculées
-         Map<TupleVariety, List<T>> _allVariety = getVarietyStatistics(_list);
+            // Lecture des variétés associées à la race pour lesquelles des données ont été calculées
+            _allVariety = getVarietyStatistics(_list);
+         }         
          for (Map.Entry<TupleVariety, List<T>> _currentVariety : _allVariety.entrySet()) {
    
             this._idVariety = _currentVariety.getKey().getId();

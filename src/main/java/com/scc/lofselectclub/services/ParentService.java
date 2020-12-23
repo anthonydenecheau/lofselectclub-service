@@ -974,8 +974,9 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
          for (Map.Entry<Integer, List<BreederStatistics>> _breedOverYear : _breedGroupByYear.entrySet()) {
    
             // 1. On groupe les étalons par qtites
-            Map<BreederStatistics, Long> _bestOfFathersBreedOverYear = _breedOverYear.getValue().stream().collect(Collectors
-                  .groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()));
+            Map<BreederStatistics, Long> _bestOfFathersBreedOverYear = _breedOverYear.getValue()
+                  .stream()
+                  .collect(Collectors.groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()))
             ;
    
             // 2.1 Classement général : on enregistre pour chaque année, les étalons ayant produit
@@ -997,7 +998,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                      );
             
             // 3. On ajoute le classement général et le topN pour chacune des variétés
-            Map<TupleVariety, List<BreederStatistics>> _allVariety = getVarietyStatistics(_breedOverYear.getValue());
+            // le groupement s/ fait s/ la variété de l'étalon
+            Map<TupleVariety, List<BreederStatistics>> _allVariety = getVarietyFatherStatistics(_breedOverYear.getValue());
             for (Map.Entry<TupleVariety, List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
 
                _tmpFathersTopNVariety.clear();

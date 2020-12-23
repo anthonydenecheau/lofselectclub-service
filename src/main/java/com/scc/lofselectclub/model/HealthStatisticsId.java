@@ -13,7 +13,6 @@ public class HealthStatisticsId implements Serializable {
    Integer idRace;
    Integer idVariete;
    Integer annee;
-   Integer mois;
    Integer idMaladie;
    String codeResultat;
 
@@ -51,14 +50,6 @@ public class HealthStatisticsId implements Serializable {
 
    public void setAnnee(Integer annee) {
       this.annee = annee;
-   }
-
-   public Integer getMois() {
-      return mois;
-   }
-
-   public void setMois(Integer mois) {
-      this.mois = mois;
    }
 
    public Integer getIdMaladie() {
