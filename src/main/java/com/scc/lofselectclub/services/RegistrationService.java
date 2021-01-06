@@ -259,13 +259,4 @@ public class RegistrationService extends AbstractGenericService<RegistrationResp
 
    }
 
-   @Override
-   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
-      return null;
-   }
-
-   @Override
-   protected <T> T emptyTopOfTheYear(int _year) {
-      return null;
-   }
 }

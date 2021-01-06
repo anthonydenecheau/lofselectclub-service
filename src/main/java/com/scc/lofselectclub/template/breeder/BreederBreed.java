@@ -18,9 +18,6 @@ public class BreederBreed {
    @ApiModelProperty(notes = "Affixes topN", position = 4, allowEmptyValue = true)
    List<BreederAffixStatistics> topN;
 
-   @ApiModelProperty(notes = "Affixes top of the year", position = 5, allowEmptyValue = true)
-   List<BreederAffixStatistics> topOfTheYear;
-
    public int getId() {
       return id;
    }
@@ -53,14 +50,6 @@ public class BreederBreed {
       this.topN = topN;
    }
 
-   public List<BreederAffixStatistics> getTopOfTheYear() {
-      return topOfTheYear;
-   }
-
-   public void setTopOfTheYear(List<BreederAffixStatistics> topOfTheYear) {
-      this.topOfTheYear = topOfTheYear;
-   }
-
    public BreederBreed withId(int id) {
       this.setId(id);
       return this;
@@ -81,14 +70,9 @@ public class BreederBreed {
       return this;
    }
 
-   public BreederBreed withTopOfTheYear(List<BreederAffixStatistics> topOfTheYear) {
-      this.setTopOfTheYear(topOfTheYear);
-      return this;
-   }
-
    @Override
    public String toString() {
-      return "RaceObject [id=" + id + ", name=" + name + ", statistics=" + statistics + ", topN=" + topN + ", topOfTheYear=" + topOfTheYear + "]";
+      return "RaceObject [id=" + id + ", name=" + name + ", statistics=" + statistics + ", topN=" + topN + "]";
    }
 
 }
