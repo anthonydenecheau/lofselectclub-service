@@ -81,9 +81,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private int limitTopN = 0;
    private List<ParentFather> allTopNBreed = new ArrayList<ParentFather>();
    private HashMap<TupleVariety,List<ParentFather>> allTopNVariety = new HashMap<TupleVariety,List<ParentFather>>();
-   private List<ParentFather> allTopOfTheYearBreed = new ArrayList<ParentFather>();
-   private HashMap<TupleVariety,List<ParentFather>> allTopOfTheYearVariety = new HashMap<TupleVariety,List<ParentFather>>();
-   
+
    private final List<BreederStatistics> _emptyParentsStatistics = new ArrayList<BreederStatistics>();
 
 
@@ -359,10 +357,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       if (_parameters.isTopN())
          return readVarietyTopN(_parameters.getYear(), _stats);
       
-      // cas de l'objet topOfTheYear
-      if (_parameters.isTopOfTheYear())
-         return readVarietyTopOfTheYear(_parameters.getYear(), _stats);
-      
       return readVariety(_stats);
    
    }
@@ -446,13 +440,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .withName(_variety.getName())
                .withFathers(fullEmptyTopNVariety(_variety.getId()));
       
-      // cas de l'objet topOfTheYear
-      if (_parameters.isTopOfTheYear())
-         return (T) new ParentAffixVariety()
-               .withId(_variety.getId())
-               .withName(_variety.getName())
-               .withFathers(fullEmptyTopOfTheYearVariety(_variety.getId()));
-
       return (T) new ParentVariety()
             .withId(_variety.getId())
             .withName(_variety.getName())
@@ -687,7 +674,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             // Si l'étalon n'est pas présent dans le top20, appartient-il au topN ?
             // si oui, il est sorti du classement pour l'année en cours; si non il n'est pas pris en compte
             // on conserve l'information qtités
-            if (!isTop20(_father.getKey(), _top20Fathers)) {
+            // On n'applique pas ce filtre  pour la dernière année
+            if (_year != this._lastYear && !isTop20(_father.getKey(), _top20Fathers)) {
                if (isTopN(_father.getKey())) {
                   _topNFathers.add(
                         new ParentFather()
@@ -861,7 +849,8 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             // Si l'étalon n'est pas présent dans le top20, appartient-il au topN ?
             // si oui, il est sorti du classement pour l'année en cours; si non il n'est pas pris en compte
             // on conserve l'information qtités
-            if (!isTop20(_father.getKey(), _top20Fathers)) {
+            // On n'applique pas ce filtre  pour la dernière année
+            if (_year != this._lastYear && !isTop20(_father.getKey(), _top20Fathers)) {
                if (isTopNVariety(_father.getKey(),_listFatherVarietyTopN)) {
                   _topNFathers.add(
                         new ParentFather()
@@ -932,7 +921,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private String getNameFatherFromBreed(Integer _id) {
       String name = "";
       try {
-         name = this.allTopOfTheYearBreed.stream().filter(p -> p.getId() == _id).findAny().orElse(null).getName();
+         name = this.allTopNBreed.stream().filter(p -> p.getId() == _id).findAny().orElse(null).getName();
       } catch (Exception e) {
          name = getNameFatherFromVariety(_id);
       } finally {
@@ -944,7 +933,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    private String getNameFatherFromVariety(Integer _id) {
       String name = "";
       try {
-         name = this.allTopOfTheYearVariety.entrySet().stream().flatMap(e -> e.getValue().stream()).filter(p -> p.getId() == _id).findAny().orElse(null).getName();
+         name = this.allTopNVariety.entrySet().stream().flatMap(e -> e.getValue().stream()).filter(p -> p.getId() == _id).findAny().orElse(null).getName();
       } catch (Exception e) {
          logger.error("getNameFather {} not found", _id);
       } finally {
@@ -964,10 +953,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       HashMap<TupleVariety,List<ParentFather>> _sortedFathersTopNVariety = new HashMap<TupleVariety,List<ParentFather>>();
       Set<ParentFather> _tmpFathersTopNVariety = new HashSet<ParentFather>();
 
-      List<ParentFather> _sortedFathersTopOfTheYearBreed = new ArrayList<ParentFather>();
-      HashMap<TupleVariety,List<ParentFather>> _sortedFathersTopOfTheYearVariety = new HashMap<TupleVariety,List<ParentFather>>();
-      Set<ParentFather> _tmpFathersTopOfTheYearVariety = new HashSet<ParentFather>();
-
       try {
          // Sélection de l'année
          Map<Integer, List<BreederStatistics>> _breedGroupByYear = getYearStatistics(_list);
@@ -979,23 +964,24 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                   .collect(Collectors.groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()))
             ;
    
-            // 2.1 Classement général : on enregistre pour chaque année, les étalons ayant produit
-            _sortedFathersTopOfTheYearBreed.addAll(
-                  _bestOfFathersBreedOverYear.entrySet().stream()
-                  .filter(x -> x.getValue() > 0 )
-                  .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon(), _breedOverYear.getKey()))
-                  .collect(Collectors.toList())
-                  );
-
-            // 2.2. On ne conserve que les 20 meilleurs que l'on ajouté à notre liste existante (l'objet Set nous prémunit des doublons)
-            _sortedFathersTopNBreed.addAll(
-                  _bestOfFathersBreedOverYear.entrySet().stream()
+            // 2. Classement dernière année : on enregistre les étalons ayant produit
+            //    Pour les années précédantes, on ne conserve que les 20 meilleurs que l'on ajoute à notre liste existante (l'objet Set nous prémunit des doublons)
+            if (_breedOverYear.getKey() == this._lastYear)
+               _sortedFathersTopNBreed.addAll(
+                     _bestOfFathersBreedOverYear.entrySet().stream()
                      .filter(x -> x.getValue() > 0 )
-                     .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-                     .limit(this.limitTopN)
                      .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon(), _breedOverYear.getKey()))
                      .collect(Collectors.toList())
                      );
+            else
+               _sortedFathersTopNBreed.addAll(
+                     _bestOfFathersBreedOverYear.entrySet().stream()
+                        .filter(x -> x.getValue() > 0 )
+                        .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+                        .limit(this.limitTopN)
+                        .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon(), _breedOverYear.getKey()))
+                        .collect(Collectors.toList())
+                        );
             
             // 3. On ajoute le classement général et le topN pour chacune des variétés
             // le groupement s/ fait s/ la variété de l'étalon
@@ -1003,36 +989,29 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             for (Map.Entry<TupleVariety, List<BreederStatistics>> _currentVariety : _allVariety.entrySet()) {
 
                _tmpFathersTopNVariety.clear();
-               _tmpFathersTopOfTheYearVariety.clear();
                
                Map<BreederStatistics, Long> _bestOfFathersVarietyOverYear = _currentVariety.getValue()
                      .stream()
                      .collect(Collectors.groupingBy(prd -> new BreederStatistics(prd.getIdEtalon(), prd.getNomEtalon()), Collectors.counting()));
                ;
 
-               _tmpFathersTopOfTheYearVariety.addAll(
-                     _bestOfFathersVarietyOverYear.entrySet().stream()
-                       .filter(x -> x.getValue() > 0 )
-                       .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon(), _breedOverYear.getKey()))
-                       .collect(Collectors.toSet())
-                       );
-                 
-               for (ParentFather p : _tmpFathersTopOfTheYearVariety) {
-                 _sortedFathersTopOfTheYearVariety.computeIfAbsent(
-                       _currentVariety.getKey()
-                       , k -> new ArrayList<>()).add( 
-                             new ParentFather(p.getId(), p.getName(), p.getYear())
-                 );
-               }
-               
-               _tmpFathersTopNVariety.addAll(
-                   _bestOfFathersVarietyOverYear.entrySet().stream()
-                     .filter(x -> x.getValue() > 0 )
-                     .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-                     .limit(this.limitTopN)
-                     .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon(), _breedOverYear.getKey()))
-                     .collect(Collectors.toSet())
-                     );
+               if (_breedOverYear.getKey() == this._lastYear)
+                  _tmpFathersTopNVariety.addAll(
+                        _bestOfFathersVarietyOverYear.entrySet().stream()
+                          .filter(x -> x.getValue() > 0 )
+                          .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon(), _breedOverYear.getKey()))
+                          .collect(Collectors.toSet())
+                   );
+                    
+               else 
+                  _tmpFathersTopNVariety.addAll(
+                      _bestOfFathersVarietyOverYear.entrySet().stream()
+                        .filter(x -> x.getValue() > 0 )
+                        .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+                        .limit(this.limitTopN)
+                        .map(a -> new ParentFather(a.getKey().getIdEtalon(), a.getKey().getNomEtalon(), _breedOverYear.getKey()))
+                        .collect(Collectors.toSet())
+                  );
                
                for (ParentFather p : _tmpFathersTopNVariety) {
                   _sortedFathersTopNVariety.computeIfAbsent(
@@ -1057,17 +1036,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
                .orElseGet(Stream::empty)
                .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,(oldValue, newValue) -> oldValue, LinkedHashMap::new));
          
-         // Classement général
-         this.allTopOfTheYearBreed = Optional.ofNullable(_sortedFathersTopOfTheYearBreed)
-               .map(List::stream)
-               .orElseGet(Stream::empty)
-               .collect(Collectors.toList());
-           
-         this.allTopOfTheYearVariety = Optional.ofNullable(_sortedFathersTopOfTheYearVariety)
-               .map(x -> x.entrySet().stream())
-               .orElseGet(Stream::empty)
-               .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue,(oldValue, newValue) -> oldValue, LinkedHashMap::new));
-
       } catch (Exception e) {
          logger.error("extractTopFathers",e.getMessage());
       } finally {
@@ -1220,7 +1188,6 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
 
       List<ParentBreedStatistics> _breedStatistics = null;
       List<ParentFatherStatistics> _fathersStatistics = null;
-      List<ParentFatherStatistics> _topOfTheYearStatistics = null;
       
       try {
          List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
@@ -1230,16 +1197,14 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
    
          // Recherche TopN Etalon s/ la race
          // Regle de sélection :
-         // Pour chaque année, on sélectionne le top 20.
-         // On en déduit les 100 meilleurs étalons (les doublons sont supprimés) qui vont
+         // Pour la dernière année, on sélectionne l'ensemble des étalons
+         // Pour les autres années, on sélectionne le top 20.
+         // On en déduit les n meilleurs étalons (les doublons sont supprimés) qui vont
          // nous servir de base pour construire le classement s/ chaque année
          setYearSeries(this._idBreed);
          extractTopFathers(_list);
          _fathersStatistics = populateTopN(_list);
 
-         // Classement par année des étalons (pas de règle de sélection)
-         _topOfTheYearStatistics = populateTopOfTheYear(_list);
-         
       } catch (Exception e) {
          logger.error("readBreed",e.getMessage());
       } finally {
@@ -1251,7 +1216,7 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
             .withName(_nameBreed)
             .withStatistics(_breedStatistics)
             .withTopN(_fathersStatistics)
-            .withTopOfTheYear(_topOfTheYearStatistics);
+            ;
       
    }
 
@@ -1374,281 +1339,4 @@ public class ParentService extends AbstractGenericService<ParentResponseObject,B
       return _cotationList;
    }
    
-   /**
-    * Retourne le classement des étalons s/ la variete ayant produit le plus de portées dans l'année
-    * 
-    * @param _year   Année
-    * @param _list   Liste des données de production à analyser
-    * @return        Propriété <code>fathers</code> de l'objet <code>BreederAffixStatistics</code>
-    */
-   private List<ParentFather> extractTopOfTheYearVarietyOverYear(int _year, List<BreederStatistics> _list) {
-      
-      List<ParentFather> _topOfTheYearFathers = new ArrayList<ParentFather>();
-      int position = 0;
-      int qtityExaequo = 0;
-      int currentPosition = 0;
-      
-      try {
-
-         NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-         format.setMaximumFractionDigits(2);
-         format.setMinimumFractionDigits(2);
-
-         double _percent = 0;
-
-         int _idBreed = _list.stream().findFirst().get().getIdRace();
-         long _qtity = breederRepository.countByIdRaceAndAnnee(_idBreed, _year);
-
-         // On extrait les étalons par varietes
-         List<ParentFather> _listFatherVarietyTopOfTheYear = this.allTopOfTheYearVariety.entrySet()
-               .stream()
-               .filter(r -> r.getKey().getId() == this._idVariety)
-               .flatMap(e -> e.getValue().stream())
-               .collect(Collectors.toList())
-         ;         
-         
-         // On groupe les affixes par qtites pour la variété et l'année en cours
-         Map<Integer, Long> _fathers = _list
-               .stream()
-               .filter(x -> (_year == x.getAnnee()))
-               .collect(Collectors.groupingBy(BreederStatistics::getIdEtalon, Collectors.counting()));
-
-         // On trie la liste des étalons pour la variété et l'année en cours
-         Map<Integer, Long> result = _fathers.entrySet()
-               .stream()
-               .filter(x -> x.getValue() > 0 )
-               .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                       (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-
-         
-         // On précise les positions
-         for (Entry<Integer, Long> _father : result.entrySet()) {
-
-            _percent = Precision.round((double) _father.getValue() / (double) _qtity, 4);
-            
-            if (qtityExaequo == (int) (long)_father.getValue() ) {
-               position++;
-            } else
-               currentPosition = ++position;
-            
-            qtityExaequo = (int) (long)_father.getValue();
-            _topOfTheYearFathers.add(
-                  new ParentFather()
-                     .withId(_father.getKey())
-                     .withName(getNameFatherFromBreed(_father.getKey()))
-                     .withQtity(qtityExaequo)
-                     .withPercentage(format.format(_percent))
-                     .withPosition(currentPosition)
-             );
-
-         }
-         
-         // On complète la liste des étalons manquants (attention, topOfTheYear contient des doublons (prend en charge les années)
-         Set<Integer> _idTopOfTheYear = _listFatherVarietyTopOfTheYear
-               .stream()
-               .map(p -> p.getId())
-               .distinct()
-               .collect(Collectors.toSet());
-         
-         for (Integer _id : _idTopOfTheYear) {
-            if (!isPresent(_id, _topOfTheYearFathers))
-               _topOfTheYearFathers.add(
-                     new ParentFather()
-                     .withId(_id)
-                     .withName(getNameFatherFromBreed(_id))
-                     .withQtity(0)
-                     .withPercentage(format.format(0))
-                     .withPosition(0)
-                  );
-         }         
-
-      } catch (Exception e) {
-         logger.error("extractTopOfTheYearVarietyOverYear : {}",e.getMessage());
-      } finally {
-         // On trie les résultats par quantites décroissante
-         _topOfTheYearFathers.sort(Collections.reverseOrder(Comparator.comparing(ParentFather::getQtity)));
-         
-      }
-
-      return _topOfTheYearFathers;
-      
-   }
-   
-   /**
-    * Retourne le classement des géniteurs ayant produit le plus de portée (ventilées sur les variétés de la race) dans l'année
-    * 
-    * @param _year         Année
-    * @param _stats        Référentiel des meilleurs géniteurs sur les 5 dernières années
-    * @return              Propriété <code>variety</code> de l'objet <code>ParentAffixVariety</code>
-    */
-   @SuppressWarnings("unchecked")
-   private <T> T readVarietyTopOfTheYear(int _year, List<T> _stats) {
-      
-      // Caste la liste
-      List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-      
-      return (T) new ParentAffixVariety()
-         .withId(this._idVariety)
-         .withName(this._nameVariety)
-         .withFathers(extractTopOfTheYearVarietyOverYear(_year, _list));
-      
-   }
-   
-   /**
-    * Retourne le classement des étalons s/ la race ayant produit le plus de portées dans l'année
-    * 
-    * @param _year   Année
-    * @param _list   Liste des données de production à analyser
-    * @return        Propriété <code>fathers</code> de l'objet <code>ParentFatherStatistics</code>
-    */
-   private List<ParentFather> extractTopOfTheYearBreedOverYear(int _year, List<BreederStatistics> _list) {
-
-      List<ParentFather> _topOfTheYearFathers = new ArrayList<ParentFather>();
-      int position = 0;
-      int qtityExaequo = 0;
-      int currentPosition = 0;
-      double _percent = 0;
-      
-      try {
-
-         NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-         format.setMaximumFractionDigits(2);
-         format.setMinimumFractionDigits(2);
-         
-         int _idBreed = _list.stream().findFirst().get().getIdRace();
-         long _qtity = breederRepository.countByIdRaceAndAnnee(_idBreed, _year);
-         
-         // On groupe les étalons par qtites pour l'année en cours
-         Map<Integer, Long> _fathers = _list
-               .stream()
-               .filter(x -> (_year == x.getAnnee()))
-               .collect(Collectors.groupingBy(BreederStatistics::getIdEtalon, Collectors.counting()));
-
-         // On trie la liste des étalons pour l'année en cours
-         Map<Integer, Long> result = _fathers.entrySet()
-               .stream()
-               .filter(x -> x.getValue() > 0 )
-               .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                       (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-
-         // On précise les positions
-         for (Entry<Integer, Long> _father : result.entrySet()) {
-
-            _percent = Precision.round((double) _father.getValue() / (double) _qtity, 4);
-            
-            if (qtityExaequo == (int) (long)_father.getValue() ) {
-               position++;
-            } else
-               currentPosition = ++position;
-            
-            qtityExaequo = (int) (long)_father.getValue();
-            _topOfTheYearFathers.add(
-                  new ParentFather()
-                     .withId(_father.getKey())
-                     .withName(getNameFatherFromBreed(_father.getKey()))
-                     .withQtity(qtityExaequo)
-                     .withPercentage(format.format(_percent))
-                     .withPosition(currentPosition)
-             );
-            
-         }
-         
-         // On complète la liste des étalons manquants (attention, topOfTheYear contient des doublons (prend en charge les années)
-         Set<Integer> _idTopOfTheYear = this.allTopOfTheYearBreed.stream().map(p -> p.getId()).distinct().collect(Collectors.toSet());
-         for (Integer _id : _idTopOfTheYear) {
-            if (!isPresent(_id, _topOfTheYearFathers))
-               _topOfTheYearFathers.add(
-                     new ParentFather()
-                     .withId(_id)
-                     .withName(getNameFatherFromBreed(_id))
-                     .withQtity(0)
-                     .withPercentage(format.format(0))
-                     .withPosition(0)
-                  );
-         }         
-
-      } catch (Exception e) {
-         logger.error("extractTopOfTheYearBreedOverYear : {}",e.getMessage());
-      } finally {
-         // On trie les résultats par quantites décroissante
-         _topOfTheYearFathers.sort(Collections.reverseOrder(Comparator.comparing(ParentFather::getQtity)));
-      }
-
-      return _topOfTheYearFathers;
-
-   }
-
-   @SuppressWarnings("unchecked")
-   @Override
-   protected <T> T readTopOfTheYear(List<T> _stats, int _year) {
-      List<ParentFather> _topOfTheYear  = null;
-      List<ParentAffixVariety> _topOfTheYearVariety = null;
-      
-      try {
-         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
-         
-         // Recherche Classement Etalon de l'année en cours s/ la race et sur les varietes
-         _topOfTheYear = extractTopOfTheYearBreedOverYear(_year, _list);
-         
-         // Lecture Classement Etalon par variétés s/ la race en cours (et pour l'année en cours)      
-         _topOfTheYearVariety = populateVarieties(_list, new ParametersVariety(_year,false,true));
-      
-      } catch (Exception e) {
-         logger.error("readTopOfTheYear",e.getMessage());
-      } finally {
-      }
-      
-      return (T) new ParentFatherStatistics()
-            .withYear(_year)
-            .withFathers(_topOfTheYear)
-            .withVariety(_topOfTheYearVariety);
-      
-   }
-
-   /**
-    * Retourne la liste des géniteurs s/ la variété pour lesquels aucune production n'a été enregistrée
-    * 
-    * @return
-    */   
-   private List<ParentFather> fullEmptyTopOfTheYearVariety (int idVariety) {
-      
-      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-      
-      return this.allTopOfTheYearVariety.entrySet()
-            .stream()
-            .filter(r -> r.getKey().getId() == idVariety)
-            .flatMap(e -> e.getValue().stream())
-            .map(p -> new ParentFather(p.getId(), p.getName()))
-            .distinct()
-            .map(s -> new ParentFather(s.getId(), s.getName(), 0, format.format(0), 0))
-            .collect(ArrayList::new, ArrayList::add,ArrayList::addAll);            
-            
-   } 
-   
-   /**
-    * Retourne la liste des géniteurs s/ la race pour lesquels aucune production n'a été enregistrée
-    * 
-    * @return
-    */
-   private List<ParentFather> fullEmptyTopOfTheYearBreed () {
-      
-      NumberFormat format = NumberFormat.getPercentInstance(Locale.FRENCH);
-      
-      return this.allTopOfTheYearBreed.stream()
-            .map(p -> new ParentFather(p.getId(), p.getName()))
-            .distinct()
-            .map (s -> new ParentFather(s.getId(), s.getName(), 0, format.format(0), 0))
-            .collect(Collectors.toList());
-   }   
-   
-   @SuppressWarnings("unchecked")
-   @Override
-   protected <T> T emptyTopOfTheYear(int _year) {
-      return (T) new ParentFatherStatistics()
-            .withYear(_year)
-            .withFathers(fullEmptyTopOfTheYearBreed())
-            .withVariety(populateVarieties(this._emptyParentsStatistics, new ParametersVariety(_year,false,true)));
-   }
 }

@@ -2,6 +2,7 @@ package com.scc.lofselectclub.utils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +34,13 @@ public class StreamUtils {
 
       LocalDateTime _l = _referenceDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
       return IntStream.rangeClosed(_l.minusYears(minusYear).getYear(), _l.getYear()).toArray();
+   }
+
+   public static int findSerieLastYear(int[] _serieYear) {
+
+      return Arrays.stream(_serieYear)
+            .max()
+            .getAsInt();
    }
 
    public static <T, K extends Comparable<K>> Collector<T, ?, TreeMap<K, List<T>>> sortedGroupingBy(

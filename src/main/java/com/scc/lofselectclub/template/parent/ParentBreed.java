@@ -18,9 +18,6 @@ public class ParentBreed {
    @ApiModelProperty(notes = "Fathers topN", position = 4, allowEmptyValue = true)
    List<ParentFatherStatistics> topN;
 
-   @ApiModelProperty(notes = "Fathers top of the year", position = 5, allowEmptyValue = true)
-   List<ParentFatherStatistics> topOfTheYear;
-   
    public int getId() {
       return id;
    }
@@ -53,14 +50,6 @@ public class ParentBreed {
       this.topN = topN;
    }
 
-   public List<ParentFatherStatistics> getTopOfTheYear() {
-      return topOfTheYear;
-   }
-
-   public void setTopOfTheYear(List<ParentFatherStatistics> topOfTheYear) {
-      this.topOfTheYear = topOfTheYear;
-   }
-   
    public ParentBreed withId(int id) {
       this.setId(id);
       return this;
@@ -81,14 +70,9 @@ public class ParentBreed {
       return this;
    }
 
-   public ParentBreed withTopOfTheYear(List<ParentFatherStatistics> topOfTheYear) {
-      this.setTopOfTheYear(topOfTheYear);
-      return this;
-   }
-
    @Override
    public String toString() {
-      return "Breed [id=" + id + ", name=" + name + ", statistics=" + statistics + ", topN=" + topN + ", topOfTheYear=" + topOfTheYear + "]";
+      return "Breed [id=" + id + ", name=" + name + ", statistics=" + statistics + ", topN=" + topN + "]";
    }
 
 }
