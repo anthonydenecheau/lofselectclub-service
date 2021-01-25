@@ -10,10 +10,10 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.scc.lofselectclub.config.ServiceConfig;
 import com.scc.lofselectclub.exceptions.EntityNotFoundException;
-import com.scc.lofselectclub.model.BreederStatistics;
 import com.scc.lofselectclub.model.GenericStatistics;
 import com.scc.lofselectclub.model.ParametersVariety;
-import com.scc.lofselectclub.repository.BreederRepository;
+import com.scc.lofselectclub.model.RegistrationStatistics;
+import com.scc.lofselectclub.repository.RegistrationRepository;
 import com.scc.lofselectclub.template.TupleBreed;
 import com.scc.lofselectclub.template.TupleVariety;
 import com.scc.lofselectclub.template.registration.RegistrationBreed;
@@ -32,18 +32,18 @@ import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional(readOnly = true)
-public class RegistrationService extends AbstractGenericService<RegistrationResponseObject,BreederStatistics> {
+public class RegistrationService extends AbstractGenericService<RegistrationResponseObject,RegistrationStatistics> {
 
    public RegistrationService() {
       super();
       this.setGenericTemplate(new RegistrationResponseObject());
-      this.setType(BreederStatistics.class);
+      this.setType(RegistrationStatistics.class);
    }
 
    private static final Logger logger = LoggerFactory.getLogger(RegistrationService.class);
 
    @Autowired
-   protected BreederRepository breederRepository;
+   protected RegistrationRepository registrationRepository;
 
    @Autowired
    private Tracer tracer;
@@ -114,19 +114,19 @@ public class RegistrationService extends AbstractGenericService<RegistrationResp
    @Override
    protected <T> T readVariety(List<T> _stats, ParametersVariety _parameters) {
 
-      BreederStatistics _sumRegistration = null;
+      RegistrationStatistics _sumRegistration = null;
       long _qtity = 0;
             
       try {
          // Caste la liste
-         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         List<RegistrationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
          
          // Somme des chiots males, femelles, portée
          _sumRegistration = _list
                .stream()
-               .reduce(new BreederStatistics(0, 0),
+               .reduce(new RegistrationStatistics(0, 0),
                   (x, y) -> {
-                     return new BreederStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
+                     return new RegistrationStatistics(x.getNbMale() + y.getNbMale(), x.getNbFemelle() + y.getNbFemelle());
                });
    
          _qtity = _list
@@ -165,7 +165,7 @@ public class RegistrationService extends AbstractGenericService<RegistrationResp
    @Override
    protected <K, V, C extends Collection<V>, M extends Map<K, C>> M getDataStatistics(int idClub) {
       return 
-            (M) breederRepository.findByIdClub(idClub, orderByTri())
+            (M) registrationRepository.findByIdClub(idClub, orderByTri())
             .stream()
             .collect(Collectors.groupingBy(r -> new TupleBreed(r.getIdRace(), r.getNomRace())));
    }
@@ -174,19 +174,19 @@ public class RegistrationService extends AbstractGenericService<RegistrationResp
    @Override
    protected <T> T readYear(List<T> _stats, int _year) {
 
-      BreederStatistics _sumRegistration = null; 
+      RegistrationStatistics _sumRegistration = null; 
       long _qtity = 0;
       List<RegistrationVariety> _variety = null;
       
       try {
-         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         List<RegistrationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
          
          // Somme des chiots males, femelles, portée
          _sumRegistration = _list
                .stream()
-               .reduce(new BreederStatistics(0, 0),
+               .reduce(new RegistrationStatistics(0, 0),
                   (x, y) -> {
-                     return new BreederStatistics(x.getNbMale() + y.getNbMale(),
+                     return new RegistrationStatistics(x.getNbMale() + y.getNbMale(),
                            x.getNbFemelle() + y.getNbFemelle());
                });
    
@@ -221,7 +221,7 @@ public class RegistrationService extends AbstractGenericService<RegistrationResp
             .withNumberOfFemale(0)
             .withNumberOfPuppies(0)
             .withTotalOfLitter(0)
-            .withVariety(populateVarieties(new ArrayList<BreederStatistics>(),null));
+            .withVariety(populateVarieties(new ArrayList<RegistrationStatistics>(),null));
    }
 
    @Override
@@ -241,7 +241,7 @@ public class RegistrationService extends AbstractGenericService<RegistrationResp
       List<RegistrationBreedStatistics> _breedStatistics = null;
       
       try { 
-         List<BreederStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
+         List<RegistrationStatistics> _list = feed((List<? extends GenericStatistics>) _stats);
          
          // Lecture des années (on ajoute un tri)
          _breedStatistics = populateYears(_list);
