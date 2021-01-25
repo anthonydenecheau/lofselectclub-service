@@ -117,9 +117,11 @@ public class StreamUtils {
                   .collect(Collectors.<BreederStatistics>toList());
    }
    
+   /*
    public static Predicate<BreederAffixRank> isTopNAffixe(List<BreederAffixRank> affixes) {
       return p -> affixes.contains(new BreederAffixRank(p.getName()));  
    }
+   */
 
    public static Predicate<BreederStatistics> onlyTopNAffixe(List<BreederAffixRank> affixes) {
       return p -> affixes.contains(new BreederAffixRank(p.getAffixeEleveur()));  

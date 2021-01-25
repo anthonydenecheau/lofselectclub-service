@@ -212,12 +212,13 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                .filter(x -> (_year == x.getAnnee()))
                .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
 
-         // On sélectionne uniquement les affixes du top20 pour la variété et l'année en cours
+         /* On sélectionne uniquement les affixes du top20 pour la variété et l'année en cours
          Set<BreederAffixRank> _top20BreederAffix = _listAffixVarietyTopN
                .stream()
                .filter(x -> _year == x.getYear())
                .collect(Collectors.toSet())
          ;
+         */
          
          // On trie la liste des affixes du topN pour la variété et l'année en cours
          Map<String, Long> result = _affixes.entrySet().stream()
@@ -232,7 +233,8 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
             // si oui, il est sorti du classement pour l'année en cours; si non il n'est pas pris en compte
             // on conserve l'information qtités
             // On n'applique pas ce filtre pour la dernière année
-            if (_year != this._lastYear && !isTop20(_affixe.getKey(), _top20BreederAffix)) {
+            /* Abandon de la stratégie de classement s/ le top20
+            if (!isTop20(_affixe.getKey(), _top20BreederAffix)) {
                if (isTopNVariety(_affixe.getKey(), _listAffixVarietyTopN)) {
                   _topsN.add(
                         new BreederAffixRank()
@@ -243,7 +245,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                }
                continue;
             }            
-
+            */
             if (qtityExaequo == (int) (long)_affixe.getValue() ) {
                position++;
             } else
@@ -310,13 +312,14 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                .filter(x -> (_year == x.getAnnee()))
                .collect(Collectors.groupingBy(BreederStatistics::getAffixeEleveur, Collectors.counting()));
          
-         // On sélectionne uniquement les affixes du top20 pour l'année en cours
+         /* On sélectionne uniquement les affixes du top20 pour l'année en cours
          Set<BreederAffixRank> _top20BreederAffix = this.allTopNBreed
                .stream()
                .filter(x -> _year == x.getYear())
                .collect(Collectors.toSet())
          ;
-
+         */
+         
          // On trie la liste des affixes du topN pour l'année en cours
          Map<String, Long> result = _affixes.entrySet().stream()
                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
@@ -329,8 +332,8 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
             // Si l'affixe n'est pas présent dans le top20, appartient-il au topN ?
             // si oui, il est sorti du classement pour l'année en cours; si non il n'est pas pris en compte
             // on conserve l'information qtités
-            // On n'applique pas ce filtre pour la dernière année
-            if (_year != this._lastYear && !isTop20(_affixe.getKey(), _top20BreederAffix)) {
+            /* Abandon de la stratégie de classement s/ le top20
+            if (!isTop20(_affixe.getKey(), _top20BreederAffix)) {
                if (isTopN(_affixe.getKey())) {
                   _topsN.add(
                         new BreederAffixRank()
@@ -341,7 +344,8 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
                }
                continue;
             }            
-
+            */
+            
             if (qtityExaequo == (int) (long)_affixe.getValue() ) {
                position++;
             } else
@@ -380,6 +384,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
 
    }
 
+   /*
    private boolean isTop20(String _affixe, Set<BreederAffixRank> _top20) {
       
       // L'affixe est-il présent dans le top20
@@ -393,7 +398,9 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
       else 
          return true;
    }
-
+   */
+   
+   /*
    private boolean isTopN(String _name) {
       
       List<BreederAffixRank> _affix = Collections.singletonList(new BreederAffixRank().withName(_name));
@@ -407,7 +414,9 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
          return true;
 
    }
+   */
    
+   /*
    private boolean isTopNVariety(String _name, List<BreederAffixRank> _listAffixVarietyTopN) {
       
       List<BreederAffixRank> _affix = Collections.singletonList(new BreederAffixRank().withName(_name));
@@ -421,6 +430,7 @@ public class BreederService extends AbstractGenericService<BreederResponseObject
          return true;
 
    }
+   */
    
    private boolean isPresent(String _affixe, List<BreederAffixRank> _top) {
       
