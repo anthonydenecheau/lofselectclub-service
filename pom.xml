@@ -162,7 +162,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<springfox-swagger.version>2.8.0</springfox-swagger.version>    
+	<springfox-swagger.version>2.10.0</springfox-swagger.version>    
     <start-class>com.scc.lofselectclub.Application</start-class>    
     <docker.image.name>anthonydenecheau/scc-lofselectclub-service</docker.image.name>
 	<docker.image.tag>${env.BUILD_NAME}</docker.image.tag>
